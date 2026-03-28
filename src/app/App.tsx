@@ -2,11 +2,15 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/auth-context';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AppShell } from './layout/AppShell';
+import { ActiveSessionsPage } from './routes/ActiveSessionsPage';
+import { ChangePasswordPage } from './routes/ChangePasswordPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { HomePage } from './routes/HomePage';
 import { LoginPage } from './routes/LoginPage';
 import { MfaChallengePage } from './routes/MfaChallengePage';
+import { MfaSettingsPage } from './routes/MfaSettingsPage';
 import { NotFoundPage } from './routes/NotFoundPage';
+import { ResetPasswordPage } from './routes/ResetPasswordPage';
 
 function BootstrapScreen() {
   return (
@@ -35,6 +39,7 @@ function AppRoutes() {
       />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/login/mfa" element={<MfaChallengePage />} />
       <Route
         path="/app"
@@ -42,6 +47,36 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppShell>
               <HomePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/settings/password"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <ChangePasswordPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/settings/mfa"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <MfaSettingsPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/settings/sessions"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <ActiveSessionsPage />
             </AppShell>
           </ProtectedRoute>
         }

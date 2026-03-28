@@ -128,8 +128,8 @@ export function ForgotPasswordPage() {
         <div className="note-card">
           <strong>Reset links expire.</strong>
           <p>
-            The next FE story will consume the token from the email link and send the new password to the
-            backend reset endpoint.
+            The reset-password screen now consumes the token from the email link and sends the new password
+            to the backend reset endpoint.
           </p>
         </div>
       </section>

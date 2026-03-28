@@ -211,6 +211,10 @@ code {
   margin-top: 1.5rem;
 }
 
+.stack-form-light {
+  margin-top: 0;
+}
+
 .field {
   display: grid;
   gap: 0.45rem;
@@ -219,6 +223,10 @@ code {
 .field span {
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.field-light span {
+  color: var(--ink-strong);
 }
 
 .input {
@@ -239,6 +247,20 @@ code {
   outline-offset: 2px;
 }
 
+.input-light {
+  border-color: rgba(16, 32, 45, 0.14);
+  background: white;
+  color: var(--ink-strong);
+}
+
+.input-light::placeholder {
+  color: rgba(84, 100, 116, 0.72);
+}
+
+.input-light:focus {
+  outline: 2px solid rgba(15, 76, 129, 0.24);
+}
+
 .checkbox {
   display: flex;
   gap: 0.75rem;
@@ -249,6 +271,10 @@ code {
 
 .checkbox input {
   margin-top: 0.2rem;
+}
+
+.checkbox-light {
+  color: var(--ink-soft);
 }
 
 .segmented-control {
@@ -300,6 +326,105 @@ code {
 .note-card p {
   margin-bottom: 0;
   color: var(--ink-soft);
+}
+
+.qr-card {
+  display: inline-flex;
+  padding: 1rem;
+  border-radius: 22px;
+  background: white;
+  border: 1px solid var(--border);
+}
+
+.qr-image {
+  display: block;
+  width: 208px;
+  height: 208px;
+}
+
+.recovery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.recovery-code {
+  display: block;
+  padding: 0.8rem 0.9rem;
+  border-radius: 16px;
+  background: rgba(15, 76, 129, 0.08);
+  border: 1px solid rgba(15, 76, 129, 0.14);
+  font-size: 0.95rem;
+}
+
+.code-wrap {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.session-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.session-card {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.session-card-current {
+  background: linear-gradient(145deg, rgba(15, 76, 129, 0.08), rgba(21, 143, 99, 0.08));
+}
+
+.session-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.session-card-header h4 {
+  margin: 0;
+}
+
+.session-card-header p {
+  margin: 0.25rem 0 0;
+  color: var(--ink-soft);
+}
+
+.session-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.session-badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(16, 32, 45, 0.08);
+  color: var(--ink-strong);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.session-badge-active {
+  background: rgba(21, 143, 99, 0.16);
+  color: #0c5a40;
+}
+
+.session-badge-inactive {
+  background: rgba(159, 48, 52, 0.14);
+  color: var(--danger);
+}
+
+.session-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
 }
 
 .shell {
@@ -404,6 +529,68 @@ code {
   justify-items: end;
 }
 
+.timeout-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) auto;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1.4rem 1.5rem;
+  border-radius: 28px;
+  border: 1px solid rgba(191, 112, 24, 0.18);
+  background:
+    linear-gradient(140deg, rgba(255, 245, 220, 0.96), rgba(255, 234, 208, 0.92)),
+    var(--surface-strong);
+  box-shadow: var(--shadow);
+}
+
+.timeout-banner-copy h2 {
+  margin: 0.35rem 0;
+}
+
+.timeout-banner-copy p {
+  margin: 0;
+  color: #6a4b16;
+}
+
+.timeout-countdown-card {
+  display: grid;
+  justify-items: center;
+  min-width: 168px;
+  padding: 1rem 1.1rem;
+  border-radius: 24px;
+  background: rgba(191, 112, 24, 0.1);
+  border: 1px solid rgba(191, 112, 24, 0.16);
+}
+
+.timeout-countdown-value {
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 800;
+  line-height: 1;
+  color: #8a4116;
+}
+
+.timeout-countdown-label {
+  margin-top: 0.35rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #7a5a24;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.timeout-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.timeout-alert {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
 .meta-label {
   display: block;
   margin-bottom: 0.2rem;
@@ -418,6 +605,10 @@ code {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
+}
+
+.panel-span-2 {
+  grid-column: 1 / -1;
 }
 
 .panel {
@@ -474,6 +665,10 @@ code {
   margin-top: 0.5rem;
 }
 
+.compact-list li + li {
+  margin-top: 0.35rem;
+}
+
 @media (max-width: 1024px) {
   .shell {
     grid-template-columns: 1fr;
@@ -495,6 +690,14 @@ code {
   }
 
   .topbar-meta {
+    justify-items: start;
+  }
+
+  .timeout-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .timeout-countdown-card {
     justify-items: start;
   }
 

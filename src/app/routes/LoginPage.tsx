@@ -23,6 +23,10 @@ export function LoginPage() {
     const search = new URLSearchParams(location.search);
     return search.get('loggedOut') === '1';
   }, [location.search]);
+  const timedOut = useMemo(() => {
+    const search = new URLSearchParams(location.search);
+    return search.get('timedOut') === '1';
+  }, [location.search]);
 
   if (state.status === 'authenticated') {
     return <Navigate to={requestedPath} replace />;
@@ -74,6 +78,11 @@ export function LoginPage() {
         <form className="stack-form" onSubmit={handleSubmit}>
           {logoutConfirmed ? (
             <p className="success-note">You have been logged out and the current session is closed.</p>
+          ) : null}
+          {timedOut ? (
+            <p className="alert">
+              Your session expired due to inactivity or max session duration. Sign in again to continue.
+            </p>
           ) : null}
 
           <label className="field">

@@ -21,8 +21,8 @@ export function HomePage() {
         <h2>Authenticated app startup is wired to the backend session model.</h2>
         <p>
           This shell boots from <code>GET /api/auth/session</code>, restores authenticated state after
-          refresh, redirects unauthenticated users to the login route, and exposes timeout metadata for the
-          later FE-10 warning experience.
+          refresh, redirects unauthenticated users to the login route, and now drives the FE-10 timeout
+          warning and session refresh experience.
         </p>
       </section>
 

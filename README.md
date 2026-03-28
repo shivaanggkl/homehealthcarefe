@@ -1,6 +1,6 @@
 # HomeHealthCareFE
 
-This frontend project currently covers Epic 1 FE-01 through FE-05.
+This frontend project currently covers Epic 1 FE-01 through FE-11.
 
 What is implemented:
 
@@ -17,6 +17,12 @@ What is implemented:
 - TOTP and recovery-code completion paths for MFA-protected login
 - logout action wired to `POST /api/auth/logout` with backend redirect support
 - forgot-password screen wired to `POST /api/auth/forgot-password` with generic success UX
+- reset-password screen wired to `GET /api/auth/password-policy` and `POST /api/auth/reset-password`
+- authenticated change-password settings screen wired to `GET /api/auth/password-policy` and `POST /api/auth/change-password`
+- reusable backend-driven password policy presentation component shared across reset and change password flows
+- authenticated MFA settings screen wired to `GET /api/auth/mfa/status`, `POST /api/auth/mfa/enrollment/start`, and `POST /api/auth/mfa/enrollment/confirm`
+- authenticated active-sessions screen wired to `GET /api/auth/sessions` and `DELETE /api/auth/sessions/{sessionId}`
+- session timeout warning banner driven by `GET /api/auth/session` and `POST /api/auth/refresh`
 
 ## Expected backend
 

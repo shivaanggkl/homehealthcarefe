@@ -57,12 +57,113 @@ export type LogoutResponse = {
   redirectTo: string;
 };
 
+export type RefreshSessionRequest = {
+  refreshToken?: string;
+  sessionId?: string;
+};
+
+export type RefreshSessionResponse = {
+  userId: string;
+  sessionId: string;
+  accessToken: string;
+  accessTokenExpiresAt: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: string;
+};
+
 export type ForgotPasswordRequest = {
   email: string;
 };
 
 export type ForgotPasswordResponse = {
   message: string;
+};
+
+export type PasswordPolicyResponse = {
+  minimumLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireDigit: boolean;
+  requireSymbol: boolean;
+  commonPasswordCheckEnabled: boolean;
+  preventReuseCount: number;
+  summary: string;
+};
+
+export type ResetPasswordRequest = {
+  token: string;
+  newPassword: string;
+  revokeExistingSessions: boolean;
+};
+
+export type ResetPasswordResponse = {
+  message: string;
+  revokedExistingSessions: boolean;
+};
+
+export type ChangePasswordRequest = {
+  accessToken?: string;
+  sessionId?: string;
+  currentPassword: string;
+  newPassword: string;
+  invalidateOtherSessions: boolean;
+};
+
+export type ChangePasswordResponse = {
+  message: string;
+  invalidatedOtherSessions: boolean;
+};
+
+export type AuthenticatedRequestContext = {
+  accessToken?: string;
+  sessionId?: string;
+};
+
+export type MfaStatusResponse = {
+  userId: string;
+  mfaEnabled: boolean;
+  enrolledAt: string | null;
+  recoveryCodesRemaining: number;
+};
+
+export type MfaEnrollmentStartRequest = AuthenticatedRequestContext & {
+  currentPassword: string;
+};
+
+export type MfaEnrollmentStartResponse = {
+  enrollmentToken: string;
+  manualEntryKey: string;
+  otpauthUri: string;
+  expiresAt: string;
+  recoveryCodes: string[];
+};
+
+export type MfaEnrollmentConfirmRequest = {
+  enrollmentToken: string;
+  totpCode: string;
+};
+
+export type MfaEnrollmentConfirmResponse = {
+  userId: string;
+  mfaEnabled: boolean;
+  recoveryCodesRemaining: number;
+};
+
+export type UserSessionSummary = {
+  sessionId: string;
+  current: boolean;
+  active: boolean;
+  createdAt: string;
+  lastActivityAt: string | null;
+  absoluteExpiresAt: string | null;
+  revokedAt: string | null;
+  revocationReason: string | null;
+};
+
+export type RevokeSessionResponse = {
+  sessionId: string;
+  revoked: boolean;
+  revocationReason: string | null;
 };
 
 export class ApiError extends Error {
@@ -220,6 +321,41 @@ export async function logoutCurrentSession(request: LogoutRequest): Promise<Logo
   };
 }
 
+export async function refreshAuthenticatedSession(
+  request: RefreshSessionRequest,
+): Promise<RefreshSessionResponse> {
+  const headers = new Headers();
+
+  if (request.refreshToken) {
+    headers.set('X-Refresh-Token', request.refreshToken);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/auth/refresh'), {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | RefreshSessionResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Session refresh failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as RefreshSessionResponse;
+}
+
 export async function requestPasswordReset(
   request: ForgotPasswordRequest,
 ): Promise<ForgotPasswordResponse> {
@@ -245,4 +381,267 @@ export async function requestPasswordReset(
   }
 
   return payload as ForgotPasswordResponse;
+}
+
+export async function fetchPasswordPolicy(): Promise<PasswordPolicyResponse> {
+  const response = await fetch(apiUrl('/api/auth/password-policy'), {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PasswordPolicyResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Password policy request failed with status ${response.status}`;
+    throw new ApiError(
+      response.status,
+      message,
+    );
+  }
+
+  return payload as PasswordPolicyResponse;
+}
+
+export async function resetPassword(request: ResetPasswordRequest): Promise<ResetPasswordResponse> {
+  const response = await fetch(apiUrl('/api/auth/reset-password'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ResetPasswordResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload?.message ?? `Reset password failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ResetPasswordResponse;
+}
+
+export async function changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+  });
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/auth/change-password'), {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: JSON.stringify({
+      currentPassword: request.currentPassword,
+      newPassword: request.newPassword,
+      invalidateOtherSessions: request.invalidateOtherSessions,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ChangePasswordResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Change password failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ChangePasswordResponse;
+}
+
+export async function fetchMfaStatus(
+  request: AuthenticatedRequestContext,
+): Promise<MfaStatusResponse> {
+  const headers = new Headers();
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/auth/mfa/status'), {
+    method: 'GET',
+    credentials: 'include',
+    headers,
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MfaStatusResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `MFA status request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MfaStatusResponse;
+}
+
+export async function startMfaEnrollment(
+  request: MfaEnrollmentStartRequest,
+): Promise<MfaEnrollmentStartResponse> {
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+  });
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/auth/mfa/enrollment/start'), {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: JSON.stringify({
+      currentPassword: request.currentPassword,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MfaEnrollmentStartResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `MFA enrollment start failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MfaEnrollmentStartResponse;
+}
+
+export async function confirmMfaEnrollment(
+  request: MfaEnrollmentConfirmRequest,
+): Promise<MfaEnrollmentConfirmResponse> {
+  const response = await fetch(apiUrl('/api/auth/mfa/enrollment/confirm'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MfaEnrollmentConfirmResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `MFA enrollment confirmation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MfaEnrollmentConfirmResponse;
+}
+
+export async function fetchUserSessions(
+  request: AuthenticatedRequestContext,
+): Promise<UserSessionSummary[]> {
+  const headers = new Headers();
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/auth/sessions'), {
+    method: 'GET',
+    credentials: 'include',
+    headers,
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | UserSessionSummary[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Session list request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as UserSessionSummary[];
+}
+
+export async function revokeUserSession(
+  request: AuthenticatedRequestContext & { targetSessionId: string },
+): Promise<RevokeSessionResponse> {
+  const headers = new Headers();
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl(`/api/auth/sessions/${request.targetSessionId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers,
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | RevokeSessionResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Session revocation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as RevokeSessionResponse;
 }

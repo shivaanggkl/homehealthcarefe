@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -13,6 +14,7 @@ import {
   fetchSessionSnapshot,
   loginWithPassword,
   logoutCurrentSession,
+  refreshAuthenticatedSession,
   SessionSnapshot,
 } from './session-api';
 import {
@@ -48,6 +50,7 @@ type AuthState =
 type AuthContextValue = {
   state: AuthState;
   refreshAuth: () => Promise<void>;
+  extendSession: () => Promise<void>;
   clearLocalAuthState: () => void;
   storeDevSession: (credentials: DevSessionCredentials) => void;
   login: (command: {
@@ -79,48 +82,96 @@ const initialState: AuthState = {
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<AuthState>(initialState);
+  const stateRef = useRef<AuthState>(initialState);
 
-  const refreshAuth = useCallback(async () => {
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const setAuthenticated = useCallback(
+    (snapshot: SessionSnapshot, authSource: 'cookie' | 'storage') => {
+      setState({
+        status: 'authenticated',
+        session: snapshot,
+        authSource,
+        error: null,
+      });
+    },
+    [],
+  );
+
+  const setUnauthenticated = useCallback((error: string | null) => {
+    clearDevSessionCredentials();
+    clearPendingMfaChallenge();
     setState({
-      status: 'bootstrapping',
+      status: 'unauthenticated',
       session: null,
       authSource: null,
-      error: null,
+      error,
     });
+  }, []);
 
-    try {
-      const storedSession = loadDevSessionCredentials();
-      const result = await fetchSessionSnapshot(storedSession);
+  const syncAuth = useCallback(
+    async (mode: 'foreground' | 'background') => {
+      const previousState = stateRef.current;
 
-      if (result.kind === 'unauthenticated') {
+      if (mode === 'foreground' && previousState.status !== 'authenticated') {
         setState({
-          status: 'unauthenticated',
+          status: 'bootstrapping',
           session: null,
           authSource: null,
           error: null,
         });
-        return;
       }
 
-      setState({
-        status: 'authenticated',
-        session: result.snapshot,
-        authSource: result.authSource,
-        error: null,
-      });
-    } catch (error) {
-      setState({
-        status: 'unauthenticated',
-        session: null,
-        authSource: null,
-        error: error instanceof Error ? error.message : 'Unable to reach the backend session API.',
-      });
-    }
-  }, []);
+      try {
+        const storedSession = loadDevSessionCredentials();
+        const result = await fetchSessionSnapshot(storedSession);
+
+        if (result.kind === 'unauthenticated') {
+          setUnauthenticated(null);
+          return;
+        }
+
+        setAuthenticated(result.snapshot, result.authSource);
+      } catch (error) {
+        if (mode === 'background' && previousState.status === 'authenticated') {
+          return;
+        }
+
+        setState({
+          status: 'unauthenticated',
+          session: null,
+          authSource: null,
+          error: error instanceof Error ? error.message : 'Unable to reach the backend session API.',
+        });
+      }
+    },
+    [setAuthenticated, setUnauthenticated],
+  );
+
+  const refreshAuth = useCallback(async () => {
+    await syncAuth('foreground');
+  }, [syncAuth]);
 
   useEffect(() => {
     void refreshAuth();
   }, [refreshAuth]);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated') {
+      return;
+    }
+
+    const pollEveryMs = state.session.warningRequired ? 5000 : 60000;
+    const intervalId = window.setInterval(() => {
+      void syncAuth('background');
+    }, pollEveryMs);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [state, syncAuth]);
 
   const clearLocalAuthState = useCallback(() => {
     clearDevSessionCredentials();
@@ -140,6 +191,27 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const clearPendingMfa = useCallback(() => {
     clearPendingMfaChallenge();
   }, []);
+
+  const extendSession = useCallback(async () => {
+    const currentState = stateRef.current;
+    const storedSession = loadDevSessionCredentials();
+    const refreshedSession = await refreshAuthenticatedSession({
+      refreshToken: storedSession?.refreshToken,
+      sessionId:
+        storedSession?.sessionId ??
+        (currentState.status === 'authenticated' ? currentState.session.sessionId : undefined),
+    });
+
+    if (storedSession || currentState.authSource === 'storage') {
+      saveDevSessionCredentials({
+        accessToken: refreshedSession.accessToken,
+        refreshToken: refreshedSession.refreshToken,
+        sessionId: refreshedSession.sessionId,
+      });
+    }
+
+    await syncAuth('background');
+  }, [syncAuth]);
 
   const login = useCallback(
     async (command: { email: string; password: string; persistDevSession: boolean }) => {
@@ -214,53 +286,37 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [refreshAuth],
   );
 
-  const logout = useCallback(
-    async (command?: { redirectTo?: string }) => {
-      const storedSession = loadDevSessionCredentials();
-      const redirectTo = command?.redirectTo ?? '/login?loggedOut=1';
+  const logout = useCallback(async (command?: { redirectTo?: string }) => {
+    const storedSession = loadDevSessionCredentials();
+    const currentState = stateRef.current;
+    const redirectTo = command?.redirectTo ?? '/login?loggedOut=1';
 
-      try {
-        const result = await logoutCurrentSession({
-          accessToken: storedSession?.accessToken,
-          refreshToken: storedSession?.refreshToken,
-          sessionId:
-            storedSession?.sessionId ??
-            (state.status === 'authenticated' ? state.session.sessionId : undefined),
-          redirectTo,
-        });
+    try {
+      const result = await logoutCurrentSession({
+        accessToken: storedSession?.accessToken,
+        refreshToken: storedSession?.refreshToken,
+        sessionId:
+          storedSession?.sessionId ??
+          (currentState.status === 'authenticated' ? currentState.session.sessionId : undefined),
+        redirectTo,
+      });
 
-        clearDevSessionCredentials();
-        clearPendingMfaChallenge();
-        setState({
-          status: 'unauthenticated',
-          session: null,
-          authSource: null,
-          error: null,
-        });
-
-        return result;
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
-          clearDevSessionCredentials();
-          clearPendingMfaChallenge();
-          setState({
-            status: 'unauthenticated',
-            session: null,
-            authSource: null,
-            error: null,
-          });
-          return { redirectTo };
-        }
-        throw error;
+      setUnauthenticated(null);
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setUnauthenticated(null);
+        return { redirectTo };
       }
-    },
-    [state],
-  );
+      throw error;
+    }
+  }, [setUnauthenticated]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       state,
       refreshAuth,
+      extendSession,
       clearLocalAuthState,
       storeDevSession,
       login,
@@ -272,6 +328,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       clearLocalAuthState,
       clearPendingMfa,
       completeMfaLogin,
+      extendSession,
       login,
       logout,
       refreshAuth,

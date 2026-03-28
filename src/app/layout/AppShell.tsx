@@ -1,6 +1,7 @@
 import { PropsWithChildren, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
+import { SessionTimeoutWarning } from '../components/SessionTimeoutWarning';
 
 function formatTimestamp(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -49,6 +50,15 @@ export function AppShell({ children }: PropsWithChildren) {
         <nav className="nav">
           <NavLink className="nav-link" to="/app">
             Session Home
+          </NavLink>
+          <NavLink className="nav-link" to="/app/settings/password">
+            Change Password
+          </NavLink>
+          <NavLink className="nav-link" to="/app/settings/mfa">
+            MFA Settings
+          </NavLink>
+          <NavLink className="nav-link" to="/app/settings/sessions">
+            Active Sessions
           </NavLink>
         </nav>
 
@@ -104,6 +114,7 @@ export function AppShell({ children }: PropsWithChildren) {
             </div>
           </div>
         </header>
+        <SessionTimeoutWarning />
         {children}
       </main>
     </div>
