@@ -19,6 +19,7 @@ import {
   buildAccessProfile,
   buildAccessProfileForRole,
   FrontendAccessProfile,
+  mapBackendPermissionsToFrontend,
 } from './access-control';
 
 type AccessContextValue = {
@@ -115,11 +116,21 @@ export function AccessProvider({ children }: PropsWithChildren) {
         override
           ? buildAccessProfile(override)
           : backendAccess
-            ? buildAccessProfileForRole(
-                backendAccess.role,
-                backendAccess.assignedBranchIds,
-                'backend',
-              )
+            ? {
+                ...buildAccessProfileForRole(
+                  backendAccess.role,
+                  backendAccess.assignedBranchIds,
+                  'backend',
+                ),
+                permissions: mapBackendPermissionsToFrontend(
+                  backendAccess.permissions,
+                  buildAccessProfileForRole(
+                    backendAccess.role,
+                    backendAccess.assignedBranchIds,
+                    'backend',
+                  ).permissions,
+                ),
+              }
             : buildAccessProfile(null),
       loading,
       setRoleOverride,

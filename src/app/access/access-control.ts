@@ -7,6 +7,16 @@ export type FrontendPermission =
   | 'manage_self_password'
   | 'manage_self_mfa'
   | 'manage_self_sessions'
+  | 'view_setup_console'
+  | 'manage_agency_profile_setup'
+  | 'manage_service_line_setup'
+  | 'manage_visit_type_setup'
+  | 'manage_workforce_catalog_setup'
+  | 'manage_task_template_setup'
+  | 'manage_documentation_template_setup'
+  | 'manage_branch_policy_setup'
+  | 'manage_alert_rule_setup'
+  | 'manage_mileage_pay_setup'
   | 'view_user_directory'
   | 'invite_users'
   | 'edit_user_accounts'
@@ -37,6 +47,13 @@ export type AppRouteDefinition = {
   permission: FrontendPermission;
   description: string;
   navBehavior: 'visible' | 'disabled';
+  section:
+    | 'workspace'
+    | 'configuration'
+    | 'people'
+    | 'security'
+    | 'personal';
+  audience?: 'owner-only' | 'admin';
 };
 
 type RoleDefinition = Omit<FrontendAccessProfile, 'assignedBranchIds' | 'source'>;
@@ -57,6 +74,16 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Agency-wide branch access',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_setup_console',
+      'manage_agency_profile_setup',
+      'manage_service_line_setup',
+      'manage_visit_type_setup',
+      'manage_workforce_catalog_setup',
+      'manage_task_template_setup',
+      'manage_documentation_template_setup',
+      'manage_branch_policy_setup',
+      'manage_alert_rule_setup',
+      'manage_mileage_pay_setup',
       'view_user_directory',
       'invite_users',
       'edit_user_accounts',
@@ -77,6 +104,16 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_setup_console',
+      'manage_agency_profile_setup',
+      'manage_service_line_setup',
+      'manage_visit_type_setup',
+      'manage_workforce_catalog_setup',
+      'manage_task_template_setup',
+      'manage_documentation_template_setup',
+      'manage_branch_policy_setup',
+      'manage_alert_rule_setup',
+      'manage_mileage_pay_setup',
       'view_user_directory',
       'invite_users',
       'edit_user_accounts',
@@ -137,6 +174,96 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'view_session_home',
     description: 'Authenticated session dashboard and backend session snapshot.',
     navBehavior: 'visible',
+    section: 'workspace',
+  },
+  {
+    path: '/app/setup',
+    navLabel: 'Agency Setup',
+    permission: 'view_setup_console',
+    description: 'Epic 2 configuration overview and setup information architecture.',
+    navBehavior: 'visible',
+    section: 'configuration',
+  },
+  {
+    path: '/app/setup/profile',
+    navLabel: 'Agency Profile',
+    permission: 'manage_agency_profile_setup',
+    description: 'Manage agency-level operational profile defaults.',
+    navBehavior: 'visible',
+    section: 'configuration',
+    audience: 'admin',
+  },
+  {
+    path: '/app/setup/catalog/service-lines',
+    navLabel: 'Service Lines',
+    permission: 'manage_service_line_setup',
+    description: 'Manage the agency service line catalog.',
+    navBehavior: 'visible',
+    section: 'configuration',
+    audience: 'admin',
+  },
+  {
+    path: '/app/setup/catalog/visit-types',
+    navLabel: 'Visit Types',
+    permission: 'manage_visit_type_setup',
+    description: 'Manage visit classifications and defaults.',
+    navBehavior: 'visible',
+    section: 'configuration',
+    audience: 'admin',
+  },
+  {
+    path: '/app/setup/workforce/catalogs',
+    navLabel: 'Workforce Catalogs',
+    permission: 'manage_workforce_catalog_setup',
+    description: 'Manage caregiver skills and certifications.',
+    navBehavior: 'visible',
+    section: 'configuration',
+    audience: 'admin',
+  },
+  {
+    path: '/app/setup/templates/tasks',
+    navLabel: 'Task Templates',
+    permission: 'manage_task_template_setup',
+    description: 'Manage reusable task templates.',
+    navBehavior: 'visible',
+    section: 'configuration',
+    audience: 'admin',
+  },
+  {
+    path: '/app/setup/templates/documentation',
+    navLabel: 'Documentation Templates',
+    permission: 'manage_documentation_template_setup',
+    description: 'Manage reusable documentation templates and versions.',
+    navBehavior: 'visible',
+    section: 'configuration',
+    audience: 'admin',
+  },
+  {
+    path: '/app/setup/policies/branches',
+    navLabel: 'Branch Policies',
+    permission: 'manage_branch_policy_setup',
+    description: 'Manage branch-level policy overrides.',
+    navBehavior: 'disabled',
+    section: 'configuration',
+    audience: 'admin',
+  },
+  {
+    path: '/app/setup/policies/alerts',
+    navLabel: 'Alert Rules',
+    permission: 'manage_alert_rule_setup',
+    description: 'Manage agency-wide and branch-specific alert rules.',
+    navBehavior: 'disabled',
+    section: 'configuration',
+    audience: 'admin',
+  },
+  {
+    path: '/app/setup/compensation/mileage-pay',
+    navLabel: 'Mileage & Pay',
+    permission: 'manage_mileage_pay_setup',
+    description: 'Manage mileage reimbursement and pay defaults.',
+    navBehavior: 'disabled',
+    section: 'configuration',
+    audience: 'admin',
   },
   {
     path: '/app/settings/password',
@@ -144,6 +271,7 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_self_password',
     description: 'Authenticated password change settings.',
     navBehavior: 'visible',
+    section: 'personal',
   },
   {
     path: '/app/settings/mfa',
@@ -151,6 +279,7 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_self_mfa',
     description: 'Self-service MFA enrollment and status.',
     navBehavior: 'visible',
+    section: 'personal',
   },
   {
     path: '/app/settings/profile',
@@ -158,6 +287,7 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_self_profile',
     description: 'Update your own profile details and preferences.',
     navBehavior: 'visible',
+    section: 'personal',
   },
   {
     path: '/app/admin/users',
@@ -165,6 +295,8 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'view_user_directory',
     description: 'Admin directory, invite flow, and staff assignment editing.',
     navBehavior: 'visible',
+    section: 'people',
+    audience: 'admin',
   },
   {
     path: '/app/admin/audit',
@@ -172,6 +304,8 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'view_audit_log',
     description: 'Review sensitive events and export the audit trail.',
     navBehavior: 'visible',
+    section: 'people',
+    audience: 'admin',
   },
   {
     path: '/app/admin/branches',
@@ -179,6 +313,8 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_branches',
     description: 'Search, create, edit, and deactivate branches.',
     navBehavior: 'disabled',
+    section: 'people',
+    audience: 'admin',
   },
   {
     path: '/app/settings/agency',
@@ -186,6 +322,8 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_agency_settings',
     description: 'Owner-only agency profile settings.',
     navBehavior: 'disabled',
+    section: 'security',
+    audience: 'owner-only',
   },
   {
     path: '/app/settings/security',
@@ -193,6 +331,8 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_security_settings',
     description: 'Owner-facing consolidated security settings.',
     navBehavior: 'disabled',
+    section: 'security',
+    audience: 'owner-only',
   },
   {
     path: '/app/settings/admin-mfa-policy',
@@ -200,6 +340,8 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_agency_mfa_policy',
     description: 'Admin-only agency MFA enforcement settings.',
     navBehavior: 'disabled',
+    section: 'security',
+    audience: 'admin',
   },
   {
     path: '/app/settings/admin-notifications',
@@ -207,6 +349,8 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_admin_notifications',
     description: 'Admin-only critical account notification preferences.',
     navBehavior: 'disabled',
+    section: 'security',
+    audience: 'admin',
   },
   {
     path: '/app/settings/sessions',
@@ -214,8 +358,51 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     permission: 'manage_self_sessions',
     description: 'Review and revoke your active sessions.',
     navBehavior: 'visible',
+    section: 'personal',
   },
 ];
+
+const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
+  VIEW_USER_DIRECTORY: ['view_user_directory'],
+  INVITE_USER: ['invite_users'],
+  EDIT_USER_PROFILE: ['edit_user_accounts'],
+  MANAGE_USER_STATUS: ['manage_user_status'],
+  VIEW_AUDIT_LOG: ['view_audit_log'],
+  MANAGE_AGENCY_SETTINGS: ['manage_agency_settings'],
+  MANAGE_BRANCHES: ['manage_branches'],
+  MANAGE_AGENCY_MFA_POLICY: ['manage_agency_mfa_policy'],
+  MANAGE_ADMIN_NOTIFICATIONS: ['manage_admin_notifications'],
+  VIEW_AGENCY_CONFIGURATION: [
+    'view_setup_console',
+    'manage_agency_profile_setup',
+    'manage_service_line_setup',
+    'manage_visit_type_setup',
+  ],
+  MANAGE_AGENCY_CONFIGURATION: [
+    'view_setup_console',
+    'manage_agency_profile_setup',
+    'manage_service_line_setup',
+    'manage_visit_type_setup',
+  ],
+  VIEW_WORKFORCE_CONFIGURATION: ['view_setup_console', 'manage_workforce_catalog_setup'],
+  MANAGE_WORKFORCE_CONFIGURATION: ['view_setup_console', 'manage_workforce_catalog_setup'],
+  VIEW_TEMPLATE_CONFIGURATION: [
+    'view_setup_console',
+    'manage_task_template_setup',
+    'manage_documentation_template_setup',
+  ],
+  MANAGE_TEMPLATE_CONFIGURATION: [
+    'view_setup_console',
+    'manage_task_template_setup',
+    'manage_documentation_template_setup',
+  ],
+  VIEW_BRANCH_POLICY: ['view_setup_console', 'manage_branch_policy_setup'],
+  MANAGE_BRANCH_POLICY: ['view_setup_console', 'manage_branch_policy_setup'],
+  VIEW_ALERT_RULE: ['view_setup_console', 'manage_alert_rule_setup'],
+  MANAGE_ALERT_RULE: ['view_setup_console', 'manage_alert_rule_setup'],
+  VIEW_COMPENSATION_SETTINGS: ['view_setup_console', 'manage_mileage_pay_setup'],
+  MANAGE_COMPENSATION_SETTINGS: ['view_setup_console', 'manage_mileage_pay_setup'],
+};
 
 function normalizeAssignedBranchIds(role: AgencyRole, branchIds?: string[]): string[] {
   const roleDefinition = ROLE_DEFINITIONS[role];
@@ -264,6 +451,34 @@ export function canAccessPermission(
   return profile.permissions.includes(permission);
 }
 
+export function mapBackendPermissionsToFrontend(
+  backendPermissions: string[],
+  fallbackPermissions: FrontendPermission[],
+): FrontendPermission[] {
+  const resolved = new Set<FrontendPermission>(COMMON_SELF_SERVICE_PERMISSIONS);
+
+  backendPermissions.forEach((permission) => {
+    BACKEND_PERMISSION_MAPPING[permission]?.forEach((mapped) => resolved.add(mapped));
+  });
+
+  if (resolved.size === COMMON_SELF_SERVICE_PERMISSIONS.length) {
+    fallbackPermissions.forEach((permission) => resolved.add(permission));
+  }
+
+  return Array.from(resolved);
+}
+
 export function routeForPath(pathname: string): AppRouteDefinition | undefined {
   return APP_ROUTES.find((route) => route.path === pathname);
 }
+
+export const NAV_SECTIONS: Array<{
+  key: AppRouteDefinition['section'];
+  label: string;
+}> = [
+  { key: 'workspace', label: 'Workspace' },
+  { key: 'configuration', label: 'Agency Setup' },
+  { key: 'people', label: 'People & Audit' },
+  { key: 'security', label: 'Security' },
+  { key: 'personal', label: 'Personal' },
+];

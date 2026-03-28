@@ -1,6 +1,6 @@
 # HomeHealthCareFE
 
-This frontend project currently covers Epic 1 FE-01 through FE-23, plus FE-24 and FE-25, including FE-12 route and navigation authorization.
+This frontend project currently covers Epic 1 FE-01 through FE-23, plus FE-24 and FE-25, including FE-12 route and navigation authorization. It also now includes Epic 2 Phase A shared UI foundation for the agency setup/configuration area.
 
 What is implemented:
 
@@ -38,6 +38,9 @@ What is implemented:
 - authenticated active-sessions screen wired to `GET /api/auth/sessions` and `DELETE /api/auth/sessions/{sessionId}`
 - session timeout warning banner driven by `GET /api/auth/session` and `POST /api/auth/refresh`
 - backend-driven current-access profile via `GET /api/me/access`, with frontend override retained for QA and local permission testing
+- Epic 2 setup information architecture under `/app/setup`
+- permission-aware setup routes for agency profile, service lines, visit types, workforce catalogs, task templates, documentation templates, branch policies, alert rules, and mileage/pay settings
+- shared Epic 2 configuration page scaffolds for reusable table, form, status, and responsive admin patterns
 
 ## Expected backend
 

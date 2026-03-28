@@ -6,22 +6,32 @@ import { AppShell } from './layout/AppShell';
 import { ActiveSessionsPage } from './routes/ActiveSessionsPage';
 import { AcceptInvitationPage } from './routes/AcceptInvitationPage';
 import { AgencySettingsPage } from './routes/AgencySettingsPage';
+import { AgencyProfileSetupPage } from './routes/AgencyProfileSetupPage';
 import { AdminNotificationPreferencesPage } from './routes/AdminNotificationPreferencesPage';
 import { AdminMfaPolicyPage } from './routes/AdminMfaPolicyPage';
 import { AuditLogPage } from './routes/AuditLogPage';
+import { AlertRuleSetupPage } from './routes/AlertRuleSetupPage';
 import { BranchManagementPage } from './routes/BranchManagementPage';
+import { BranchPolicySetupPage } from './routes/BranchPolicySetupPage';
 import { ChangePasswordPage } from './routes/ChangePasswordPage';
+import { DocumentationTemplateSetupPage } from './routes/DocumentationTemplateSetupPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { HomePage } from './routes/HomePage';
 import { InviteUserPage } from './routes/InviteUserPage';
 import { LoginPage } from './routes/LoginPage';
+import { MileagePaySetupPage } from './routes/MileagePaySetupPage';
 import { MfaChallengePage } from './routes/MfaChallengePage';
 import { MfaSettingsPage } from './routes/MfaSettingsPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { ResetPasswordPage } from './routes/ResetPasswordPage';
 import { SecuritySettingsPage } from './routes/SecuritySettingsPage';
 import { SelfProfilePage } from './routes/SelfProfilePage';
+import { ServiceLineSetupPage } from './routes/ServiceLineSetupPage';
+import { SetupOverviewPage } from './routes/SetupOverviewPage';
+import { TaskTemplateSetupPage } from './routes/TaskTemplateSetupPage';
 import { UserDirectoryPage } from './routes/UserDirectoryPage';
+import { VisitTypeSetupPage } from './routes/VisitTypeSetupPage';
+import { WorkforceCatalogSetupPage } from './routes/WorkforceCatalogSetupPage';
 
 function BootstrapScreen() {
   return (
@@ -72,6 +82,146 @@ function AppRoutes() {
           <ProtectedRoute requiredPermission="view_session_home">
             <AppShell>
               <HomePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup"
+        element={
+          <ProtectedRoute
+            deniedMessage="Epic 2 setup routes are limited to roles with agency configuration access."
+            deniedTitle="Agency setup is not available for this role."
+            requiredPermission="view_setup_console"
+          >
+            <AppShell>
+              <SetupOverviewPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/profile"
+        element={
+          <ProtectedRoute
+            deniedMessage="Agency profile setup follows backend configuration permissions."
+            deniedTitle="Agency profile setup is not available for this role."
+            requiredPermission="manage_agency_profile_setup"
+          >
+            <AppShell>
+              <AgencyProfileSetupPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/catalog/service-lines"
+        element={
+          <ProtectedRoute
+            deniedMessage="Service line setup follows backend configuration permissions."
+            deniedTitle="Service line setup is not available for this role."
+            requiredPermission="manage_service_line_setup"
+          >
+            <AppShell>
+              <ServiceLineSetupPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/catalog/visit-types"
+        element={
+          <ProtectedRoute
+            deniedMessage="Visit type setup follows backend configuration permissions."
+            deniedTitle="Visit type setup is not available for this role."
+            requiredPermission="manage_visit_type_setup"
+          >
+            <AppShell>
+              <VisitTypeSetupPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/workforce/catalogs"
+        element={
+          <ProtectedRoute
+            deniedMessage="Workforce catalog setup follows backend configuration permissions."
+            deniedTitle="Workforce catalogs are not available for this role."
+            requiredPermission="manage_workforce_catalog_setup"
+          >
+            <AppShell>
+              <WorkforceCatalogSetupPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/templates/tasks"
+        element={
+          <ProtectedRoute
+            deniedMessage="Task template setup follows backend configuration permissions."
+            deniedTitle="Task templates are not available for this role."
+            requiredPermission="manage_task_template_setup"
+          >
+            <AppShell>
+              <TaskTemplateSetupPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/templates/documentation"
+        element={
+          <ProtectedRoute
+            deniedMessage="Documentation template setup follows backend configuration permissions."
+            deniedTitle="Documentation templates are not available for this role."
+            requiredPermission="manage_documentation_template_setup"
+          >
+            <AppShell>
+              <DocumentationTemplateSetupPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/policies/branches"
+        element={
+          <ProtectedRoute
+            deniedMessage="Branch policy setup follows backend branch-aware permissions."
+            deniedTitle="Branch policies are not available for this role."
+            requiredPermission="manage_branch_policy_setup"
+          >
+            <AppShell>
+              <BranchPolicySetupPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/policies/alerts"
+        element={
+          <ProtectedRoute
+            deniedMessage="Alert rule setup follows backend branch-aware permissions."
+            deniedTitle="Alert rules are not available for this role."
+            requiredPermission="manage_alert_rule_setup"
+          >
+            <AppShell>
+              <AlertRuleSetupPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/setup/compensation/mileage-pay"
+        element={
+          <ProtectedRoute
+            deniedMessage="Mileage and pay setup follows backend compensation permissions."
+            deniedTitle="Mileage and pay settings are not available for this role."
+            requiredPermission="manage_mileage_pay_setup"
+          >
+            <AppShell>
+              <MileagePaySetupPage />
             </AppShell>
           </ProtectedRoute>
         }
