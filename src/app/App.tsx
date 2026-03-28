@@ -1,8 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { AccessProvider, useAccess } from './access/access-context';
 import { AuthProvider, useAuth } from './auth/auth-context';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AppShell } from './layout/AppShell';
 import { ActiveSessionsPage } from './routes/ActiveSessionsPage';
+import { AdminNotificationPreferencesPage } from './routes/AdminNotificationPreferencesPage';
+import { AdminMfaPolicyPage } from './routes/AdminMfaPolicyPage';
 import { ChangePasswordPage } from './routes/ChangePasswordPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { HomePage } from './routes/HomePage';
@@ -11,6 +14,7 @@ import { MfaChallengePage } from './routes/MfaChallengePage';
 import { MfaSettingsPage } from './routes/MfaSettingsPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { ResetPasswordPage } from './routes/ResetPasswordPage';
+import { SecuritySettingsPage } from './routes/SecuritySettingsPage';
 
 function BootstrapScreen() {
   return (
@@ -22,6 +26,11 @@ function BootstrapScreen() {
       </div>
     </div>
   );
+}
+
+function DefaultLandingRoute() {
+  const { profile } = useAccess();
+  return <Navigate replace to={profile.defaultRoute} />;
 }
 
 function AppRoutes() {
@@ -45,6 +54,14 @@ function AppRoutes() {
         path="/app"
         element={
           <ProtectedRoute>
+            <DefaultLandingRoute />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/home"
+        element={
+          <ProtectedRoute requiredPermission="view_session_home">
             <AppShell>
               <HomePage />
             </AppShell>
@@ -52,9 +69,23 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/app/settings/security"
+        element={
+          <ProtectedRoute
+            deniedMessage="The consolidated security settings page is currently limited to the agency owner access profile."
+            deniedTitle="Security settings are not available for this role."
+            requiredPermission="manage_security_settings"
+          >
+            <AppShell>
+              <SecuritySettingsPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/app/settings/password"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredPermission="manage_self_password">
             <AppShell>
               <ChangePasswordPage />
             </AppShell>
@@ -64,7 +95,7 @@ function AppRoutes() {
       <Route
         path="/app/settings/mfa"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredPermission="manage_self_mfa">
             <AppShell>
               <MfaSettingsPage />
             </AppShell>
@@ -72,9 +103,37 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/app/settings/admin-mfa-policy"
+        element={
+          <ProtectedRoute
+            deniedMessage="Agency MFA enforcement is limited to roles with admin security permissions."
+            deniedTitle="Agency MFA policy is not available for this role."
+            requiredPermission="manage_agency_mfa_policy"
+          >
+            <AppShell>
+              <AdminMfaPolicyPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/settings/admin-notifications"
+        element={
+          <ProtectedRoute
+            deniedMessage="Critical account notification settings are limited to admin roles."
+            deniedTitle="Admin notifications are not available for this role."
+            requiredPermission="manage_admin_notifications"
+          >
+            <AppShell>
+              <AdminNotificationPreferencesPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/app/settings/sessions"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredPermission="manage_self_sessions">
             <AppShell>
               <ActiveSessionsPage />
             </AppShell>
@@ -89,7 +148,9 @@ function AppRoutes() {
 export function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <AccessProvider>
+        <AppRoutes />
+      </AccessProvider>
     </AuthProvider>
   );
 }

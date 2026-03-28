@@ -1,6 +1,9 @@
 import { PropsWithChildren, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAccess } from '../access/access-context';
+import { APP_ROUTES, canAccessPermission } from '../access/access-control';
 import { useAuth } from '../auth/auth-context';
+import { AccessProfileCard } from '../components/AccessProfileCard';
 import { SessionTimeoutWarning } from '../components/SessionTimeoutWarning';
 
 function formatTimestamp(value: string): string {
@@ -12,6 +15,7 @@ function formatTimestamp(value: string): string {
 
 export function AppShell({ children }: PropsWithChildren) {
   const { state, clearLocalAuthState, refreshAuth, logout } = useAuth();
+  const { profile } = useAccess();
   const navigate = useNavigate();
   const [logoutPending, setLogoutPending] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -48,18 +52,31 @@ export function AppShell({ children }: PropsWithChildren) {
         </Link>
 
         <nav className="nav">
-          <NavLink className="nav-link" to="/app">
-            Session Home
-          </NavLink>
-          <NavLink className="nav-link" to="/app/settings/password">
-            Change Password
-          </NavLink>
-          <NavLink className="nav-link" to="/app/settings/mfa">
-            MFA Settings
-          </NavLink>
-          <NavLink className="nav-link" to="/app/settings/sessions">
-            Active Sessions
-          </NavLink>
+          {APP_ROUTES.map((route) => {
+            const allowed = canAccessPermission(profile, route.permission);
+            if (allowed) {
+              return (
+                <NavLink className="nav-link" key={route.path} to={route.path}>
+                  {route.navLabel}
+                </NavLink>
+              );
+            }
+
+            if (route.navBehavior === 'disabled') {
+              return (
+                <span
+                  aria-disabled="true"
+                  className="nav-link nav-link-disabled"
+                  key={route.path}
+                  title={route.description}
+                >
+                  {route.navLabel}
+                </span>
+              );
+            }
+
+            return null;
+          })}
         </nav>
 
         <section className="sidebar-card">
@@ -76,6 +93,8 @@ export function AppShell({ children }: PropsWithChildren) {
           <strong>{formatTimestamp(state.session.forcedLogoutAt)}</strong>
           <p>{state.session.secondsUntilForcedLogout} seconds remaining in the current warning window.</p>
         </section>
+
+        <AccessProfileCard />
 
         <div className="sidebar-actions">
           <button className="button button-secondary" onClick={() => void refreshAuth()} type="button">

@@ -1,5 +1,8 @@
+import type { AgencyRole } from './session-api';
+
 export const DEV_SESSION_STORAGE_KEY = 'hhc_dev_auth';
 export const PENDING_MFA_STORAGE_KEY = 'hhc_pending_mfa';
+export const ACCESS_PROFILE_STORAGE_KEY = 'hhc_frontend_access_profile';
 
 export type DevSessionCredentials = {
   accessToken: string;
@@ -12,6 +15,11 @@ export type PendingMfaChallenge = {
   userId: string;
   challengeToken: string;
   persistDevSession: boolean;
+};
+
+export type FrontendAccessOverride = {
+  role: AgencyRole;
+  assignedBranchIds?: string[];
 };
 
 function canUseStorage(): boolean {
@@ -104,4 +112,46 @@ export function clearPendingMfaChallenge(): void {
   }
 
   window.localStorage.removeItem(PENDING_MFA_STORAGE_KEY);
+}
+
+export function loadFrontendAccessOverride(): FrontendAccessOverride | null {
+  if (!canUseStorage()) {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(ACCESS_PROFILE_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<FrontendAccessOverride>;
+    if (!parsed.role) {
+      return null;
+    }
+    return {
+      role: parsed.role,
+      assignedBranchIds: Array.isArray(parsed.assignedBranchIds)
+        ? parsed.assignedBranchIds.filter((value): value is string => typeof value === 'string')
+        : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveFrontendAccessOverride(override: FrontendAccessOverride): void {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.setItem(ACCESS_PROFILE_STORAGE_KEY, JSON.stringify(override));
+}
+
+export function clearFrontendAccessOverride(): void {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.removeItem(ACCESS_PROFILE_STORAGE_KEY);
 }

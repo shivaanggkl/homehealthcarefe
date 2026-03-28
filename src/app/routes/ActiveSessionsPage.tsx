@@ -46,7 +46,13 @@ export function ActiveSessionsPage() {
       });
       setSessions(loadedSessions);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Unable to load sessions.');
+      if (error instanceof ApiError && error.status === 403) {
+        setErrorMessage('You do not have permission to view sessions for the current security context.');
+      } else if (error instanceof ApiError && error.status === 404) {
+        setErrorMessage('Sessions were not found for the current account or agency context.');
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : 'Unable to load sessions.');
+      }
     } finally {
       setLoading(false);
     }
@@ -89,7 +95,13 @@ export function ActiveSessionsPage() {
       setSuccessMessage('Session revoked successfully.');
     } catch (error) {
       if (error instanceof ApiError) {
-        setErrorMessage(error.message);
+        if (error.status === 403) {
+          setErrorMessage('You do not have permission to revoke that session.');
+        } else if (error.status === 404) {
+          setErrorMessage('That session no longer exists or is no longer visible in this context.');
+        } else {
+          setErrorMessage(error.message);
+        }
       } else {
         setErrorMessage('Unable to revoke that session right now.');
       }

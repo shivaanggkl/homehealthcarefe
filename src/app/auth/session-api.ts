@@ -149,6 +149,43 @@ export type MfaEnrollmentConfirmResponse = {
   recoveryCodesRemaining: number;
 };
 
+export type AgencyMfaPolicyMode = 'OFF' | 'ALL_USERS' | 'SELECTED_ROLES';
+
+export type AgencyRole =
+  | 'AGENCY_OWNER'
+  | 'BRANCH_ADMIN'
+  | 'SCHEDULER_COORDINATOR'
+  | 'CAREGIVER'
+  | 'QA_CLINICAL_REVIEWER'
+  | 'BILLING_BACK_OFFICE'
+  | 'READ_ONLY_AUDITOR';
+
+export type AgencyMfaPolicyResponse = {
+  agencyId: string;
+  mode: AgencyMfaPolicyMode;
+  requiredRoles: AgencyRole[];
+};
+
+export type UpdateAgencyMfaPolicyRequest = AuthenticatedRequestContext & {
+  mode: AgencyMfaPolicyMode;
+  requiredRoles: AgencyRole[];
+};
+
+export type AdminNotificationPreferencesResponse = {
+  membershipId: string;
+  emailEnabled: boolean;
+  failedLoginAlertsEnabled: boolean;
+  lockedAccountAlertsEnabled: boolean;
+  newAdminAlertsEnabled: boolean;
+};
+
+export type UpdateAdminNotificationPreferencesRequest = AuthenticatedRequestContext & {
+  emailEnabled: boolean;
+  failedLoginAlertsEnabled: boolean;
+  lockedAccountAlertsEnabled: boolean;
+  newAdminAlertsEnabled: boolean;
+};
+
 export type UserSessionSummary = {
   sessionId: string;
   current: boolean;
@@ -574,6 +611,160 @@ export async function confirmMfaEnrollment(
   }
 
   return payload as MfaEnrollmentConfirmResponse;
+}
+
+export async function fetchAgencyMfaPolicy(
+  request: AuthenticatedRequestContext,
+): Promise<AgencyMfaPolicyResponse> {
+  const headers = new Headers();
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/security/mfa-policy'), {
+    method: 'GET',
+    credentials: 'include',
+    headers,
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | AgencyMfaPolicyResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Agency MFA policy request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as AgencyMfaPolicyResponse;
+}
+
+export async function updateAgencyMfaPolicy(
+  request: UpdateAgencyMfaPolicyRequest,
+): Promise<AgencyMfaPolicyResponse> {
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+  });
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/security/mfa-policy'), {
+    method: 'PUT',
+    credentials: 'include',
+    headers,
+    body: JSON.stringify({
+      mode: request.mode,
+      requiredRoles: request.requiredRoles,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | AgencyMfaPolicyResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Agency MFA policy update failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as AgencyMfaPolicyResponse;
+}
+
+export async function fetchAdminNotificationPreferences(
+  request: AuthenticatedRequestContext,
+): Promise<AdminNotificationPreferencesResponse> {
+  const headers = new Headers();
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/security/admin-notifications'), {
+    method: 'GET',
+    credentials: 'include',
+    headers,
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | AdminNotificationPreferencesResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Admin notification preferences request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as AdminNotificationPreferencesResponse;
+}
+
+export async function updateAdminNotificationPreferences(
+  request: UpdateAdminNotificationPreferencesRequest,
+): Promise<AdminNotificationPreferencesResponse> {
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+  });
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  const response = await fetch(apiUrl('/api/security/admin-notifications'), {
+    method: 'PUT',
+    credentials: 'include',
+    headers,
+    body: JSON.stringify({
+      emailEnabled: request.emailEnabled,
+      failedLoginAlertsEnabled: request.failedLoginAlertsEnabled,
+      lockedAccountAlertsEnabled: request.lockedAccountAlertsEnabled,
+      newAdminAlertsEnabled: request.newAdminAlertsEnabled,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | AdminNotificationPreferencesResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Admin notification preferences update failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as AdminNotificationPreferencesResponse;
 }
 
 export async function fetchUserSessions(
