@@ -1074,6 +1074,11 @@ code {
   background: rgba(21, 143, 99, 0.16);
 }
 
+.status-draft {
+  color: #0f4c81;
+  background: rgba(15, 76, 129, 0.14);
+}
+
 .status-locked,
 .status-suspended {
   color: #8b4f05;
@@ -1083,6 +1088,12 @@ code {
 .status-deactivated {
   color: #7f2931;
   background: rgba(159, 48, 52, 0.14);
+}
+
+.status-inactive,
+.status-archived {
+  color: #6b7280;
+  background: rgba(107, 114, 128, 0.16);
 }
 
 .button-small {

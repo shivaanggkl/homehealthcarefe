@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import { loadDevSessionCredentials } from '../auth/session-storage';
 import {
@@ -45,6 +46,7 @@ function metadataPreview(value: string | null): string {
 
 export function AuditLogPage() {
   const { state } = useAuth();
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<AuditFilters>(INITIAL_FILTERS);
   const [events, setEvents] = useState<AuditEventEntry[]>([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -64,13 +66,26 @@ export function AuditLogPage() {
     };
   }, [state]);
 
+  const initialFilters = useMemo<AuditFilters>(
+    () => ({
+      from: searchParams.get('from') ?? '',
+      to: searchParams.get('to') ?? '',
+      actorId: searchParams.get('actorId') ?? '',
+      actionType: searchParams.get('actionType') ?? '',
+      targetUserId: searchParams.get('targetUserId') ?? '',
+      page: 0,
+    }),
+    [searchParams],
+  );
+
   if (state.status !== 'authenticated') {
     return null;
   }
 
   useEffect(() => {
-    void loadAuditEvents(INITIAL_FILTERS);
-  }, []);
+    setFilters(initialFilters);
+    void loadAuditEvents(initialFilters);
+  }, [initialFilters]);
 
   async function loadAuditEvents(targetFilters: AuditFilters = filters) {
     setLoading(true);
