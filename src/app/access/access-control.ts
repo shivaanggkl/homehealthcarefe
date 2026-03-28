@@ -6,6 +6,9 @@ export type FrontendPermission =
   | 'manage_self_password'
   | 'manage_self_mfa'
   | 'manage_self_sessions'
+  | 'view_user_directory'
+  | 'invite_users'
+  | 'edit_user_accounts'
   | 'manage_security_settings'
   | 'manage_agency_mfa_policy'
   | 'manage_admin_notifications';
@@ -20,7 +23,7 @@ export type FrontendAccessProfile = {
   assignedBranchIds: string[];
   permissions: FrontendPermission[];
   defaultRoute: string;
-  source: 'fallback' | 'override';
+  source: 'fallback' | 'override' | 'backend';
 };
 
 export type AppRouteDefinition = {
@@ -48,6 +51,9 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Agency-wide branch access',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_user_directory',
+      'invite_users',
+      'edit_user_accounts',
       'manage_security_settings',
       'manage_agency_mfa_policy',
       'manage_admin_notifications',
@@ -61,6 +67,9 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_user_directory',
+      'invite_users',
+      'edit_user_accounts',
       'manage_agency_mfa_policy',
       'manage_admin_notifications',
     ],
@@ -131,6 +140,13 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     navBehavior: 'visible',
   },
   {
+    path: '/app/admin/users',
+    navLabel: 'User Directory',
+    permission: 'view_user_directory',
+    description: 'Admin directory, invite flow, and staff assignment editing.',
+    navBehavior: 'visible',
+  },
+  {
     path: '/app/settings/security',
     navLabel: 'Security Settings',
     permission: 'manage_security_settings',
@@ -173,17 +189,31 @@ function normalizeAssignedBranchIds(role: AgencyRole, branchIds?: string[]): str
   return normalized.length > 0 ? [...new Set(normalized)] : ['branch-a'];
 }
 
+export function buildAccessProfileForRole(
+  role: AgencyRole,
+  branchIds: string[] | undefined,
+  source: FrontendAccessProfile['source'],
+): FrontendAccessProfile {
+  const definition = ROLE_DEFINITIONS[role];
+  return {
+    ...definition,
+    assignedBranchIds: normalizeAssignedBranchIds(role, branchIds),
+    source,
+  };
+}
+
 export function buildAccessProfile(
   override: FrontendAccessOverride | null,
 ): FrontendAccessProfile {
-  const role = override?.role ?? 'CAREGIVER';
-  const definition = ROLE_DEFINITIONS[role];
+  if (override) {
+    return buildAccessProfileForRole(
+      override.role,
+      override.assignedBranchIds,
+      'override',
+    );
+  }
 
-  return {
-    ...definition,
-    assignedBranchIds: normalizeAssignedBranchIds(role, override?.assignedBranchIds),
-    source: override ? 'override' : 'fallback',
-  };
+  return buildAccessProfileForRole('CAREGIVER', undefined, 'fallback');
 }
 
 export function canAccessPermission(

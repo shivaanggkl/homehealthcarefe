@@ -160,6 +160,133 @@ export type AgencyRole =
   | 'BILLING_BACK_OFFICE'
   | 'READ_ONLY_AUDITOR';
 
+export type UserStatus =
+  | 'INVITED'
+  | 'ACTIVE'
+  | 'LOCKED'
+  | 'SUSPENDED'
+  | 'DEACTIVATED';
+
+export type CurrentAccessResponse = {
+  userId: string;
+  agencyId: string;
+  membershipId: string;
+  role: AgencyRole;
+  branchScope: 'AGENCY_WIDE' | 'AGENCY_WIDE_READ' | 'ASSIGNED_BRANCHES';
+  assignedBranchIds: string[];
+  permissions: string[];
+};
+
+export type BranchSummary = {
+  id: string;
+  agencyId: string;
+  name: string;
+  code: string;
+  address: string;
+  timezone: string;
+  status: 'ACTIVE' | 'INACTIVE';
+};
+
+export type UserDirectoryEntry = {
+  userId: string;
+  membershipId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  userStatus: UserStatus;
+  role: AgencyRole;
+  lastLoginAt: string | null;
+  mfaEnabled: boolean;
+  branchNames: string[];
+};
+
+export type UserDirectoryPage = {
+  content: UserDirectoryEntry[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+};
+
+export type UserDirectoryQuery = AuthenticatedRequestContext & {
+  search?: string;
+  status?: UserStatus | 'ALL';
+  role?: AgencyRole | 'ALL';
+  branchId?: string | 'ALL';
+  page?: number;
+  size?: number;
+};
+
+export type InviteUserRequest = AuthenticatedRequestContext & {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: AgencyRole;
+  branchIds: string[];
+};
+
+export type InvitationResponse = {
+  invitationId: string;
+  agencyId: string;
+  membershipId: string;
+  userId: string;
+  email: string;
+  role: AgencyRole;
+  expiresAt: string;
+  branchIds: string[];
+  branchNames: string[];
+};
+
+export type InvitationDetailsResponse = {
+  invitationId: string;
+  agencyId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  role: AgencyRole;
+  expiresAt: string;
+  branchIds: string[];
+  branchNames: string[];
+};
+
+export type AcceptInvitationRequest = {
+  token: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  password: string;
+};
+
+export type AcceptedInvitationResponse = {
+  invitationId: string;
+  userId: string;
+  membershipId: string;
+  agencyId: string;
+};
+
+export type UpdateUserRequest = AuthenticatedRequestContext & {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: AgencyRole;
+  branchIds: string[];
+};
+
+export type UpdatedUserResponse = {
+  userId: string;
+  membershipId: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  role: AgencyRole;
+  branchIds: string[];
+  branchNames: string[];
+};
+
 export type AgencyMfaPolicyResponse = {
   agencyId: string;
   mode: AgencyMfaPolicyMode;
@@ -218,6 +345,27 @@ function apiUrl(path: string): string {
     return path;
   }
   return `${configuredBase.replace(/\/$/, '')}${path}`;
+}
+
+function buildAuthenticatedHeaders(
+  request: AuthenticatedRequestContext,
+  contentType?: 'application/json',
+): Headers {
+  const headers = new Headers();
+
+  if (contentType) {
+    headers.set('Content-Type', contentType);
+  }
+
+  if (request.accessToken) {
+    headers.set('Authorization', `Bearer ${request.accessToken}`);
+  }
+
+  if (request.sessionId) {
+    headers.set('X-Session-Id', request.sessionId);
+  }
+
+  return headers;
 }
 
 export async function fetchSessionSnapshot(
@@ -805,15 +953,7 @@ export async function fetchUserSessions(
 export async function revokeUserSession(
   request: AuthenticatedRequestContext & { targetSessionId: string },
 ): Promise<RevokeSessionResponse> {
-  const headers = new Headers();
-
-  if (request.accessToken) {
-    headers.set('Authorization', `Bearer ${request.accessToken}`);
-  }
-
-  if (request.sessionId) {
-    headers.set('X-Session-Id', request.sessionId);
-  }
+  const headers = buildAuthenticatedHeaders(request);
 
   const response = await fetch(apiUrl(`/api/auth/sessions/${request.targetSessionId}`), {
     method: 'DELETE',
@@ -835,4 +975,221 @@ export async function revokeUserSession(
   }
 
   return payload as RevokeSessionResponse;
+}
+
+export async function fetchCurrentAccess(
+  request: AuthenticatedRequestContext,
+): Promise<CurrentAccessResponse> {
+  const response = await fetch(apiUrl('/api/me/access'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CurrentAccessResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Current access request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CurrentAccessResponse;
+}
+
+export async function fetchBranches(
+  request: AuthenticatedRequestContext & { search?: string },
+): Promise<BranchSummary[]> {
+  const branchesUrl = new URL(apiUrl('/api/branches'), window.location.origin);
+  if (request.search?.trim()) {
+    branchesUrl.searchParams.set('search', request.search.trim());
+  }
+
+  const response = await fetch(branchesUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | BranchSummary[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Branch list request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as BranchSummary[];
+}
+
+export async function fetchUserDirectory(
+  request: UserDirectoryQuery,
+): Promise<UserDirectoryPage> {
+  const directoryUrl = new URL(apiUrl('/api/users'), window.location.origin);
+
+  if (request.search?.trim()) {
+    directoryUrl.searchParams.set('search', request.search.trim());
+  }
+  if (request.status && request.status !== 'ALL') {
+    directoryUrl.searchParams.set('status', request.status);
+  }
+  if (request.role && request.role !== 'ALL') {
+    directoryUrl.searchParams.set('role', request.role);
+  }
+  if (request.branchId && request.branchId !== 'ALL') {
+    directoryUrl.searchParams.set('branchId', request.branchId);
+  }
+  directoryUrl.searchParams.set('page', String(request.page ?? 0));
+  directoryUrl.searchParams.set('size', String(request.size ?? 20));
+
+  const response = await fetch(directoryUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | UserDirectoryPage
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `User directory request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as UserDirectoryPage;
+}
+
+export async function inviteUser(
+  request: InviteUserRequest,
+): Promise<InvitationResponse> {
+  const response = await fetch(apiUrl('/api/users/invitations'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      firstName: request.firstName,
+      lastName: request.lastName,
+      email: request.email,
+      phone: request.phone || null,
+      role: request.role,
+      branchIds: request.branchIds,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | InvitationResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `User invitation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as InvitationResponse;
+}
+
+export async function fetchInvitationDetails(token: string): Promise<InvitationDetailsResponse> {
+  const response = await fetch(apiUrl(`/api/invitations/${encodeURIComponent(token)}`), {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | InvitationDetailsResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Invitation lookup failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as InvitationDetailsResponse;
+}
+
+export async function acceptInvitation(
+  request: AcceptInvitationRequest,
+): Promise<AcceptedInvitationResponse> {
+  const response = await fetch(apiUrl(`/api/invitations/${encodeURIComponent(request.token)}/accept`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({
+      firstName: request.firstName,
+      lastName: request.lastName,
+      phone: request.phone || null,
+      password: request.password,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | AcceptedInvitationResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Invitation acceptance failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as AcceptedInvitationResponse;
+}
+
+export async function updateUser(
+  request: UpdateUserRequest,
+): Promise<UpdatedUserResponse> {
+  const response = await fetch(apiUrl(`/api/users/${request.userId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      firstName: request.firstName,
+      lastName: request.lastName,
+      phone: request.phone || null,
+      role: request.role,
+      branchIds: request.branchIds,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | UpdatedUserResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `User update failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as UpdatedUserResponse;
 }

@@ -30,8 +30,12 @@ export function AccessProfileCard() {
       <span className="eyebrow">FE-12 access profile</span>
       <strong>{profile.roleLabel}</strong>
       <p>
-        Source: {profile.source === 'override' ? 'frontend override' : 'safe fallback'}.
-        {' '}This is a temporary frontend-side access model until the backend provides current-user permissions.
+        Source: {profile.source === 'override'
+          ? 'frontend override'
+          : profile.source === 'backend'
+            ? 'backend current access'
+            : 'safe fallback'}.
+        {' '}Frontend override still exists for QA, but authenticated sessions now prefer the real backend access profile.
       </p>
 
       <label className="field field-light compact-field">

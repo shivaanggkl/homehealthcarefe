@@ -4,17 +4,20 @@ import { AuthProvider, useAuth } from './auth/auth-context';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AppShell } from './layout/AppShell';
 import { ActiveSessionsPage } from './routes/ActiveSessionsPage';
+import { AcceptInvitationPage } from './routes/AcceptInvitationPage';
 import { AdminNotificationPreferencesPage } from './routes/AdminNotificationPreferencesPage';
 import { AdminMfaPolicyPage } from './routes/AdminMfaPolicyPage';
 import { ChangePasswordPage } from './routes/ChangePasswordPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { HomePage } from './routes/HomePage';
+import { InviteUserPage } from './routes/InviteUserPage';
 import { LoginPage } from './routes/LoginPage';
 import { MfaChallengePage } from './routes/MfaChallengePage';
 import { MfaSettingsPage } from './routes/MfaSettingsPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { ResetPasswordPage } from './routes/ResetPasswordPage';
 import { SecuritySettingsPage } from './routes/SecuritySettingsPage';
+import { UserDirectoryPage } from './routes/UserDirectoryPage';
 
 function BootstrapScreen() {
   return (
@@ -49,6 +52,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       <Route path="/login/mfa" element={<MfaChallengePage />} />
       <Route
         path="/app"
@@ -64,6 +68,34 @@ function AppRoutes() {
           <ProtectedRoute requiredPermission="view_session_home">
             <AppShell>
               <HomePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/admin/users"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only permitted admins can access the agency user directory."
+            deniedTitle="User directory is not available for this role."
+            requiredPermission="view_user_directory"
+          >
+            <AppShell>
+              <UserDirectoryPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/admin/users/invite"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only permitted admins can invite users into the agency."
+            deniedTitle="Invite user is not available for this role."
+            requiredPermission="invite_users"
+          >
+            <AppShell>
+              <InviteUserPage />
             </AppShell>
           </ProtectedRoute>
         }

@@ -16,7 +16,7 @@ export function ProtectedRoute({
   deniedMessage?: string;
 }>) {
   const { state } = useAuth();
-  const { profile } = useAccess();
+  const { profile, loading } = useAccess();
   const location = useLocation();
 
   if (state.status === 'bootstrapping') {
@@ -25,6 +25,10 @@ export function ProtectedRoute({
 
   if (state.status !== 'authenticated') {
     return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
+  }
+
+  if (loading) {
+    return null;
   }
 
   if (requiredPermission && !canAccessPermission(profile, requiredPermission)) {

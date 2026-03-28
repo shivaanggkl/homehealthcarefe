@@ -1,6 +1,6 @@
 # HomeHealthCareFE
 
-This frontend project currently covers Epic 1 FE-01 through FE-14, plus FE-24 and FE-25, including FE-12 route and navigation authorization.
+This frontend project currently covers Epic 1 FE-01 through FE-18, plus FE-24 and FE-25, including FE-12 route and navigation authorization.
 
 What is implemented:
 
@@ -24,11 +24,15 @@ What is implemented:
 - authenticated MFA settings screen wired to `GET /api/auth/mfa/status`, `POST /api/auth/mfa/enrollment/start`, and `POST /api/auth/mfa/enrollment/confirm`
 - admin MFA policy settings screen wired to `GET /api/security/mfa-policy` and `PUT /api/security/mfa-policy`
 - admin notification preferences screen wired to `GET /api/security/admin-notifications` and `PUT /api/security/admin-notifications`
+- admin user directory wired to `GET /api/users` with search, role, status, branch filters, and pagination
+- admin invite-user flow wired to `POST /api/users/invitations`
+- public accept-invitation flow wired to `GET /api/invitations/{token}` and `POST /api/invitations/{token}/accept`
+- inline admin user-edit flow wired to `PUT /api/users/{userId}` for name, phone, role, and branch assignments
 - consolidated security settings screen that combines live MFA policy management, backend password-policy display, and a designed read-only session-policy section
 - role-based home experience with a distinct permission-denied `403` state separate from the `404` route-not-found state
 - authenticated active-sessions screen wired to `GET /api/auth/sessions` and `DELETE /api/auth/sessions/{sessionId}`
 - session timeout warning banner driven by `GET /api/auth/session` and `POST /api/auth/refresh`
-- frontend access-profile override layer for partial-backend permission metadata during development
+- backend-driven current-access profile via `GET /api/me/access`, with frontend override retained for QA and local permission testing
 
 ## Expected backend
 
@@ -81,7 +85,7 @@ The login screen can populate that storage automatically for local development m
 
 ## Frontend access metadata override
 
-FE-12 adds a frontend-only access-profile layer because the backend does not yet expose a current-user permissions endpoint.
+The app now prefers the backend current-access profile from `GET /api/me/access`. The override is still available for QA and local permission testing.
 
 It stores temporary role and branch metadata under:
 

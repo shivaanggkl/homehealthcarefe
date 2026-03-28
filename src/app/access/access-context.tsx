@@ -7,16 +7,23 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { AgencyRole } from '../auth/session-api';
+import { useAuth } from '../auth/auth-context';
+import { AgencyRole, CurrentAccessResponse, fetchCurrentAccess } from '../auth/session-api';
 import {
   clearFrontendAccessOverride,
+  loadDevSessionCredentials,
   loadFrontendAccessOverride,
   saveFrontendAccessOverride,
 } from '../auth/session-storage';
-import { buildAccessProfile, FrontendAccessProfile } from './access-control';
+import {
+  buildAccessProfile,
+  buildAccessProfileForRole,
+  FrontendAccessProfile,
+} from './access-control';
 
 type AccessContextValue = {
   profile: FrontendAccessProfile;
+  loading: boolean;
   setRoleOverride: (role: AgencyRole) => void;
   setAssignedBranches: (branchIds: string[]) => void;
   clearOverride: () => void;
@@ -25,7 +32,10 @@ type AccessContextValue = {
 const AccessContext = createContext<AccessContextValue | null>(null);
 
 export function AccessProvider({ children }: PropsWithChildren) {
+  const { state } = useAuth();
   const [override, setOverride] = useState(() => loadFrontendAccessOverride());
+  const [backendAccess, setBackendAccess] = useState<CurrentAccessResponse | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -37,6 +47,42 @@ export function AccessProvider({ children }: PropsWithChildren) {
       window.removeEventListener('storage', handleStorage);
     };
   }, []);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated') {
+      setBackendAccess(null);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const devSession = loadDevSessionCredentials();
+
+    setLoading(true);
+    void fetchCurrentAccess({
+      accessToken: devSession?.accessToken,
+      sessionId: devSession?.sessionId ?? state.session.sessionId,
+    })
+      .then((response) => {
+        if (!cancelled) {
+          setBackendAccess(response);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBackendAccess(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state]);
 
   const setRoleOverride = useCallback((role: AgencyRole) => {
     const currentOverride = loadFrontendAccessOverride();
@@ -65,12 +111,22 @@ export function AccessProvider({ children }: PropsWithChildren) {
 
   const value = useMemo<AccessContextValue>(
     () => ({
-      profile: buildAccessProfile(override),
+      profile:
+        override
+          ? buildAccessProfile(override)
+          : backendAccess
+            ? buildAccessProfileForRole(
+                backendAccess.role,
+                backendAccess.assignedBranchIds,
+                'backend',
+              )
+            : buildAccessProfile(null),
+      loading,
       setRoleOverride,
       setAssignedBranches,
       clearOverride,
     }),
-    [clearOverride, override, setAssignedBranches, setRoleOverride],
+    [backendAccess, clearOverride, loading, override, setAssignedBranches, setRoleOverride],
   );
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;
