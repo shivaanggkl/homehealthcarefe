@@ -7,6 +7,7 @@ import {
   AgencyRole,
   ApiError,
   BranchSummary,
+  changeUserStatus,
   fetchBranches,
   fetchUserDirectory,
   UpdatedUserResponse,
@@ -84,6 +85,7 @@ export function UserDirectoryPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [changingStatus, setChangingStatus] = useState<UserStatus | null>(null);
 
   const authContext = useMemo(() => {
     const devSession = loadDevSessionCredentials();
@@ -235,11 +237,61 @@ export function UserDirectoryPage() {
     }
   }
 
+  async function handleStatusChange(nextStatus: UserStatus) {
+    if (!selectedUser) {
+      return;
+    }
+
+    const requiresConfirmation = ['LOCKED', 'SUSPENDED', 'DEACTIVATED'].includes(nextStatus);
+    if (requiresConfirmation) {
+      const confirmed = window.confirm(
+        nextStatus === 'SUSPENDED' || nextStatus === 'DEACTIVATED'
+          ? `Set ${fullName(selectedUser)} to ${nextStatus}? This will revoke active sessions.`
+          : `Set ${fullName(selectedUser)} to ${nextStatus}?`,
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    setChangingStatus(nextStatus);
+    setEditError(null);
+    setEditSuccess(null);
+
+    try {
+      const response = await changeUserStatus({
+        ...authContext,
+        userId: selectedUser.userId,
+        status: nextStatus,
+      });
+
+      setSelectedUser((current) => (current ? { ...current, userStatus: response.status } : current));
+      setDirectory((current) =>
+        current.map((entry) =>
+          entry.userId === selectedUser.userId ? { ...entry, userStatus: response.status } : entry,
+        ),
+      );
+      setEditSuccess(
+        response.sessionRevocationTriggered
+          ? `User status changed to ${response.status}. Existing sessions were revoked by the backend.`
+          : `User status changed to ${response.status}.`,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setEditError(error.message);
+      } else {
+        setEditError('Unable to change user status right now.');
+      }
+    } finally {
+      setChangingStatus(null);
+    }
+  }
+
   if (unauthorized) {
     return (
       <div className="page-grid">
         <section className="hero-card">
-          <span className="eyebrow">Frontend Story FE-15 / FE-18</span>
+          <span className="eyebrow">Frontend Story FE-15 / FE-18 / FE-19</span>
           <h2>User management is restricted.</h2>
           <p>
             The backend returned a controlled <code>403</code> response for the user directory API, so the
@@ -254,11 +306,12 @@ export function UserDirectoryPage() {
   return (
     <div className="page-grid">
       <section className="hero-card panel-span-2">
-        <span className="eyebrow">Frontend Stories FE-15 and FE-18</span>
+        <span className="eyebrow">Frontend Stories FE-15, FE-18, and FE-19</span>
         <h2>Agency user directory and staff assignment editor.</h2>
         <p>
           Search, filter, and page through users with backend data from <code>GET /api/users</code>, then edit
-          role and branch assignments using <code>PUT /api/users/{'{userId}'}</code>.
+          role and branch assignments using <code>PUT /api/users/{'{userId}'}</code>. Status changes are also
+          available from the selected-user panel through <code>PUT /api/users/{'{userId}'}/status</code>.
         </p>
       </section>
 
@@ -438,8 +491,8 @@ export function UserDirectoryPage() {
         <div className="panel-header">
           <h3>Selected user editor</h3>
           <p>
-            FE-18 is implemented directly from directory data. Role and branch changes are protected and update
-            immediately after save.
+            FE-18 and FE-19 are implemented directly from directory data. Role, branch, and status changes are
+            protected and update immediately after save.
           </p>
         </div>
 
@@ -535,6 +588,34 @@ export function UserDirectoryPage() {
               <p>
                 Email, account status, password, and MFA are intentionally excluded from this form. If you change
                 the role or branch list, that permission scope applies immediately after save.
+              </p>
+            </div>
+
+            <div className="panel inset-panel">
+              <div className="panel-header">
+                <h4>Status actions</h4>
+                <p>
+                  Suspension and deactivation revoke active sessions. Destructive actions should be confirmed
+                  before use in a production workflow.
+                </p>
+              </div>
+
+              <div className="button-row">
+                {(['ACTIVE', 'LOCKED', 'SUSPENDED', 'DEACTIVATED'] as UserStatus[]).map((statusOption) => (
+                  <button
+                    className="button button-secondary"
+                    disabled={changingStatus === statusOption || selectedUser.userStatus === statusOption}
+                    key={statusOption}
+                    onClick={() => void handleStatusChange(statusOption)}
+                    type="button"
+                  >
+                    {changingStatus === statusOption ? `Applying ${statusOption}...` : `Set ${statusOption}`}
+                  </button>
+                ))}
+              </div>
+
+              <p className="session-note">
+                Current status: <strong>{selectedUser.userStatus}</strong>
               </p>
             </div>
 

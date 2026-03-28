@@ -187,6 +187,101 @@ export type BranchSummary = {
   status: 'ACTIVE' | 'INACTIVE';
 };
 
+export type SelfProfileResponse = {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  preferredLanguage: string | null;
+  timeZone: string | null;
+};
+
+export type UpdateSelfProfileRequest = AuthenticatedRequestContext & {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  preferredLanguage: string;
+  timeZone: string;
+};
+
+export type UserStatusResponse = {
+  userId: string;
+  status: UserStatus;
+  sessionRevocationTriggered: boolean;
+};
+
+export type ChangeUserStatusRequest = AuthenticatedRequestContext & {
+  userId: string;
+  status: UserStatus;
+};
+
+export type AuditEventOutcome = 'SUCCESS' | 'FAILURE';
+
+export type AuditEventEntry = {
+  id: string;
+  occurredAt: string;
+  actorType: string;
+  actorId: string | null;
+  actorEmail: string | null;
+  actionType: string;
+  targetType: string | null;
+  targetId: string | null;
+  agencyId: string | null;
+  branchId: string | null;
+  outcome: AuditEventOutcome;
+  metadataJson: string | null;
+};
+
+export type AuditEventPage = {
+  content: AuditEventEntry[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+};
+
+export type AuditEventQuery = AuthenticatedRequestContext & {
+  from?: string;
+  to?: string;
+  actorId?: string;
+  actionType?: string;
+  targetUserId?: string;
+  page?: number;
+  size?: number;
+};
+
+export type AgencySettingsResponse = {
+  agencyId: string;
+  name: string;
+  slug: string;
+  timezone: string;
+  contactEmail: string;
+  status: 'ACTIVE' | 'INACTIVE';
+};
+
+export type UpdateAgencySettingsRequest = AuthenticatedRequestContext & {
+  name: string;
+  timezone: string;
+  contactEmail: string;
+};
+
+export type CreateBranchRequest = AuthenticatedRequestContext & {
+  agencyId: string;
+  name: string;
+  code: string;
+  address: string;
+  timezone: string;
+};
+
+export type UpdateBranchRequest = AuthenticatedRequestContext & {
+  branchId: string;
+  name: string;
+  code: string;
+  address: string;
+  timezone: string;
+};
+
 export type UserDirectoryEntry = {
   userId: string;
   membershipId: string;
@@ -1192,4 +1287,310 @@ export async function updateUser(
   }
 
   return payload as UpdatedUserResponse;
+}
+
+export async function changeUserStatus(
+  request: ChangeUserStatusRequest,
+): Promise<UserStatusResponse> {
+  const response = await fetch(apiUrl(`/api/users/${request.userId}/status`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      status: request.status,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | UserStatusResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `User status change failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as UserStatusResponse;
+}
+
+export async function fetchSelfProfile(
+  request: AuthenticatedRequestContext,
+): Promise<SelfProfileResponse> {
+  const response = await fetch(apiUrl('/api/me/profile'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | SelfProfileResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Self profile request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as SelfProfileResponse;
+}
+
+export async function updateSelfProfile(
+  request: UpdateSelfProfileRequest,
+): Promise<SelfProfileResponse> {
+  const response = await fetch(apiUrl('/api/me/profile'), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      firstName: request.firstName,
+      lastName: request.lastName,
+      phone: request.phone || null,
+      preferredLanguage: request.preferredLanguage || null,
+      timeZone: request.timeZone || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | SelfProfileResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Self profile update failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as SelfProfileResponse;
+}
+
+export async function fetchAuditEvents(
+  request: AuditEventQuery,
+): Promise<AuditEventPage> {
+  const eventsUrl = new URL(apiUrl('/api/audit-events'), window.location.origin);
+  if (request.from) {
+    eventsUrl.searchParams.set('from', request.from);
+  }
+  if (request.to) {
+    eventsUrl.searchParams.set('to', request.to);
+  }
+  if (request.actorId) {
+    eventsUrl.searchParams.set('actorId', request.actorId);
+  }
+  if (request.actionType?.trim()) {
+    eventsUrl.searchParams.set('actionType', request.actionType.trim());
+  }
+  if (request.targetUserId) {
+    eventsUrl.searchParams.set('targetUserId', request.targetUserId);
+  }
+  eventsUrl.searchParams.set('page', String(request.page ?? 0));
+  eventsUrl.searchParams.set('size', String(request.size ?? 20));
+
+  const response = await fetch(eventsUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | AuditEventPage
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Audit event request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as AuditEventPage;
+}
+
+export async function exportAuditEvents(
+  request: AuditEventQuery,
+): Promise<string> {
+  const exportUrl = new URL(apiUrl('/api/audit-events/export'), window.location.origin);
+  if (request.from) {
+    exportUrl.searchParams.set('from', request.from);
+  }
+  if (request.to) {
+    exportUrl.searchParams.set('to', request.to);
+  }
+  if (request.actorId) {
+    exportUrl.searchParams.set('actorId', request.actorId);
+  }
+  if (request.actionType?.trim()) {
+    exportUrl.searchParams.set('actionType', request.actionType.trim());
+  }
+  if (request.targetUserId) {
+    exportUrl.searchParams.set('targetUserId', request.targetUserId);
+  }
+
+  const response = await fetch(exportUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  if (!response.ok) {
+    const payload = (await response.text().catch(() => '')) || '';
+    throw new ApiError(response.status, payload || `Audit export failed with status ${response.status}`);
+  }
+
+  return response.text();
+}
+
+export async function fetchAgencySettings(
+  request: AuthenticatedRequestContext,
+): Promise<AgencySettingsResponse> {
+  const response = await fetch(apiUrl('/api/agency/settings'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | AgencySettingsResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Agency settings request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as AgencySettingsResponse;
+}
+
+export async function updateAgencySettings(
+  request: UpdateAgencySettingsRequest,
+): Promise<AgencySettingsResponse> {
+  const response = await fetch(apiUrl('/api/agency/settings'), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      name: request.name,
+      timezone: request.timezone,
+      contactEmail: request.contactEmail,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | AgencySettingsResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Agency settings update failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as AgencySettingsResponse;
+}
+
+export async function createBranch(
+  request: CreateBranchRequest,
+): Promise<BranchSummary> {
+  const response = await fetch(apiUrl('/api/branches'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      agencyId: request.agencyId,
+      name: request.name,
+      code: request.code,
+      address: request.address,
+      timezone: request.timezone,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | BranchSummary
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Branch creation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as BranchSummary;
+}
+
+export async function updateBranch(
+  request: UpdateBranchRequest,
+): Promise<BranchSummary> {
+  const response = await fetch(apiUrl(`/api/branches/${request.branchId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      name: request.name,
+      code: request.code,
+      address: request.address,
+      timezone: request.timezone,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | BranchSummary
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Branch update failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as BranchSummary;
+}
+
+export async function deactivateBranch(
+  request: AuthenticatedRequestContext & { branchId: string },
+): Promise<BranchSummary> {
+  const response = await fetch(apiUrl(`/api/branches/${request.branchId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | BranchSummary
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Branch deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as BranchSummary;
 }

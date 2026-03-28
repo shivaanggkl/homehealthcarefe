@@ -3,12 +3,17 @@ import { FrontendAccessOverride } from '../auth/session-storage';
 
 export type FrontendPermission =
   | 'view_session_home'
+  | 'manage_self_profile'
   | 'manage_self_password'
   | 'manage_self_mfa'
   | 'manage_self_sessions'
   | 'view_user_directory'
   | 'invite_users'
   | 'edit_user_accounts'
+  | 'manage_user_status'
+  | 'view_audit_log'
+  | 'manage_agency_settings'
+  | 'manage_branches'
   | 'manage_security_settings'
   | 'manage_agency_mfa_policy'
   | 'manage_admin_notifications';
@@ -38,6 +43,7 @@ type RoleDefinition = Omit<FrontendAccessProfile, 'assignedBranchIds' | 'source'
 
 const COMMON_SELF_SERVICE_PERMISSIONS: FrontendPermission[] = [
   'view_session_home',
+  'manage_self_profile',
   'manage_self_password',
   'manage_self_mfa',
   'manage_self_sessions',
@@ -54,6 +60,10 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'view_user_directory',
       'invite_users',
       'edit_user_accounts',
+      'manage_user_status',
+      'view_audit_log',
+      'manage_agency_settings',
+      'manage_branches',
       'manage_security_settings',
       'manage_agency_mfa_policy',
       'manage_admin_notifications',
@@ -70,6 +80,9 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'view_user_directory',
       'invite_users',
       'edit_user_accounts',
+      'manage_user_status',
+      'view_audit_log',
+      'manage_branches',
       'manage_agency_mfa_policy',
       'manage_admin_notifications',
     ],
@@ -104,7 +117,7 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     roleLabel: 'Billing Back Office',
     branchScope: 'branch-assigned',
     branchScopeLabel: 'Assigned branches only',
-    permissions: [...COMMON_SELF_SERVICE_PERMISSIONS],
+    permissions: [...COMMON_SELF_SERVICE_PERMISSIONS, 'view_audit_log'],
     defaultRoute: '/app/home',
   },
   READ_ONLY_AUDITOR: {
@@ -112,7 +125,7 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     roleLabel: 'Read Only Auditor',
     branchScope: 'agency-wide-read',
     branchScopeLabel: 'Agency-wide read scope',
-    permissions: [...COMMON_SELF_SERVICE_PERMISSIONS],
+    permissions: [...COMMON_SELF_SERVICE_PERMISSIONS, 'view_audit_log'],
     defaultRoute: '/app/home',
   },
 };
@@ -140,11 +153,39 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     navBehavior: 'visible',
   },
   {
+    path: '/app/settings/profile',
+    navLabel: 'My Profile',
+    permission: 'manage_self_profile',
+    description: 'Update your own profile details and preferences.',
+    navBehavior: 'visible',
+  },
+  {
     path: '/app/admin/users',
     navLabel: 'User Directory',
     permission: 'view_user_directory',
     description: 'Admin directory, invite flow, and staff assignment editing.',
     navBehavior: 'visible',
+  },
+  {
+    path: '/app/admin/audit',
+    navLabel: 'Audit Log',
+    permission: 'view_audit_log',
+    description: 'Review sensitive events and export the audit trail.',
+    navBehavior: 'visible',
+  },
+  {
+    path: '/app/admin/branches',
+    navLabel: 'Branch Management',
+    permission: 'manage_branches',
+    description: 'Search, create, edit, and deactivate branches.',
+    navBehavior: 'disabled',
+  },
+  {
+    path: '/app/settings/agency',
+    navLabel: 'Agency Settings',
+    permission: 'manage_agency_settings',
+    description: 'Owner-only agency profile settings.',
+    navBehavior: 'disabled',
   },
   {
     path: '/app/settings/security',

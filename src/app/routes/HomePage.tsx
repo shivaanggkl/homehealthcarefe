@@ -167,7 +167,13 @@ export function HomePage() {
           </div>
           <div>
             <dt>Profile source</dt>
-            <dd>{profile.source === 'override' ? 'Frontend override' : 'Safe fallback profile'}</dd>
+            <dd>
+              {profile.source === 'override'
+                ? 'Frontend override'
+                : profile.source === 'backend'
+                  ? 'Backend current access'
+                  : 'Safe fallback profile'}
+            </dd>
           </div>
           <div>
             <dt>Why this matters</dt>

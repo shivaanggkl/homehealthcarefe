@@ -1,6 +1,6 @@
 # HomeHealthCareFE
 
-This frontend project currently covers Epic 1 FE-01 through FE-18, plus FE-24 and FE-25, including FE-12 route and navigation authorization.
+This frontend project currently covers Epic 1 FE-01 through FE-23, plus FE-24 and FE-25, including FE-12 route and navigation authorization.
 
 What is implemented:
 
@@ -28,6 +28,11 @@ What is implemented:
 - admin invite-user flow wired to `POST /api/users/invitations`
 - public accept-invitation flow wired to `GET /api/invitations/{token}` and `POST /api/invitations/{token}/accept`
 - inline admin user-edit flow wired to `PUT /api/users/{userId}` for name, phone, role, and branch assignments
+- user status management actions wired to `PUT /api/users/{userId}/status`
+- self-service profile screen wired to `GET /api/me/profile` and `PUT /api/me/profile`
+- audit log viewer wired to `GET /api/audit-events` and `GET /api/audit-events/export`
+- agency settings screen wired to `GET /api/agency/settings` and `PUT /api/agency/settings`
+- branch management screen wired to `GET /api/branches`, `POST /api/branches`, `PUT /api/branches/{branchId}`, and `DELETE /api/branches/{branchId}`
 - consolidated security settings screen that combines live MFA policy management, backend password-policy display, and a designed read-only session-policy section
 - role-based home experience with a distinct permission-denied `403` state separate from the `404` route-not-found state
 - authenticated active-sessions screen wired to `GET /api/auth/sessions` and `DELETE /api/auth/sessions/{sessionId}`

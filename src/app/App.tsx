@@ -5,8 +5,11 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AppShell } from './layout/AppShell';
 import { ActiveSessionsPage } from './routes/ActiveSessionsPage';
 import { AcceptInvitationPage } from './routes/AcceptInvitationPage';
+import { AgencySettingsPage } from './routes/AgencySettingsPage';
 import { AdminNotificationPreferencesPage } from './routes/AdminNotificationPreferencesPage';
 import { AdminMfaPolicyPage } from './routes/AdminMfaPolicyPage';
+import { AuditLogPage } from './routes/AuditLogPage';
+import { BranchManagementPage } from './routes/BranchManagementPage';
 import { ChangePasswordPage } from './routes/ChangePasswordPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { HomePage } from './routes/HomePage';
@@ -17,6 +20,7 @@ import { MfaSettingsPage } from './routes/MfaSettingsPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { ResetPasswordPage } from './routes/ResetPasswordPage';
 import { SecuritySettingsPage } from './routes/SecuritySettingsPage';
+import { SelfProfilePage } from './routes/SelfProfilePage';
 import { UserDirectoryPage } from './routes/UserDirectoryPage';
 
 function BootstrapScreen() {
@@ -73,6 +77,16 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/app/settings/profile"
+        element={
+          <ProtectedRoute requiredPermission="manage_self_profile">
+            <AppShell>
+              <SelfProfilePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/app/admin/users"
         element={
           <ProtectedRoute
@@ -96,6 +110,48 @@ function AppRoutes() {
           >
             <AppShell>
               <InviteUserPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/admin/audit"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized admins and auditors can access the audit log."
+            deniedTitle="Audit log is not available for this role."
+            requiredPermission="view_audit_log"
+          >
+            <AppShell>
+              <AuditLogPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/admin/branches"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized admins can manage branches."
+            deniedTitle="Branch management is not available for this role."
+            requiredPermission="manage_branches"
+          >
+            <AppShell>
+              <BranchManagementPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/settings/agency"
+        element={
+          <ProtectedRoute
+            deniedMessage="Agency settings are limited to the agency owner."
+            deniedTitle="Agency settings are not available for this role."
+            requiredPermission="manage_agency_settings"
+          >
+            <AppShell>
+              <AgencySettingsPage />
             </AppShell>
           </ProtectedRoute>
         }
