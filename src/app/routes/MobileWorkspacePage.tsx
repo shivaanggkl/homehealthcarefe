@@ -94,6 +94,27 @@ function mobileAuditHref(actionType: string) {
   return `/app/admin/audit?actionType=${encodeURIComponent(actionType)}`;
 }
 
+function MobileAuditCallout({
+  actionTypes,
+  body,
+}: {
+  actionTypes: string[];
+  body: string;
+}) {
+  return (
+    <div className="mobile-audit-callout">
+      <p>{body}</p>
+      <div className="mobile-inline-button-row">
+        {actionTypes.map((actionType) => (
+          <Link className="mobile-audit-link" key={actionType} to={mobileAuditHref(actionType)}>
+            Review {actionType}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
@@ -1144,6 +1165,10 @@ export function MobileWorkspacePage() {
             onPrimaryClick={() => void flushQueuedActions()}
             onSecondaryClick={() => void loadMobileData('manual')}
           />
+          <MobileAuditCallout
+            actionTypes={['MOBILE_OFFLINE_SYNC_ACCEPTED', 'MOBILE_OFFLINE_SYNC_REJECTED']}
+            body="Queued offline actions remain visible until the backend accepts them. Rejected sync attempts are logged too, so follow-up stays controlled."
+          />
         </MobilePanel>
       ) : null}
 
@@ -1250,6 +1275,10 @@ export function MobileWorkspacePage() {
                   <p>{messageSuccess}</p>
                 </div>
               ) : null}
+              <MobileAuditCallout
+                actionTypes={['MOBILE_MESSAGE_SENT', 'MOBILE_OFFLINE_SYNC_ACCEPTED']}
+                body="Message delivery stays lightweight for caregivers, while the backend keeps a reviewable record of sent and later-synced mobile messages."
+              />
             </MobilePanel>
           </div>
         ) : (
@@ -1306,13 +1335,10 @@ export function MobileWorkspacePage() {
               Administrative record editing stays in the desktop app. This mobile shell only shows
               the minimum patient, route, and care context required for the assigned caregiver.
             </p>
-            <p className="support-copy">
-              Key execution changes are audited in the backend. Admin review lives in{' '}
-              <Link className="text-link" to={mobileAuditHref('MOBILE_EXECUTION_STARTED')}>
-                audit log
-              </Link>
-              .
-            </p>
+            <MobileAuditCallout
+              actionTypes={['MOBILE_VISIT_EXECUTION_STARTED', 'MOBILE_VISIT_EXECUTION_ENDED']}
+              body="Key visit-execution changes are logged in the backend for admin follow-up, but those review controls stay out of the caregiver workflow."
+            />
           </MobilePanel>
         </div>
       ) : null}
@@ -1502,6 +1528,10 @@ export function MobileWorkspacePage() {
                   <p>{savedChecklist.filter((item) => item.completed).length} items marked complete.</p>
                 </div>
               ) : null}
+              <MobileAuditCallout
+                actionTypes={['MOBILE_TASK_CHECKLIST_SAVED', 'MOBILE_OFFLINE_SYNC_ACCEPTED']}
+                body="Checklist saves are controlled field mutations. Admins can verify saved or later-synced checklist activity from the audit trail."
+              />
             </MobilePanel>
 
             <MobilePanel
@@ -1554,6 +1584,10 @@ export function MobileWorkspacePage() {
                   ))}
                 </div>
               ) : null}
+              <MobileAuditCallout
+                actionTypes={['MOBILE_QUICK_NOTE_SAVED', 'MOBILE_OFFLINE_SYNC_ACCEPTED']}
+                body="Quick notes record field-only documentation. Saved and offline-synced notes are logged for later review without exposing extra chart metadata here."
+              />
             </MobilePanel>
 
             <MobilePanel
@@ -1617,6 +1651,10 @@ export function MobileWorkspacePage() {
                   ))}
                 </div>
               ) : null}
+              <MobileAuditCallout
+                actionTypes={['MOBILE_PHOTO_UPLOADED', 'MOBILE_SIGNATURE_CAPTURED']}
+                body="Uploaded photos and captured signatures are treated as controlled artifacts. Admin review stays in audit tools, not on the caregiver device."
+              />
             </MobilePanel>
 
             <MobilePanel
@@ -1683,6 +1721,10 @@ export function MobileWorkspacePage() {
                   ))}
                 </div>
               ) : null}
+              <MobileAuditCallout
+                actionTypes={['MOBILE_INCIDENT_FLAGGED', 'MOBILE_OFFLINE_SYNC_ACCEPTED']}
+                body="Incident submissions are logged as sensitive field events so agencies can reconstruct what was reported and when."
+              />
             </MobilePanel>
 
             <MobilePanel
@@ -1704,6 +1746,10 @@ export function MobileWorkspacePage() {
                 secondaryLabel="Open message center"
                 onPrimaryClick={() => void handleThreadCreate()}
                 onSecondaryClick={() => navigate('/mobile/messages')}
+              />
+              <MobileAuditCallout
+                actionTypes={['MOBILE_MESSAGE_SENT', 'MOBILE_OFFLINE_SYNC_ACCEPTED']}
+                body="Visit-linked coordination messages are logged for traceability, while the field app keeps the conversation surface lightweight."
               />
             </MobilePanel>
           </MobileVisitDetailLayout>

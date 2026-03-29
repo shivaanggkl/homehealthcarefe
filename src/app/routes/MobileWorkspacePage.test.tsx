@@ -41,7 +41,12 @@ const sessionApi = await import('../auth/session-api');
 
 describe('MobileWorkspacePage', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     window.localStorage.clear();
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+      configurable: true,
+      value: vi.fn(() => null),
+    });
     vi.stubGlobal('navigator', {
       onLine: true,
       geolocation: {
@@ -314,6 +319,64 @@ describe('MobileWorkspacePage', () => {
     });
 
     expect(await screen.findByText('Checklist saved to the backend mobile documentation flow.')).toBeInTheDocument();
+  });
+
+  it('shows audit-aware links for controlled field mutations without exposing admin tooling inline', async () => {
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Review MOBILE_TASK_CHECKLIST_SAVED')).toBeInTheDocument();
+    expect(screen.getByText('Review MOBILE_PHOTO_UPLOADED')).toBeInTheDocument();
+    expect(screen.getByText('Review MOBILE_INCIDENT_FLAGGED')).toBeInTheDocument();
+  });
+
+  it('queues checklist work for later sync when the device goes offline', async () => {
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Start visit' }));
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: false });
+    fireEvent.click(await screen.findByRole('button', { name: 'Save checklist' }));
+
+    expect(await screen.findByText('Checklist queued for sync when connectivity returns.')).toBeInTheDocument();
+    expect(sessionApi.saveMobileTaskChecklist).toHaveBeenCalledTimes(0);
+    expect(await screen.findByText('Queued sync actions')).toBeInTheDocument();
+  });
+
+  it('shows a clear validation failure for unsupported photo uploads', async () => {
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Start visit' }));
+    await screen.findByText('Visit started. The field session is now active and recorded.');
+    const invalidFile = new File(['bad'], 'notes.txt', { type: 'text/plain' });
+    const fileInput = document.querySelector('input[type="file"]');
+    if (!(fileInput instanceof HTMLInputElement)) {
+      throw new Error('Expected photo file input to be rendered.');
+    }
+    fireEvent.change(fileInput, {
+      target: { files: [invalidFile] },
+    });
+
+    expect(
+      await screen.findByText('Only JPEG, PNG, and WEBP uploads are allowed in the mobile field workflow.'),
+    ).toBeInTheDocument();
+    expect(sessionApi.uploadMobileFieldArtifact).not.toHaveBeenCalled();
   });
 
   it('renders the real message center and sends a reply through the backend API', async () => {

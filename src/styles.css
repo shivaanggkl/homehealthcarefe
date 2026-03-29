@@ -2724,6 +2724,34 @@ code {
   background: rgba(235, 244, 248, 0.84);
 }
 
+.mobile-audit-callout {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(11, 77, 115, 0.14);
+  background: rgba(246, 251, 255, 0.92);
+}
+
+.mobile-audit-callout p {
+  margin: 0;
+  color: #4a6074;
+}
+
+.mobile-audit-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(11, 77, 115, 0.16);
+  color: #0b4d73;
+  background: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  font-weight: 700;
+}
+
 .mobile-route-list {
   display: grid;
   gap: 0.7rem;
@@ -2765,6 +2793,7 @@ code {
   width: 100%;
   text-align: left;
   border: 1px solid rgba(11, 77, 115, 0.08);
+  min-height: 3.1rem;
 }
 
 .mobile-thread-card-active {
@@ -2829,6 +2858,13 @@ code {
   color: #0b4d73;
 }
 
+.mobile-panel .input,
+.mobile-panel input[type='file'],
+.mobile-panel textarea,
+.mobile-panel select {
+  font-size: 16px;
+}
+
 @media (max-width: 720px) {
   .mobile-topbar,
   .mobile-visit-card-header,
@@ -2850,5 +2886,22 @@ code {
   .mobile-tabbar {
     gap: 0.35rem;
     padding-inline: 0.6rem;
+  }
+
+  .mobile-thread-card,
+  .mobile-queue-item,
+  .mobile-message-item,
+  .mobile-card-row,
+  .mobile-audit-callout {
+    padding: 0.85rem;
+  }
+
+  .mobile-signature-canvas {
+    height: 160px;
+  }
+
+  .mobile-audit-link,
+  .mobile-action-footer .button {
+    width: 100%;
   }
 }
