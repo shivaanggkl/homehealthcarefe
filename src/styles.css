@@ -1849,6 +1849,125 @@ code {
   padding: 1.2rem;
 }
 
+.scheduling-assignment-layout,
+.scheduling-recurring-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+  gap: 1rem;
+}
+
+.scheduling-match-panel,
+.scheduling-assignment-dropzone-wrapper,
+.scheduling-recurring-list,
+.scheduling-preview-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.scheduling-match-list,
+.scheduling-preview-stack,
+.scheduling-conflict-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.scheduling-match-card,
+.scheduling-conflict-card,
+.scheduling-guidance-card,
+.scheduling-recurring-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 1rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.scheduling-match-card {
+  cursor: pointer;
+}
+
+.scheduling-match-card-selected,
+.scheduling-recurring-card-selected {
+  border-color: rgba(15, 76, 129, 0.3);
+  box-shadow: 0 10px 24px rgba(15, 76, 129, 0.08);
+}
+
+.scheduling-match-card-header,
+.scheduling-match-card-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.scheduling-match-rank {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.scheduling-travel-summary {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.scheduling-assignment-dropzone {
+  border: 2px dashed rgba(15, 76, 129, 0.28);
+  border-radius: 20px;
+  background: rgba(15, 76, 129, 0.06);
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.scheduling-assignment-dropzone-active {
+  border-color: rgba(21, 143, 99, 0.4);
+  background: rgba(21, 143, 99, 0.08);
+}
+
+.scheduling-guidance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+.scheduling-guidance-card p,
+.scheduling-conflict-card p,
+.scheduling-match-card p,
+.scheduling-recurring-card p {
+  margin: 0;
+}
+
+.scheduling-conflict-card-warning {
+  border-color: rgba(221, 147, 39, 0.24);
+}
+
+.scheduling-conflict-card-blocking {
+  border-color: rgba(159, 48, 52, 0.22);
+}
+
+.scheduling-conflict-card-clear {
+  border-color: rgba(21, 143, 99, 0.22);
+}
+
+.status-warning {
+  color: #8b4f05;
+  background: rgba(221, 147, 39, 0.18);
+}
+
+.status-blocking {
+  color: #7f2931;
+  background: rgba(159, 48, 52, 0.14);
+}
+
+.status-clear {
+  color: #11583d;
+  background: rgba(21, 143, 99, 0.14);
+}
+
 .scheduling-mode-badge {
   display: inline-flex;
   width: fit-content;
@@ -2233,6 +2352,8 @@ code {
   .patient-form-grid,
   .workforce-form-grid,
   .scheduling-filter-grid,
+  .scheduling-assignment-layout,
+  .scheduling-recurring-layout,
   .scheduling-summary-cards,
   .scheduling-detail-meta,
   .patient-summary-metrics,
@@ -2276,7 +2397,9 @@ code {
   .scheduling-filter-actions,
   .scheduling-open-shift-actions,
   .scheduling-board-column-header,
-  .scheduling-open-shift-header {
+  .scheduling-open-shift-header,
+  .scheduling-match-card-header,
+  .scheduling-match-card-meta {
     flex-direction: column;
     align-items: flex-start;
   }

@@ -273,6 +273,198 @@ export type ManageScheduleVisitRequest = AuthenticatedRequestContext & {
   notes?: string;
 };
 
+export type CaregiverAssignmentStatus = 'ACTIVE' | 'REMOVED';
+
+export type ScheduleAssignment = {
+  id: string;
+  agencyId: string;
+  visitOccurrenceId: string;
+  caregiverProfileId: string;
+  branchId: string | null;
+  assignedAt: string;
+  assignmentStatus: CaregiverAssignmentStatus;
+  assignmentSource: string | null;
+  notes: string | null;
+};
+
+export type ManageScheduleAssignmentRequest = AuthenticatedRequestContext & {
+  visitId: string;
+  caregiverProfileId: string;
+  branchId?: string;
+  assignmentSource?: string;
+  notes?: string;
+};
+
+export type OpenShiftStatus = 'OPEN' | 'FILLED' | 'CLOSED';
+
+export type ScheduleOpenShift = {
+  id: string;
+  agencyId: string;
+  visitOccurrenceId: string;
+  branchId: string | null;
+  openedAt: string;
+  closedAt: string | null;
+  status: OpenShiftStatus;
+  priority: string | null;
+  notes: string | null;
+};
+
+export type ManageScheduleOpenShiftRequest = AuthenticatedRequestContext & {
+  visitId: string;
+  branchId?: string;
+  priority?: string;
+  notes?: string;
+};
+
+export type TravelAwareness = {
+  estimatedTravelMinutes: number;
+  gapMinutes: number;
+  level: TravelAwarenessLevel;
+  rationaleCode: string | null;
+};
+
+export type OvertimeEvaluation = {
+  projectedScheduledMinutes: number;
+  proposedMinutes: number;
+  warningThresholdMinutes: number;
+  blockingThresholdMinutes: number;
+  outcome: SchedulingConflictOutcome;
+  message: string | null;
+};
+
+export type SchedulingConflictItem = {
+  code: string;
+  outcome: SchedulingConflictOutcome;
+  message: string;
+};
+
+export type CaregiverMatch = {
+  caregiverProfileId: string;
+  caregiverDisplayName: string;
+  score: number;
+  outcome: SchedulingConflictOutcome;
+  factors: SchedulingConflictItem[];
+  travelAwareness: TravelAwareness;
+  overtimeEvaluation: OvertimeEvaluation;
+};
+
+export type ScheduleMatchQuery = AuthenticatedRequestContext & {
+  visitId: string;
+  preferredLanguage?: string;
+  enforcePatientOverlapCheck?: boolean;
+  requireAvailabilityFit?: boolean;
+  requiredSkillIds?: string[];
+  requiredCredentialTypes?: string[];
+};
+
+export type ScheduleConflictPreviewRequest = AuthenticatedRequestContext & {
+  visitId: string;
+  caregiverProfileId: string;
+  preferredLanguage?: string;
+  enforcePatientOverlapCheck?: boolean;
+  requireAvailabilityFit?: boolean;
+  requiredSkillIds?: string[];
+  requiredCredentialTypes?: string[];
+};
+
+export type ScheduleConflictPreview = {
+  visitOccurrenceId: string;
+  caregiverProfileId: string;
+  outcome: SchedulingConflictOutcome;
+  items: SchedulingConflictItem[];
+  travelAwareness: TravelAwareness;
+  overtimeEvaluation: OvertimeEvaluation;
+};
+
+export type RecurringVisitCadence = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+
+export type RecurringVisitRuleStatus = 'ACTIVE' | 'INACTIVE';
+
+export type ScheduleRecurringVisitRule = {
+  id: string;
+  agencyId: string;
+  patientId: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  visitTypeId: string | null;
+  cadence: RecurringVisitCadence;
+  weekdays: string[];
+  effectiveStart: string;
+  effectiveEnd: string | null;
+  plannedStartTime: string;
+  plannedEndTime: string;
+  timezone: string;
+  priority: string | null;
+  creationMode: string | null;
+  notes: string | null;
+  status: RecurringVisitRuleStatus;
+};
+
+export type ManageRecurringVisitRuleRequest = AuthenticatedRequestContext & {
+  recurringRuleId?: string;
+  patientId: string;
+  branchId?: string;
+  serviceLineId?: string;
+  visitTypeId?: string;
+  cadence: RecurringVisitCadence;
+  weekdays?: string[];
+  effectiveStart: string;
+  effectiveEnd?: string;
+  plannedStartTime: string;
+  plannedEndTime: string;
+  timezone: string;
+  priority?: string;
+  creationMode?: string;
+  notes?: string;
+};
+
+export type ExpandRecurringVisitRuleRequest = AuthenticatedRequestContext & {
+  recurringRuleId: string;
+  windowStart: string;
+  windowEnd: string;
+};
+
+export type ScheduleRescheduleRequest = AuthenticatedRequestContext & {
+  visitId: string;
+  newPlannedStartAt: string;
+  newPlannedEndAt: string;
+  timezone: string;
+  branchId?: string;
+  newCaregiverProfileId?: string;
+  reason?: string;
+};
+
+export type ScheduleRescheduleResponse = {
+  id: string;
+  agencyId: string;
+  visitOccurrenceId: string;
+  previousCaregiverProfileId: string | null;
+  newCaregiverProfileId: string | null;
+  previousPlannedStartAt: string;
+  previousPlannedEndAt: string;
+  newPlannedStartAt: string;
+  newPlannedEndAt: string;
+  reason: string | null;
+  rescheduledAt: string;
+};
+
+export type VisitCancellationParty = 'AGENCY' | 'CAREGIVER' | 'PATIENT' | 'SYSTEM';
+
+export type ScheduleCancellationRequest = AuthenticatedRequestContext & {
+  visitId: string;
+  cancellationParty: VisitCancellationParty;
+  reason?: string;
+};
+
+export type ScheduleCancellationResponse = {
+  id: string;
+  agencyId: string;
+  visitOccurrenceId: string;
+  cancellationParty: VisitCancellationParty;
+  reason: string | null;
+  cancelledAt: string;
+};
+
 export type WorkforceLifecycleStatus =
   | 'ACTIVE'
   | 'INACTIVE'
@@ -2216,6 +2408,365 @@ export async function saveScheduleVisit(
   }
 
   return payload as ScheduleVisitDetail;
+}
+
+export async function assignCaregiverToScheduleVisit(
+  request: ManageScheduleAssignmentRequest,
+): Promise<ScheduleAssignment> {
+  const response = await fetch(apiUrl(`/api/schedule-visits/${request.visitId}/assignments`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      caregiverProfileId: request.caregiverProfileId,
+      branchId: request.branchId || null,
+      assignmentSource: request.assignmentSource || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleAssignment
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver assignment failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleAssignment;
+}
+
+export async function createScheduleOpenShift(
+  request: ManageScheduleOpenShiftRequest,
+): Promise<ScheduleOpenShift> {
+  const response = await fetch(apiUrl(`/api/schedule-visits/${request.visitId}/open-shift`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId || null,
+      priority: request.priority || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleOpenShift
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Open shift request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleOpenShift;
+}
+
+export async function assignFromOpenShift(
+  openShiftId: string,
+  request: Omit<ManageScheduleAssignmentRequest, 'visitId'>,
+): Promise<ScheduleAssignment> {
+  const response = await fetch(apiUrl(`/api/open-shifts/${openShiftId}/assign`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      caregiverProfileId: request.caregiverProfileId,
+      branchId: request.branchId || null,
+      assignmentSource: request.assignmentSource || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleAssignment
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Open-shift assignment failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleAssignment;
+}
+
+export async function fetchScheduleMatches(
+  request: ScheduleMatchQuery,
+): Promise<CaregiverMatch[]> {
+  const matchesUrl = new URL(
+    apiUrl(`/api/schedule-visits/${request.visitId}/matches`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(matchesUrl, {
+    preferredLanguage: request.preferredLanguage,
+    enforcePatientOverlapCheck: request.enforcePatientOverlapCheck ? 'true' : undefined,
+    requireAvailabilityFit:
+      request.requireAvailabilityFit === false ? 'false' : request.requireAvailabilityFit ? 'true' : undefined,
+    requiredSkillIds: request.requiredSkillIds?.length ? request.requiredSkillIds.join(',') : undefined,
+    requiredCredentialTypes:
+      request.requiredCredentialTypes?.length ? request.requiredCredentialTypes.join(',') : undefined,
+  });
+
+  const response = await fetch(matchesUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverMatch[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Schedule match request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverMatch[];
+}
+
+export async function previewScheduleConflicts(
+  request: ScheduleConflictPreviewRequest,
+): Promise<ScheduleConflictPreview> {
+  const response = await fetch(
+    apiUrl(`/api/schedule-visits/${request.visitId}/conflict-preview`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        caregiverProfileId: request.caregiverProfileId,
+        requiredSkillIds: request.requiredSkillIds ?? [],
+        requiredCredentialTypes: request.requiredCredentialTypes ?? [],
+        preferredLanguage: request.preferredLanguage || null,
+        enforcePatientOverlapCheck: Boolean(request.enforcePatientOverlapCheck),
+        requireAvailabilityFit: request.requireAvailabilityFit !== false,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleConflictPreview
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Schedule conflict preview failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleConflictPreview;
+}
+
+export async function fetchRecurringVisitRules(
+  request: AuthenticatedRequestContext & { patientId?: string },
+): Promise<ScheduleRecurringVisitRule[]> {
+  const rulesUrl = new URL(apiUrl('/api/recurring-visits'), window.location.origin);
+  appendOptionalSearchParams(rulesUrl, {
+    patientId: request.patientId,
+  });
+
+  const response = await fetch(rulesUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleRecurringVisitRule[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Recurring visit rule request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleRecurringVisitRule[];
+}
+
+export async function saveRecurringVisitRule(
+  request: ManageRecurringVisitRuleRequest,
+): Promise<ScheduleRecurringVisitRule> {
+  const path = request.recurringRuleId
+    ? `/api/recurring-visits/${request.recurringRuleId}`
+    : '/api/recurring-visits';
+  const response = await fetch(apiUrl(path), {
+    method: request.recurringRuleId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      patientId: request.patientId,
+      branchId: request.branchId || null,
+      serviceLineId: request.serviceLineId || null,
+      visitTypeId: request.visitTypeId || null,
+      cadence: request.cadence,
+      weekdays: request.weekdays ?? [],
+      effectiveStart: request.effectiveStart,
+      effectiveEnd: request.effectiveEnd || null,
+      plannedStartTime: request.plannedStartTime,
+      plannedEndTime: request.plannedEndTime,
+      timezone: request.timezone,
+      priority: request.priority || null,
+      creationMode: request.creationMode || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleRecurringVisitRule
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Recurring visit rule save failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleRecurringVisitRule;
+}
+
+export async function deactivateRecurringVisitRule(
+  recurringRuleId: string,
+  request: AuthenticatedRequestContext,
+): Promise<ScheduleRecurringVisitRule> {
+  const response = await fetch(apiUrl(`/api/recurring-visits/${recurringRuleId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleRecurringVisitRule
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Recurring visit rule deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleRecurringVisitRule;
+}
+
+export async function expandRecurringVisitRule(
+  request: ExpandRecurringVisitRuleRequest,
+): Promise<ScheduleVisitDetail[]> {
+  const response = await fetch(apiUrl(`/api/recurring-visits/${request.recurringRuleId}/expand`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      windowStart: request.windowStart,
+      windowEnd: request.windowEnd,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleVisitDetail[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Recurring visit rule expansion failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleVisitDetail[];
+}
+
+export async function rescheduleScheduleVisit(
+  request: ScheduleRescheduleRequest,
+): Promise<ScheduleRescheduleResponse> {
+  const response = await fetch(apiUrl(`/api/schedule-visits/${request.visitId}/reschedule`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      newPlannedStartAt: request.newPlannedStartAt,
+      newPlannedEndAt: request.newPlannedEndAt,
+      timezone: request.timezone,
+      branchId: request.branchId || null,
+      newCaregiverProfileId: request.newCaregiverProfileId || null,
+      reason: request.reason || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleRescheduleResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Visit reschedule failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleRescheduleResponse;
+}
+
+export async function cancelScheduleVisit(
+  request: ScheduleCancellationRequest,
+): Promise<ScheduleCancellationResponse> {
+  const response = await fetch(apiUrl(`/api/schedule-visits/${request.visitId}/cancel`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      cancellationParty: request.cancellationParty,
+      reason: request.reason || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleCancellationResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Visit cancellation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleCancellationResponse;
 }
 
 export async function fetchCaregivers(

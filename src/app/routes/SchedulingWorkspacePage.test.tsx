@@ -18,14 +18,25 @@ vi.mock('../auth/session-api', async () => {
   const actual = await vi.importActual('../auth/session-api');
   return {
     ...actual,
+    assignCaregiverToScheduleVisit: vi.fn(),
+    assignFromOpenShift: vi.fn(),
+    cancelScheduleVisit: vi.fn(),
+    createScheduleOpenShift: vi.fn(),
+    deactivateRecurringVisitRule: vi.fn(),
+    expandRecurringVisitRule: vi.fn(),
     fetchBranches: vi.fn(),
     fetchCaregivers: vi.fn(),
     fetchPatients: vi.fn(),
+    fetchRecurringVisitRules: vi.fn(),
     fetchScheduleBoard: vi.fn(),
+    fetchScheduleMatches: vi.fn(),
     fetchScheduleVisit: vi.fn(),
     fetchScheduleVisits: vi.fn(),
     fetchServiceLines: vi.fn(),
     fetchVisitTypes: vi.fn(),
+    previewScheduleConflicts: vi.fn(),
+    rescheduleScheduleVisit: vi.fn(),
+    saveRecurringVisitRule: vi.fn(),
     saveScheduleVisit: vi.fn(),
   };
 });
@@ -170,6 +181,68 @@ describe('SchedulingWorkspacePage', () => {
       totalElements: 4,
       totalPages: 4,
     });
+    vi.mocked(sessionApi.fetchScheduleBoard).mockResolvedValue({
+      view: 'WEEK',
+      windowStart: '2026-04-07',
+      windowEnd: '2026-04-14',
+      items: [],
+    });
+    vi.mocked(sessionApi.fetchRecurringVisitRules).mockResolvedValue([]);
+    vi.mocked(sessionApi.fetchScheduleMatches).mockResolvedValue([
+      {
+        caregiverProfileId: 'caregiver-1',
+        caregiverDisplayName: 'Jamie Caregiver',
+        score: 98,
+        outcome: 'WARNING',
+        factors: [
+          {
+            code: 'AVAILABILITY_MATCH',
+            outcome: 'CLEAR',
+            message: 'Caregiver is available for the proposed visit window.',
+          },
+        ],
+        travelAwareness: {
+          estimatedTravelMinutes: 18,
+          gapMinutes: 25,
+          level: 'TIGHT_CONNECTION',
+          rationaleCode: 'TRANSIT_TIGHT',
+        },
+        overtimeEvaluation: {
+          projectedScheduledMinutes: 420,
+          proposedMinutes: 60,
+          warningThresholdMinutes: 480,
+          blockingThresholdMinutes: 600,
+          outcome: 'WARNING',
+          message: 'This assignment is approaching the overtime warning threshold.',
+        },
+      },
+    ]);
+    vi.mocked(sessionApi.previewScheduleConflicts).mockResolvedValue({
+      visitOccurrenceId: 'visit-1',
+      caregiverProfileId: 'caregiver-1',
+      outcome: 'WARNING',
+      items: [
+        {
+          code: 'TRAVEL_TIGHT',
+          outcome: 'WARNING',
+          message: 'Travel gap is tight but still feasible.',
+        },
+      ],
+      travelAwareness: {
+        estimatedTravelMinutes: 18,
+        gapMinutes: 25,
+        level: 'TIGHT_CONNECTION',
+        rationaleCode: 'TRANSIT_TIGHT',
+      },
+      overtimeEvaluation: {
+        projectedScheduledMinutes: 420,
+        proposedMinutes: 60,
+        warningThresholdMinutes: 480,
+        blockingThresholdMinutes: 600,
+        outcome: 'WARNING',
+        message: 'Approaching overtime threshold.',
+      },
+    });
   });
 
   it('renders the live scheduling board, open-shift pool, and selected visit drawer from backend APIs', async () => {
@@ -273,7 +346,7 @@ describe('SchedulingWorkspacePage', () => {
     expect(screen.getAllByText('OPEN_SHIFT').length).toBeGreaterThan(0);
     expect(screen.getByText('Visit visit-1')).toBeInTheDocument();
     expect(screen.getByText('Review open shifts')).toBeInTheDocument();
-    expect(screen.getByText('Create assignment flow')).toBeInTheDocument();
+    expect(screen.getByText('Assignment workflow')).toBeInTheDocument();
     expect(sessionApi.fetchScheduleBoard).toHaveBeenCalledWith(
       expect.objectContaining({
         view: 'WEEK',
@@ -326,5 +399,104 @@ describe('SchedulingWorkspacePage', () => {
     expect(within(formPanel as HTMLElement).getAllByLabelText('Patient')[0]).toBeInTheDocument();
     expect(within(formPanel as HTMLElement).getByLabelText('Planned start')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create visit' })).toBeInTheDocument();
+  });
+
+  it('renders assignment decision support and recurring workflow surfaces', async () => {
+    vi.mocked(sessionApi.fetchScheduleBoard)
+      .mockResolvedValueOnce({
+        view: 'WEEK',
+        windowStart: '2026-04-07',
+        windowEnd: '2026-04-14',
+        items: [
+          {
+            visitId: 'visit-1',
+            patientId: 'patient-1',
+            patientDisplayName: 'Ava Patient',
+            branchId: 'branch-1',
+            serviceLineId: 'service-line-1',
+            visitTypeId: 'visit-type-1',
+            plannedStartAt: '2026-04-10T09:00:00-05:00',
+            plannedEndAt: '2026-04-10T10:00:00-05:00',
+            timezone: 'America/Chicago',
+            status: 'OPEN_SHIFT',
+            priority: 'URGENT',
+            activeAssignmentId: null,
+            activeCaregiverProfileId: null,
+            openShift: true,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        view: 'DAY',
+        windowStart: '2026-03-29',
+        windowEnd: '2026-03-29',
+        items: [],
+      });
+    vi.mocked(sessionApi.fetchScheduleVisit).mockResolvedValue({
+      id: 'visit-1',
+      agencyId: 'agency-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      serviceLineId: 'service-line-1',
+      visitTypeId: 'visit-type-1',
+      recurringVisitRuleId: null,
+      plannedStartAt: '2026-04-10T09:00:00-05:00',
+      plannedEndAt: '2026-04-10T10:00:00-05:00',
+      timezone: 'America/Chicago',
+      status: 'OPEN_SHIFT',
+      priority: 'URGENT',
+      creationMode: 'MANUAL',
+      notes: 'Needs weekend coverage',
+      activeAssignmentId: null,
+      activeCaregiverProfileId: null,
+      openShiftId: 'open-shift-1',
+    });
+
+    const assignmentRender = render(
+      <MemoryRouter
+        initialEntries={['/app/scheduling/visits/visit-1?view=WEEK&date=2026-04-10&workflow=assign']}
+      >
+        <Routes>
+          <Route element={<SchedulingWorkspacePage />} path="/app/scheduling/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Caregiver assignment and match panel')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Jamie Caregiver')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(sessionApi.fetchScheduleMatches).toHaveBeenCalledWith(
+        expect.objectContaining({
+          visitId: 'visit-1',
+        }),
+      );
+      expect(sessionApi.previewScheduleConflicts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          visitId: 'visit-1',
+          caregiverProfileId: 'caregiver-1',
+        }),
+      );
+    });
+
+    assignmentRender.unmount();
+
+    render(
+      <MemoryRouter
+        initialEntries={['/app/scheduling/visits/visit-1?view=WEEK&date=2026-04-10&workflow=recurring']}
+      >
+        <Routes>
+          <Route element={<SchedulingWorkspacePage />} path="/app/scheduling/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Recurring visit management')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: 'Create recurring rule' })).toBeInTheDocument();
   });
 });
