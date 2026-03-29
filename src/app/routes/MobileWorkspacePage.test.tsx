@@ -18,11 +18,20 @@ vi.mock('../auth/session-api', async () => {
   const actual = await vi.importActual('../auth/session-api');
   return {
     ...actual,
+    createMobileIncident: vi.fn(),
+    createMobileMessageThread: vi.fn(),
+    downloadMobileFieldArtifact: vi.fn(),
     endMobileVisitExecution: vi.fn(),
     fetchMobileHome: vi.fn(),
+    fetchMobileMessageThread: vi.fn(),
+    fetchMobileMessageThreads: vi.fn(),
     fetchMobileRoute: vi.fn(),
     fetchMobileVisitDetail: vi.fn(),
+    saveMobileQuickNote: vi.fn(),
+    saveMobileTaskChecklist: vi.fn(),
+    sendMobileMessage: vi.fn(),
     startMobileVisitExecution: vi.fn(),
+    uploadMobileFieldArtifact: vi.fn(),
   };
 });
 
@@ -32,7 +41,9 @@ const sessionApi = await import('../auth/session-api');
 
 describe('MobileWorkspacePage', () => {
   beforeEach(() => {
+    window.localStorage.clear();
     vi.stubGlobal('navigator', {
+      onLine: true,
       geolocation: {
         getCurrentPosition: vi.fn((success: (position: { coords: { latitude: number; longitude: number } }) => void) =>
           success({
@@ -171,6 +182,61 @@ describe('MobileWorkspacePage', () => {
       executionStatus: 'COMPLETED',
       syncStatus: 'ACCEPTED',
     });
+    vi.mocked(sessionApi.saveMobileTaskChecklist).mockResolvedValue([
+      {
+        id: 'checklist-1',
+        executionSessionId: 'execution-1',
+        taskTemplateId: null,
+        title: 'Arrival and safety check',
+        description: 'Confirm patient readiness and environment safety.',
+        category: 'GENERAL',
+        sortOrder: 1,
+        completed: true,
+        completedAt: '2026-04-21T09:15:00-05:00',
+        completionNotes: 'Done',
+      },
+    ]);
+    vi.mocked(sessionApi.saveMobileQuickNote).mockResolvedValue({
+      id: 'note-1',
+      executionSessionId: 'execution-1',
+      caregiverProfileId: 'caregiver-1',
+      authoredAt: '2026-04-21T09:16:00-05:00',
+      noteText: 'Patient resting comfortably.',
+      status: 'SUBMITTED',
+    });
+    vi.mocked(sessionApi.fetchMobileMessageThreads).mockResolvedValue([
+      {
+        threadId: 'thread-1',
+        participantsSummary: ['Jamie Caregiver', 'Agency operations'],
+        lastMessagePreview: 'Running 10 minutes behind schedule.',
+        unreadCount: 0,
+        patientId: 'patient-1',
+        visitOccurrenceId: 'visit-1',
+        lastMessageAt: '2026-04-21T09:40:00-05:00',
+      },
+    ]);
+    vi.mocked(sessionApi.fetchMobileMessageThread).mockResolvedValue({
+      threadId: 'thread-1',
+      subject: 'Route delay',
+      patientId: 'patient-1',
+      visitOccurrenceId: 'visit-1',
+      messages: [
+        {
+          messageId: 'message-1',
+          senderMembershipId: 'membership-1',
+          senderEmail: 'ops@agency.example',
+          sentAt: '2026-04-21T09:40:00-05:00',
+          messageText: 'Running 10 minutes behind schedule.',
+        },
+      ],
+    });
+    vi.mocked(sessionApi.sendMobileMessage).mockResolvedValue({
+      id: 'message-2',
+      threadId: 'thread-1',
+      senderMembershipId: 'membership-1',
+      sentAt: '2026-04-21T09:41:00-05:00',
+      messageText: 'Acknowledged.',
+    });
   });
 
   it('renders backend-backed today work and visit detail in the mobile shell', async () => {
@@ -224,6 +290,62 @@ describe('MobileWorkspacePage', () => {
 
     expect(await screen.findByText('Visit started. The field session is now active and recorded.')).toBeInTheDocument();
     expect(screen.getByText(/Latitude 41.8810, longitude -87.6230/)).toBeInTheDocument();
+  });
+
+  it('saves checklist items after the visit has started', async () => {
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Start visit' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Save checklist' }));
+
+    await waitFor(() => {
+      expect(sessionApi.saveMobileTaskChecklist).toHaveBeenCalledWith({
+        accessToken: undefined,
+        sessionId: 'session-1',
+        executionSessionId: 'execution-1',
+        items: expect.any(Array),
+      });
+    });
+
+    expect(await screen.findByText('Checklist saved to the backend mobile documentation flow.')).toBeInTheDocument();
+  });
+
+  it('renders the real message center and sends a reply through the backend API', async () => {
+    render(
+      <MemoryRouter initialEntries={['/mobile/messages?threadId=thread-1']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/messages" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(sessionApi.fetchMobileMessageThreads).toHaveBeenCalled();
+      expect(sessionApi.fetchMobileMessageThread).toHaveBeenCalledWith('thread-1', {
+        accessToken: undefined,
+        sessionId: 'session-1',
+      });
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: /reply/i }), {
+      target: { value: 'Acknowledged.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+
+    await waitFor(() => {
+      expect(sessionApi.sendMobileMessage).toHaveBeenCalledWith({
+        accessToken: undefined,
+        sessionId: 'session-1',
+        threadId: 'thread-1',
+        messageText: 'Acknowledged.',
+        sentAt: expect.any(String),
+      });
+    });
   });
 
   it('renders a controlled read-only message state when message permission is missing', async () => {

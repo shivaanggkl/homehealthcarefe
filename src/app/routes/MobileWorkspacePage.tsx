@@ -1,21 +1,48 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { canAccessPermission } from '../access/access-control';
 import { useAccess } from '../access/access-context';
 import { useAuth } from '../auth/auth-context';
 import { loadDevSessionCredentials } from '../auth/session-storage';
 import {
   ApiError,
+  createMobileIncident,
+  createMobileMessageThread,
+  downloadMobileFieldArtifact,
   endMobileVisitExecution,
   fetchMobileHome,
+  fetchMobileMessageThread,
+  fetchMobileMessageThreads,
   fetchMobileRoute,
   fetchMobileVisitDetail,
+  MobileFieldArtifact,
   MobileHomeResponse,
+  MobileIncident,
+  MobileMessageThreadDetail,
+  MobileMessageThreadSummary,
+  MobileQuickNote,
+  MobileQuickNoteStatus,
   MobileRouteProjectionResponse,
+  SaveMobileTaskChecklistItemRequest,
+  MobileTaskChecklistItem,
   MobileVisitDetailResponse,
   MobileVisitExecutionSession,
+  saveMobileQuickNote,
+  saveMobileTaskChecklist,
+  sendMobileMessage,
   startMobileVisitExecution,
+  uploadMobileFieldArtifact,
 } from '../auth/session-api';
+import {
+  clearMobileExecutionSessionId,
+  loadMobileExecutionSessionIds,
+  loadMobileSyncQueue,
+  MobileQueuedAction,
+  persistMobileExecutionSessionId,
+  queueMobileAction,
+  removeQueuedMobileAction,
+  replaceQueuedMobileAction,
+} from '../mobile/mobile-sync';
 import {
   MobileActionFooter,
   MobileAppShell,
@@ -32,6 +59,25 @@ type LocationCapture =
   | { status: 'requesting' }
   | { status: 'captured'; latitude: number; longitude: number }
   | { status: 'unavailable'; reason: string };
+
+type ChecklistDraftItem = {
+  taskTemplateId?: string;
+  title: string;
+  description: string;
+  category: string;
+  completed: boolean;
+  completionNotes: string;
+};
+
+type IncidentDraft = {
+  incidentType: string;
+  severity: string;
+  narrative: string;
+  escalationHook: string;
+};
+
+const MOBILE_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MOBILE_MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 function toIsoDate(value: Date): string {
   const year = value.getFullYear();
@@ -53,6 +99,34 @@ function formatDateTime(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function defaultChecklist(): ChecklistDraftItem[] {
+  return [
+    {
+      title: 'Arrival and safety check',
+      description: 'Confirm patient readiness and environment safety.',
+      category: 'GENERAL',
+      completed: false,
+      completionNotes: '',
+    },
+    {
+      title: 'Care delivery tasks',
+      description: 'Capture the main visit tasks completed in the field.',
+      category: 'CLINICAL',
+      completed: false,
+      completionNotes: '',
+    },
+  ];
+}
+
+function emptyIncident(): IncidentDraft {
+  return {
+    incidentType: 'CLINICAL_CONCERN',
+    severity: 'HIGH',
+    narrative: '',
+    escalationHook: 'NOTIFY_BRANCH_CLINICAL',
+  };
 }
 
 function nextActionLabel(
@@ -83,7 +157,8 @@ async function requestGeolocation(): Promise<LocationCapture> {
   if (typeof window === 'undefined' || !('geolocation' in navigator)) {
     return {
       status: 'unavailable',
-      reason: 'Location is not available on this device. You can continue and the backend will record a controlled field action without coordinates.',
+      reason:
+        'Location is not available on this device. You can continue and the backend will record a controlled field action without coordinates.',
     };
   }
 
@@ -112,11 +187,152 @@ async function requestGeolocation(): Promise<LocationCapture> {
   });
 }
 
+function dataUrlToFile(dataUrl: string, fileName: string): File {
+  const [header, payload] = dataUrl.split(',');
+  const mimeMatch = header.match(/data:(.*?);base64/);
+  const contentType = mimeMatch?.[1] ?? 'image/png';
+  const binary = window.atob(payload);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new File([bytes], fileName, { type: contentType });
+}
+
+function safeGetCanvasContext(canvas: HTMLCanvasElement | null) {
+  if (!canvas) {
+    return null;
+  }
+
+  try {
+    return canvas.getContext('2d');
+  } catch {
+    return null;
+  }
+}
+
+function SignaturePad({
+  disabled,
+  saving,
+  onSave,
+}: {
+  disabled: boolean;
+  saving: boolean;
+  onSave: (file: File) => Promise<void>;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
+  const [hasStroke, setHasStroke] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+    const context = safeGetCanvasContext(canvas);
+    if (!context) {
+      return;
+    }
+    context.lineWidth = 2.5;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.strokeStyle = '#0b4d73';
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  function positionForEvent(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return { x: 0, y: 0 };
+    }
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  }
+
+  function clearCanvas() {
+    const canvas = canvasRef.current;
+    const context = safeGetCanvasContext(canvas);
+    if (!canvas || !context) {
+      return;
+    }
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    setHasStroke(false);
+  }
+
+  async function handleSave() {
+    const canvas = canvasRef.current;
+    if (!canvas || !hasStroke || !safeGetCanvasContext(canvas)) {
+      return;
+    }
+    const file = dataUrlToFile(canvas.toDataURL('image/png'), `signature-${Date.now()}.png`);
+    await onSave(file);
+  }
+
+  return (
+    <div className="mobile-signature-pad">
+      <canvas
+        className="mobile-signature-canvas"
+        height={180}
+        onPointerDown={(event) => {
+          if (disabled) {
+            return;
+          }
+          drawingRef.current = true;
+          const context = safeGetCanvasContext(canvasRef.current);
+          const position = positionForEvent(event);
+          context?.beginPath();
+          context?.moveTo(position.x, position.y);
+        }}
+        onPointerLeave={() => {
+          drawingRef.current = false;
+        }}
+        onPointerMove={(event) => {
+          if (disabled || !drawingRef.current) {
+            return;
+          }
+          const context = safeGetCanvasContext(canvasRef.current);
+          const position = positionForEvent(event);
+          context?.lineTo(position.x, position.y);
+          context?.stroke();
+          setHasStroke(true);
+        }}
+        onPointerUp={() => {
+          drawingRef.current = false;
+        }}
+        ref={canvasRef}
+        width={520}
+      />
+      <div className="mobile-inline-button-row">
+        <button className="button button-secondary" disabled={disabled} onClick={clearCanvas} type="button">
+          Clear
+        </button>
+        <button
+          className="button"
+          disabled={disabled || !hasStroke || saving}
+          onClick={() => void handleSave()}
+          type="button"
+        >
+          {saving ? 'Saving signature...' : 'Save signature'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function MobileWorkspacePage() {
   const { state, refreshAuth, logout } = useAuth();
   const { profile } = useAccess();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { visitId } = useParams<{ visitId: string }>();
   const [home, setHome] = useState<MobileHomeResponse | null>(null);
   const [routeProjection, setRouteProjection] = useState<MobileRouteProjectionResponse | null>(null);
@@ -124,13 +340,46 @@ export function MobileWorkspacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<MobileSyncVisualState>('idle');
-  const [syncMessage, setSyncMessage] = useState('Field app is ready. Pull fresh data when you need it.');
+  const [syncMessage, setSyncMessage] = useState(
+    'Field app is ready. Pull fresh data when you need it.',
+  );
   const [logoutPending, setLogoutPending] = useState(false);
   const [executionSession, setExecutionSession] = useState<MobileVisitExecutionSession | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState(false);
   const [locationCapture, setLocationCapture] = useState<LocationCapture>({ status: 'idle' });
+  const [syncQueue, setSyncQueue] = useState<MobileQueuedAction[]>(() => loadMobileSyncQueue());
+  const [queueBusy, setQueueBusy] = useState(false);
+  const [checklistDraft, setChecklistDraft] = useState<ChecklistDraftItem[]>(defaultChecklist());
+  const [savedChecklist, setSavedChecklist] = useState<MobileTaskChecklistItem[]>([]);
+  const [checklistSaving, setChecklistSaving] = useState(false);
+  const [checklistError, setChecklistError] = useState<string | null>(null);
+  const [checklistSuccess, setChecklistSuccess] = useState<string | null>(null);
+  const [quickNoteText, setQuickNoteText] = useState('');
+  const [quickNoteStatus, setQuickNoteStatus] = useState<MobileQuickNoteStatus>('DRAFT');
+  const [savedNotes, setSavedNotes] = useState<MobileQuickNote[]>([]);
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
+  const [noteSuccess, setNoteSuccess] = useState<string | null>(null);
+  const [artifacts, setArtifacts] = useState<MobileFieldArtifact[]>([]);
+  const [artifactSaving, setArtifactSaving] = useState(false);
+  const [artifactError, setArtifactError] = useState<string | null>(null);
+  const [artifactSuccess, setArtifactSuccess] = useState<string | null>(null);
+  const [incidents, setIncidents] = useState<MobileIncident[]>([]);
+  const [incidentDraft, setIncidentDraft] = useState<IncidentDraft>(emptyIncident());
+  const [incidentSaving, setIncidentSaving] = useState(false);
+  const [incidentError, setIncidentError] = useState<string | null>(null);
+  const [incidentSuccess, setIncidentSuccess] = useState<string | null>(null);
+  const [threads, setThreads] = useState<MobileMessageThreadSummary[]>([]);
+  const [selectedThread, setSelectedThread] = useState<MobileMessageThreadDetail | null>(null);
+  const [threadsLoading, setThreadsLoading] = useState(false);
+  const [threadsError, setThreadsError] = useState<string | null>(null);
+  const [threadSubject, setThreadSubject] = useState('');
+  const [messageText, setMessageText] = useState('');
+  const [messageSaving, setMessageSaving] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
+  const [messageSuccess, setMessageSuccess] = useState<string | null>(null);
 
   const authContext = useMemo(() => {
     const devSession = loadDevSessionCredentials();
@@ -152,6 +401,7 @@ export function MobileWorkspacePage() {
   const inMessages = location.pathname === '/mobile/messages';
   const inAccount = location.pathname === '/mobile/account';
   const inVisit = Boolean(visitId);
+  const selectedThreadId = searchParams.get('threadId');
 
   const visits = home?.visits ?? [];
   const inProgressVisit = visits.find((item) => item.executionStatus === 'IN_PROGRESS') ?? null;
@@ -164,6 +414,8 @@ export function MobileWorkspacePage() {
   const currentVisit = inProgressVisit ?? nextVisit ?? null;
   const canExecuteVisits = canAccessPermission(profile, 'execute_mobile_visits');
   const canViewMessages = canAccessPermission(profile, 'view_mobile_messages');
+  const canSendMessages = canAccessPermission(profile, 'send_mobile_messages');
+  const executionSessionId = executionSession?.id ?? null;
 
   async function loadMobileData(mode: 'initial' | 'manual') {
     if (state.status !== 'authenticated') {
@@ -201,26 +453,51 @@ export function MobileWorkspacePage() {
       setHome(homeResponse);
       setRouteProjection(routeResponse);
       setVisitDetail(detailResponse);
-      const matchedVisitSession =
-        homeResponse.visits.find((item) => item.visitId === visitId)?.executionStatus ?? null;
-      setExecutionSession((previous) => {
-        if (!visitId || !matchedVisitSession) {
-          return previous?.executionStatus === 'COMPLETED' || previous?.executionStatus === 'IN_PROGRESS'
-            ? previous
-            : null;
-        }
 
-        if (!previous) {
+      if (visitId) {
+        const matchedStatus =
+          homeResponse.visits.find((item) => item.visitId === visitId)?.executionStatus ?? null;
+        const storedSessionId = loadMobileExecutionSessionIds()[visitId];
+        setExecutionSession((previous) => {
+          if (previous) {
+            return matchedStatus
+              ? {
+                  ...previous,
+                  executionStatus: matchedStatus,
+                }
+              : previous;
+          }
+
+          if (storedSessionId && matchedStatus && detailResponse) {
+            return {
+              id: storedSessionId,
+              visitOccurrenceId: visitId,
+              caregiverProfileId: 'caregiver-mobile',
+              patientId: detailResponse.patientSummary.patientId,
+              branchId: 'branch-mobile',
+              startedAt: new Date().toISOString(),
+              endedAt: matchedStatus === 'COMPLETED' ? new Date().toISOString() : null,
+              startedLatitude: null,
+              startedLongitude: null,
+              endedLatitude: null,
+              endedLongitude: null,
+              startSource: 'mobile_web',
+              endSource: matchedStatus === 'COMPLETED' ? 'mobile_web' : null,
+              executionStatus: matchedStatus,
+              syncStatus: 'ACCEPTED',
+            };
+          }
+
           return null;
-        }
+        });
+      }
 
-        return {
-          ...previous,
-          executionStatus: matchedVisitSession,
-        };
-      });
-      setSyncState('synced');
-      setSyncMessage(`Field data synced for ${homeResponse.day}.`);
+      setSyncState(syncQueue.length ? 'queued' : 'synced');
+      setSyncMessage(
+        syncQueue.length
+          ? `${syncQueue.length} action${syncQueue.length === 1 ? '' : 's'} queued for sync.`
+          : `Field data synced for ${homeResponse.day}.`,
+      );
     } catch (fetchError) {
       const message =
         fetchError instanceof ApiError
@@ -234,15 +511,67 @@ export function MobileWorkspacePage() {
     }
   }
 
+  async function loadThreads() {
+    if (!canViewMessages || state.status !== 'authenticated') {
+      return;
+    }
+
+    setThreadsLoading(true);
+    setThreadsError(null);
+
+    try {
+      const summaries = await fetchMobileMessageThreads(authContext);
+      setThreads(summaries);
+
+      if (selectedThreadId) {
+        const detail = await fetchMobileMessageThread(selectedThreadId, authContext);
+        setSelectedThread(detail);
+      } else {
+        setSelectedThread(null);
+      }
+    } catch (threadError) {
+      setThreadsError(
+        threadError instanceof ApiError
+          ? threadError.message
+          : 'Unable to load mobile messages right now.',
+      );
+    } finally {
+      setThreadsLoading(false);
+    }
+  }
+
   useEffect(() => {
     void loadMobileData('initial');
   }, [day, timezone, visitId, authContext.accessToken, authContext.sessionId, state.status]);
 
   useEffect(() => {
-    setExecutionSession(null);
+    if (inMessages) {
+      void loadThreads();
+    }
+  }, [inMessages, selectedThreadId, canViewMessages]);
+
+  useEffect(() => {
+    setChecklistError(null);
+    setChecklistSuccess(null);
+    setNoteError(null);
+    setNoteSuccess(null);
+    setArtifactError(null);
+    setArtifactSuccess(null);
+    setIncidentError(null);
+    setIncidentSuccess(null);
     setActionError(null);
     setActionSuccess(null);
+    setMessageError(null);
+    setMessageSuccess(null);
     setLocationCapture({ status: 'idle' });
+    setChecklistDraft(defaultChecklist());
+    setQuickNoteText('');
+    setQuickNoteStatus('DRAFT');
+    setSavedChecklist([]);
+    setSavedNotes([]);
+    setArtifacts([]);
+    setIncidents([]);
+    setIncidentDraft(emptyIncident());
   }, [visitId]);
 
   async function handleLogout() {
@@ -255,6 +584,87 @@ export function MobileWorkspacePage() {
       navigate(result.redirectTo, { replace: true });
     } finally {
       setLogoutPending(false);
+    }
+  }
+
+  async function flushQueuedActions() {
+    if (queueBusy || !syncQueue.length) {
+      return;
+    }
+
+    setQueueBusy(true);
+    setSyncState('syncing');
+    setSyncMessage('Retrying queued mobile actions.');
+
+    let nextQueue = [...syncQueue];
+
+    for (const item of syncQueue) {
+      try {
+        if (item.kind === 'task-checklist') {
+          await saveMobileTaskChecklist({
+            ...authContext,
+            executionSessionId: item.executionSessionId,
+            items: item.payload.items as SaveMobileTaskChecklistItemRequest[],
+          });
+        } else if (item.kind === 'quick-note') {
+          await saveMobileQuickNote({
+            ...authContext,
+            executionSessionId: item.executionSessionId,
+            status: item.payload.status as MobileQuickNoteStatus,
+            noteText: item.payload.noteText as string,
+            authoredAt: item.payload.authoredAt as string,
+          });
+        } else if (item.kind === 'incident') {
+          await createMobileIncident({
+            ...authContext,
+            executionSessionId: item.executionSessionId,
+            incidentType: item.payload.incidentType as string,
+            severity: item.payload.severity as string,
+            narrative: item.payload.narrative as string,
+            reportedAt: item.payload.reportedAt as string,
+            escalationHook: item.payload.escalationHook as string,
+            artifactIds: item.payload.artifactIds as string[],
+          });
+        } else if (item.kind === 'create-thread') {
+          await createMobileMessageThread({
+            ...authContext,
+            executionSessionId: item.executionSessionId,
+            subject: item.payload.subject as string,
+          });
+        } else if (item.kind === 'send-message') {
+          await sendMobileMessage({
+            ...authContext,
+            threadId: item.payload.threadId as string,
+            messageText: item.payload.messageText as string,
+            sentAt: item.payload.sentAt as string,
+          });
+        }
+
+        nextQueue = removeQueuedMobileAction(item.id);
+        setSyncQueue(nextQueue);
+      } catch (queueError) {
+        nextQueue = replaceQueuedMobileAction({
+          ...item,
+          failureMessage:
+            queueError instanceof ApiError
+              ? queueError.message
+              : 'Queued action still cannot be synced.',
+        });
+        setSyncQueue(nextQueue);
+      }
+    }
+
+    setQueueBusy(false);
+    if (nextQueue.length) {
+      setSyncState('queued');
+      setSyncMessage(`${nextQueue.length} queued action${nextQueue.length === 1 ? '' : 's'} still need attention.`);
+    } else {
+      setSyncState('synced');
+      setSyncMessage('Queued actions synced successfully.');
+      await loadMobileData('manual');
+      if (inMessages) {
+        await loadThreads();
+      }
     }
   }
 
@@ -297,6 +707,7 @@ export function MobileWorkspacePage() {
           startSource: 'mobile_web',
           syncStatus: 'ACCEPTED',
         });
+        persistMobileExecutionSessionId(visitId, session.id);
         setExecutionSession(session);
         setActionSuccess('Visit started. The field session is now active and recorded.');
       } else {
@@ -313,6 +724,7 @@ export function MobileWorkspacePage() {
           endSource: 'mobile_web',
           syncStatus: 'ACCEPTED',
         });
+        clearMobileExecutionSessionId(visitId);
         setExecutionSession(session);
         setActionSuccess('Visit ended. Today-work and route state have been refreshed.');
       }
@@ -333,8 +745,346 @@ export function MobileWorkspacePage() {
     }
   }
 
+  async function handleChecklistSave() {
+    if (!visitId || !executionSessionId) {
+      setChecklistError('Start the visit before saving checklist work.');
+      return;
+    }
+
+    const items = checklistDraft.map((item, index) => ({
+      taskTemplateId: item.taskTemplateId,
+      title: item.title,
+      description: item.description,
+      category: item.category,
+      sortOrder: index + 1,
+      completed: item.completed,
+      completedAt: item.completed ? new Date().toISOString() : undefined,
+      completionNotes: item.completionNotes,
+    }));
+
+    if (navigator.onLine === false) {
+      const nextQueue = queueMobileAction({
+        kind: 'task-checklist',
+        visitId,
+        executionSessionId,
+        payload: { items },
+      });
+      setSyncQueue(nextQueue);
+      setChecklistSuccess('Checklist queued for sync when connectivity returns.');
+      setSyncState('queued');
+      setSyncMessage(`${nextQueue.length} action${nextQueue.length === 1 ? '' : 's'} queued for sync.`);
+      return;
+    }
+
+    setChecklistSaving(true);
+    setChecklistError(null);
+    setChecklistSuccess(null);
+
+    try {
+      const saved = await saveMobileTaskChecklist({
+        ...authContext,
+        executionSessionId,
+        items,
+      });
+      setSavedChecklist(saved);
+      setChecklistSuccess('Checklist saved to the backend mobile documentation flow.');
+      setSyncState('synced');
+      setSyncMessage('Checklist synced successfully.');
+    } catch (saveError) {
+      setChecklistError(saveError instanceof ApiError ? saveError.message : 'Unable to save checklist right now.');
+    } finally {
+      setChecklistSaving(false);
+    }
+  }
+
+  async function handleQuickNoteSave() {
+    if (!visitId || !executionSessionId) {
+      setNoteError('Start the visit before saving a field note.');
+      return;
+    }
+    if (!quickNoteText.trim()) {
+      setNoteError('Enter note text before saving.');
+      return;
+    }
+
+    const payload = {
+      status: quickNoteStatus,
+      noteText: quickNoteText.trim(),
+      authoredAt: new Date().toISOString(),
+    };
+
+    if (navigator.onLine === false) {
+      const nextQueue = queueMobileAction({
+        kind: 'quick-note',
+        visitId,
+        executionSessionId,
+        payload,
+      });
+      setSyncQueue(nextQueue);
+      setSavedNotes((current) => [
+        {
+          id: `queued-${Date.now()}`,
+          executionSessionId,
+          caregiverProfileId: 'caregiver-mobile',
+          authoredAt: payload.authoredAt,
+          noteText: payload.noteText,
+          status: payload.status,
+        },
+        ...current,
+      ]);
+      setQuickNoteText('');
+      setNoteSuccess('Note queued for sync when connectivity returns.');
+      setSyncState('queued');
+      setSyncMessage(`${nextQueue.length} action${nextQueue.length === 1 ? '' : 's'} queued for sync.`);
+      return;
+    }
+
+    setNoteSaving(true);
+    setNoteError(null);
+    setNoteSuccess(null);
+
+    try {
+      const saved = await saveMobileQuickNote({
+        ...authContext,
+        executionSessionId,
+        ...payload,
+      });
+      setSavedNotes((current) => [saved, ...current]);
+      setQuickNoteText('');
+      setNoteSuccess(saved.status === 'DRAFT' ? 'Draft note saved.' : 'Quick note submitted.');
+      setSyncState('synced');
+      setSyncMessage('Quick note synced successfully.');
+    } catch (saveError) {
+      setNoteError(saveError instanceof ApiError ? saveError.message : 'Unable to save quick note right now.');
+    } finally {
+      setNoteSaving(false);
+    }
+  }
+
+  async function handleArtifactUpload(file: File, artifactType: 'PHOTO' | 'SIGNATURE') {
+    if (!executionSessionId) {
+      setArtifactError('Start the visit before uploading artifacts.');
+      return;
+    }
+    if (!MOBILE_ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setArtifactError('Only JPEG, PNG, and WEBP uploads are allowed in the mobile field workflow.');
+      return;
+    }
+    if (file.size > MOBILE_MAX_UPLOAD_BYTES) {
+      setArtifactError('Mobile artifact uploads must be 10 MB or smaller.');
+      return;
+    }
+
+    setArtifactSaving(true);
+    setArtifactError(null);
+    setArtifactSuccess(null);
+
+    try {
+      const saved = await uploadMobileFieldArtifact({
+        ...authContext,
+        executionSessionId,
+        artifactType,
+        file,
+        description:
+          artifactType === 'PHOTO'
+            ? 'Field photo uploaded from the mobile workflow.'
+            : 'Field signature captured from the mobile workflow.',
+      });
+      setArtifacts((current) => [saved, ...current]);
+      setArtifactSuccess(
+        artifactType === 'PHOTO'
+          ? 'Photo uploaded and logged.'
+          : 'Signature captured and logged.',
+      );
+      setSyncState('synced');
+      setSyncMessage('Artifact synced successfully.');
+    } catch (uploadError) {
+      setArtifactError(uploadError instanceof ApiError ? uploadError.message : 'Unable to upload artifact right now.');
+    } finally {
+      setArtifactSaving(false);
+    }
+  }
+
+  async function handleArtifactDownload(artifact: MobileFieldArtifact) {
+    try {
+      const downloaded = await downloadMobileFieldArtifact(artifact.id, authContext);
+      const url = window.URL.createObjectURL(downloaded.blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = downloaded.fileName ?? artifact.fileName;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      setArtifactError(downloadError instanceof ApiError ? downloadError.message : 'Unable to download artifact right now.');
+    }
+  }
+
+  async function handleIncidentSave() {
+    if (!visitId || !executionSessionId) {
+      setIncidentError('Start the visit before flagging an incident.');
+      return;
+    }
+    if (!incidentDraft.narrative.trim()) {
+      setIncidentError('Enter incident details before submitting.');
+      return;
+    }
+
+    const payload = {
+      incidentType: incidentDraft.incidentType,
+      severity: incidentDraft.severity,
+      narrative: incidentDraft.narrative.trim(),
+      reportedAt: new Date().toISOString(),
+      escalationHook: incidentDraft.escalationHook,
+      artifactIds: artifacts.map((artifact) => artifact.id),
+    };
+
+    if (navigator.onLine === false) {
+      const nextQueue = queueMobileAction({
+        kind: 'incident',
+        visitId,
+        executionSessionId,
+        payload,
+      });
+      setSyncQueue(nextQueue);
+      setIncidentSuccess('Incident queued for sync when connectivity returns.');
+      setSyncState('queued');
+      setSyncMessage(`${nextQueue.length} action${nextQueue.length === 1 ? '' : 's'} queued for sync.`);
+      return;
+    }
+
+    setIncidentSaving(true);
+    setIncidentError(null);
+    setIncidentSuccess(null);
+
+    try {
+      const saved = await createMobileIncident({
+        ...authContext,
+        executionSessionId,
+        ...payload,
+      });
+      setIncidents((current) => [saved, ...current]);
+      setIncidentDraft(emptyIncident());
+      setIncidentSuccess('Incident submitted and logged.');
+      setSyncState('synced');
+      setSyncMessage('Incident synced successfully.');
+    } catch (saveError) {
+      setIncidentError(saveError instanceof ApiError ? saveError.message : 'Unable to submit incident right now.');
+    } finally {
+      setIncidentSaving(false);
+    }
+  }
+
+  async function handleThreadCreate() {
+    if (!visitId || !executionSessionId) {
+      setMessageError('Start the visit before opening a visit-linked message thread.');
+      return;
+    }
+    if (!threadSubject.trim()) {
+      setMessageError('Enter a thread subject before creating the conversation.');
+      return;
+    }
+
+    const payload = {
+      subject: threadSubject.trim(),
+    };
+
+    if (navigator.onLine === false) {
+      const nextQueue = queueMobileAction({
+        kind: 'create-thread',
+        visitId,
+        executionSessionId,
+        payload,
+      });
+      setSyncQueue(nextQueue);
+      setThreadSubject('');
+      setMessageSuccess('Message thread queued for sync when connectivity returns.');
+      setSyncState('queued');
+      setSyncMessage(`${nextQueue.length} action${nextQueue.length === 1 ? '' : 's'} queued for sync.`);
+      return;
+    }
+
+    setMessageSaving(true);
+    setMessageError(null);
+    setMessageSuccess(null);
+
+    try {
+      const created = await createMobileMessageThread({
+        ...authContext,
+        executionSessionId,
+        subject: payload.subject,
+      });
+      setThreadSubject('');
+      setSearchParams({ threadId: created.id });
+      setMessageSuccess('Message thread created.');
+      await loadThreads();
+    } catch (saveError) {
+      setMessageError(saveError instanceof ApiError ? saveError.message : 'Unable to create message thread right now.');
+    } finally {
+      setMessageSaving(false);
+    }
+  }
+
+  async function handleSendMessage() {
+    if (!selectedThreadId) {
+      setMessageError('Select a thread before sending a message.');
+      return;
+    }
+    if (!messageText.trim()) {
+      setMessageError('Enter a message before sending.');
+      return;
+    }
+
+    const payload = {
+      threadId: selectedThreadId,
+      messageText: messageText.trim(),
+      sentAt: new Date().toISOString(),
+    };
+
+    if (navigator.onLine === false) {
+      const nextQueue = queueMobileAction({
+        kind: 'send-message',
+        visitId: visitId ?? currentVisit?.visitId ?? 'mobile-messages',
+        executionSessionId: executionSessionId ?? loadMobileExecutionSessionIds()[visitId ?? ''] ?? 'mobile-messages',
+        payload,
+      });
+      setSyncQueue(nextQueue);
+      setMessageText('');
+      setMessageSuccess('Message queued for sync when connectivity returns.');
+      setSyncState('queued');
+      setSyncMessage(`${nextQueue.length} action${nextQueue.length === 1 ? '' : 's'} queued for sync.`);
+      return;
+    }
+
+    setMessageSaving(true);
+    setMessageError(null);
+    setMessageSuccess(null);
+
+    try {
+      await sendMobileMessage({
+        ...authContext,
+        ...payload,
+      });
+      setMessageText('');
+      setMessageSuccess('Message sent.');
+      await loadThreads();
+    } catch (saveError) {
+      setMessageError(saveError instanceof ApiError ? saveError.message : 'Unable to send message right now.');
+    } finally {
+      setMessageSaving(false);
+    }
+  }
+
   const headerAction = (
-    <button className="button button-secondary" onClick={() => void loadMobileData('manual')} type="button">
+    <button
+      className="button button-secondary"
+      onClick={() => {
+        void loadMobileData('manual');
+        if (inMessages) {
+          void loadThreads();
+        }
+      }}
+      type="button"
+    >
       Refresh
     </button>
   );
@@ -371,23 +1121,137 @@ export function MobileWorkspacePage() {
         />
       ) : null}
 
+      {!loading && syncQueue.length ? (
+        <MobilePanel
+          description="Supported mobile field actions can be queued locally when connectivity drops."
+          title="Queued sync actions"
+        >
+          <div className="mobile-queue-list">
+            {syncQueue.map((item) => (
+              <div className="mobile-queue-item" key={item.id}>
+                <div>
+                  <strong>{item.kind}</strong>
+                  <p>Queued at {formatDateTime(item.queuedAt)}</p>
+                  {item.failureMessage ? <p>{item.failureMessage}</p> : null}
+                </div>
+              </div>
+            ))}
+          </div>
+          <MobileActionFooter
+            primaryDisabled={queueBusy}
+            primaryLabel={queueBusy ? 'Retrying queued actions...' : 'Retry queued sync'}
+            secondaryLabel="Recheck backend"
+            onPrimaryClick={() => void flushQueuedActions()}
+            onSecondaryClick={() => void loadMobileData('manual')}
+          />
+        </MobilePanel>
+      ) : null}
+
       {!loading && !error && inMessages ? (
         canViewMessages ? (
-          <MobileMutationFrame
-            helper="The backend message APIs are live, but the full thread list and send-message workflow land in Phase C. Phase B keeps the mobile message route reachable while today-work and visit execution become real."
-            mode="read-only"
-            syncMessage={syncMessage}
-            syncState={syncState}
-            title="Message center foundation"
-          >
-            <MobileActionFooter
-              primaryDisabled
-              primaryLabel="Thread list lands in Phase C"
-              secondaryDisabled={syncState === 'syncing'}
-              secondaryLabel="Recheck session"
-              onSecondaryClick={() => void refreshAuth()}
-            />
-          </MobileMutationFrame>
+          <div className="mobile-stack">
+            <MobilePanel
+              description="Thread list and detail both use the backend mobile message APIs."
+              title="Message threads"
+            >
+              {threadsLoading ? (
+                <MobileModuleState
+                  description="Loading the latest caregiver message threads."
+                  title="Loading messages"
+                />
+              ) : threadsError ? (
+                <MobileModuleState
+                  description={threadsError}
+                  title="Messages could not be loaded"
+                  variant="error"
+                />
+              ) : threads.length ? (
+                <div className="mobile-thread-list">
+                  {threads.map((thread) => (
+                    <button
+                      className={`mobile-thread-card${
+                        selectedThreadId === thread.threadId ? ' mobile-thread-card-active' : ''
+                      }`}
+                      key={thread.threadId}
+                      onClick={() => setSearchParams({ threadId: thread.threadId })}
+                      type="button"
+                    >
+                      <strong>{thread.lastMessagePreview ?? 'Conversation started'}</strong>
+                      <p>{thread.participantsSummary.join(' · ')}</p>
+                      <span>{thread.lastMessageAt ? formatDateTime(thread.lastMessageAt) : 'No messages yet'}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <MobileModuleState
+                  description="Message threads will appear here once the caregiver opens or receives a conversation."
+                  title="No message threads yet"
+                  variant="empty"
+                />
+              )}
+            </MobilePanel>
+
+            <MobilePanel
+              description="Use a visit-linked thread from the field app without leaving the caregiver workflow."
+              title="Conversation detail"
+            >
+              {selectedThread ? (
+                <div className="mobile-thread-detail">
+                  <div className="mobile-inline-note">
+                    <strong>{selectedThread.subject}</strong>
+                    <p>
+                      {selectedThread.messages.length
+                        ? `${selectedThread.messages.length} message${selectedThread.messages.length === 1 ? '' : 's'}`
+                        : 'No messages yet'}
+                    </p>
+                  </div>
+                  <div className="mobile-message-list">
+                    {selectedThread.messages.map((message) => (
+                      <div className="mobile-message-item" key={message.messageId}>
+                        <strong>{message.senderEmail}</strong>
+                        <p>{message.messageText}</p>
+                        <span>{formatDateTime(message.sentAt)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {canSendMessages ? (
+                    <>
+                      <label className="field">
+                        <span>Reply</span>
+                        <textarea
+                          className="input"
+                          onChange={(event) => setMessageText(event.target.value)}
+                          placeholder="Send a field update without leaving the visit context."
+                          rows={3}
+                          value={messageText}
+                        />
+                      </label>
+                      <MobileActionFooter
+                        primaryDisabled={messageSaving}
+                        primaryLabel={messageSaving ? 'Sending...' : 'Send message'}
+                        onPrimaryClick={() => void handleSendMessage()}
+                      />
+                    </>
+                  ) : null}
+                </div>
+              ) : (
+                <MobileModuleState
+                  description="Pick a thread to see the conversation history and reply from the field app."
+                  title="Select a thread"
+                  variant="empty"
+                />
+              )}
+              {messageError ? (
+                <MobileModuleState description={messageError} title="Message action failed" variant="error" />
+              ) : null}
+              {messageSuccess ? (
+                <div className="mobile-inline-note">
+                  <strong>Saved</strong>
+                  <p>{messageSuccess}</p>
+                </div>
+              ) : null}
+            </MobilePanel>
+          </div>
         ) : (
           <MobileModuleState
             description="This caregiver profile does not currently include message-center access."
@@ -474,7 +1338,7 @@ export function MobileWorkspacePage() {
                     {effectiveExecutionStatus === 'IN_PROGRESS'
                       ? 'End visit when field work is complete'
                       : effectiveExecutionStatus === 'COMPLETED'
-                        ? 'Review and continue to the next scheduled stop'
+                        ? 'Review documentation and continue to the next stop'
                         : 'Start visit with current field location'}
                   </dd>
                 </div>
@@ -524,9 +1388,7 @@ export function MobileWorkspacePage() {
             >
               <MobileActionFooter
                 primaryDisabled={
-                  !canExecuteVisits ||
-                  actionPending ||
-                  effectiveExecutionStatus === 'COMPLETED'
+                  !canExecuteVisits || actionPending || effectiveExecutionStatus === 'COMPLETED'
                 }
                 primaryLabel={nextActionLabel(executionSession, canExecuteVisits, actionPending)}
                 primaryTone={effectiveExecutionStatus === 'IN_PROGRESS' ? 'success' : 'default'}
@@ -555,6 +1417,295 @@ export function MobileWorkspacePage() {
                 }
               />
             </MobileMutationFrame>
+
+            <MobilePanel
+              description="Checklist changes can be saved immediately or queued when connectivity drops."
+              title="Task checklist"
+            >
+              {!executionSessionId ? (
+                <MobileModuleState
+                  description="Start the visit to open task checklist capture."
+                  title="Checklist locked until visit start"
+                  variant="readonly"
+                />
+              ) : (
+                <>
+                  <div className="mobile-form-stack">
+                    {checklistDraft.map((item, index) => (
+                      <div className="mobile-card-row" key={`${item.title}-${index}`}>
+                        <label className="checkbox">
+                          <input
+                            checked={item.completed}
+                            onChange={(event) =>
+                              setChecklistDraft((current) =>
+                                current.map((candidate, candidateIndex) =>
+                                  candidateIndex === index
+                                    ? { ...candidate, completed: event.target.checked }
+                                    : candidate,
+                                ),
+                              )
+                            }
+                            type="checkbox"
+                          />
+                          <span>{item.title}</span>
+                        </label>
+                        <textarea
+                          className="input"
+                          onChange={(event) =>
+                            setChecklistDraft((current) =>
+                              current.map((candidate, candidateIndex) =>
+                                candidateIndex === index
+                                  ? { ...candidate, completionNotes: event.target.value }
+                                  : candidate,
+                              ),
+                            )
+                          }
+                          placeholder="Completion notes"
+                          rows={2}
+                          value={item.completionNotes}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <MobileActionFooter
+                    primaryDisabled={checklistSaving}
+                    primaryLabel={checklistSaving ? 'Saving checklist...' : 'Save checklist'}
+                    secondaryLabel="Add task row"
+                    onPrimaryClick={() => void handleChecklistSave()}
+                    onSecondaryClick={() =>
+                      setChecklistDraft((current) => [
+                        ...current,
+                        {
+                          title: 'Additional field task',
+                          description: '',
+                          category: 'GENERAL',
+                          completed: false,
+                          completionNotes: '',
+                        },
+                      ])
+                    }
+                  />
+                </>
+              )}
+              {checklistError ? (
+                <MobileModuleState description={checklistError} title="Checklist save failed" variant="error" />
+              ) : null}
+              {checklistSuccess ? (
+                <div className="mobile-inline-note">
+                  <strong>Saved</strong>
+                  <p>{checklistSuccess}</p>
+                </div>
+              ) : null}
+              {savedChecklist.length ? (
+                <div className="mobile-inline-note">
+                  <strong>Last saved checklist</strong>
+                  <p>{savedChecklist.filter((item) => item.completed).length} items marked complete.</p>
+                </div>
+              ) : null}
+            </MobilePanel>
+
+            <MobilePanel
+              description="Quick notes support draft vs submitted state and share the same sync model as checklist saves."
+              title="Quick notes"
+            >
+              <label className="field">
+                <span>Note status</span>
+                <select
+                  className="input"
+                  onChange={(event) => setQuickNoteStatus(event.target.value as MobileQuickNoteStatus)}
+                  value={quickNoteStatus}
+                >
+                  <option value="DRAFT">Draft</option>
+                  <option value="SUBMITTED">Submitted</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Field note</span>
+                <textarea
+                  className="input"
+                  onChange={(event) => setQuickNoteText(event.target.value)}
+                  placeholder="Document what happened during the visit."
+                  rows={4}
+                  value={quickNoteText}
+                />
+              </label>
+              <MobileActionFooter
+                primaryDisabled={noteSaving}
+                primaryLabel={noteSaving ? 'Saving note...' : 'Save note'}
+                onPrimaryClick={() => void handleQuickNoteSave()}
+              />
+              {noteError ? (
+                <MobileModuleState description={noteError} title="Quick note save failed" variant="error" />
+              ) : null}
+              {noteSuccess ? (
+                <div className="mobile-inline-note">
+                  <strong>Saved</strong>
+                  <p>{noteSuccess}</p>
+                </div>
+              ) : null}
+              {savedNotes.length ? (
+                <div className="mobile-message-list">
+                  {savedNotes.map((note) => (
+                    <div className="mobile-message-item" key={note.id}>
+                      <strong>{note.status}</strong>
+                      <p>{note.noteText}</p>
+                      <span>{formatDateTime(note.authoredAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </MobilePanel>
+
+            <MobilePanel
+              description="Photo capture and signature save both use the backend artifact upload flow, with clear mobile restrictions."
+              title="Photos and signature"
+            >
+              {!executionSessionId ? (
+                <MobileModuleState
+                  description="Start the visit to capture photos or a signature."
+                  title="Artifact capture locked until visit start"
+                  variant="readonly"
+                />
+              ) : (
+                <>
+                  <label className="field">
+                    <span>Upload field photo</span>
+                    <input
+                      accept={MOBILE_ALLOWED_IMAGE_TYPES.join(',')}
+                      className="input"
+                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                        const file = event.target.files?.[0];
+                        if (file) {
+                          void handleArtifactUpload(file, 'PHOTO');
+                        }
+                      }}
+                      type="file"
+                    />
+                  </label>
+
+                  <SignaturePad
+                    disabled={!executionSessionId || artifactSaving}
+                    onSave={(file) => handleArtifactUpload(file, 'SIGNATURE')}
+                    saving={artifactSaving}
+                  />
+                </>
+              )}
+              {artifactError ? (
+                <MobileModuleState description={artifactError} title="Artifact action failed" variant="error" />
+              ) : null}
+              {artifactSuccess ? (
+                <div className="mobile-inline-note">
+                  <strong>Saved</strong>
+                  <p>{artifactSuccess}</p>
+                </div>
+              ) : null}
+              {artifacts.length ? (
+                <div className="mobile-thread-list">
+                  {artifacts.map((artifact) => (
+                    <div className="mobile-thread-card" key={artifact.id}>
+                      <strong>{artifact.fileName}</strong>
+                      <p>{artifact.artifactType}</p>
+                      <span>{formatDateTime(artifact.uploadedAt)}</span>
+                      <button
+                        className="button button-secondary"
+                        onClick={() => void handleArtifactDownload(artifact)}
+                        type="button"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </MobilePanel>
+
+            <MobilePanel
+              description="Incident capture keeps the narrative, severity, and optional linked artifacts together."
+              title="Incident flagging"
+            >
+              <label className="field">
+                <span>Incident type</span>
+                <input
+                  className="input"
+                  onChange={(event) =>
+                    setIncidentDraft((current) => ({ ...current, incidentType: event.target.value }))
+                  }
+                  value={incidentDraft.incidentType}
+                />
+              </label>
+              <label className="field">
+                <span>Severity</span>
+                <select
+                  className="input"
+                  onChange={(event) =>
+                    setIncidentDraft((current) => ({ ...current, severity: event.target.value }))
+                  }
+                  value={incidentDraft.severity}
+                >
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Narrative</span>
+                <textarea
+                  className="input"
+                  onChange={(event) =>
+                    setIncidentDraft((current) => ({ ...current, narrative: event.target.value }))
+                  }
+                  rows={4}
+                  value={incidentDraft.narrative}
+                />
+              </label>
+              <MobileActionFooter
+                primaryDisabled={incidentSaving}
+                primaryLabel={incidentSaving ? 'Submitting incident...' : 'Submit incident'}
+                onPrimaryClick={() => void handleIncidentSave()}
+              />
+              {incidentError ? (
+                <MobileModuleState description={incidentError} title="Incident submit failed" variant="error" />
+              ) : null}
+              {incidentSuccess ? (
+                <div className="mobile-inline-note">
+                  <strong>Saved</strong>
+                  <p>{incidentSuccess}</p>
+                </div>
+              ) : null}
+              {incidents.length ? (
+                <div className="mobile-message-list">
+                  {incidents.map((incident) => (
+                    <div className="mobile-message-item" key={incident.id}>
+                      <strong>{incident.incidentType}</strong>
+                      <p>{incident.narrative}</p>
+                      <span>{formatDateTime(incident.reportedAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </MobilePanel>
+
+            <MobilePanel
+              description="Create a visit-linked thread directly from the field workflow, then continue in the message center."
+              title="Open a message thread"
+            >
+              <label className="field">
+                <span>Thread subject</span>
+                <input
+                  className="input"
+                  onChange={(event) => setThreadSubject(event.target.value)}
+                  placeholder="Example: Route delay for next patient"
+                  value={threadSubject}
+                />
+              </label>
+              <MobileActionFooter
+                primaryDisabled={messageSaving || !canSendMessages}
+                primaryLabel={messageSaving ? 'Creating thread...' : 'Create thread'}
+                secondaryLabel="Open message center"
+                onPrimaryClick={() => void handleThreadCreate()}
+                onSecondaryClick={() => navigate('/mobile/messages')}
+              />
+            </MobilePanel>
           </MobileVisitDetailLayout>
         </div>
       ) : null}

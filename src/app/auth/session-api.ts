@@ -267,6 +267,158 @@ export type MobileVisitExecutionSession = {
   syncStatus: MobileSyncDisposition | null;
 };
 
+export type MobileQuickNoteStatus = 'DRAFT' | 'SUBMITTED';
+
+export type MobileFieldArtifactType = 'PHOTO' | 'SIGNATURE';
+
+export type MobileFieldArtifactStatus = 'ACTIVE' | 'ARCHIVED';
+
+export type MobileIncidentStatus = 'OPEN' | 'TRIAGED' | 'RESOLVED';
+
+export type MobileMessageThreadStatus = 'OPEN' | 'ARCHIVED';
+
+export type MobileTaskChecklistItem = {
+  id: string;
+  executionSessionId: string;
+  taskTemplateId: string | null;
+  title: string;
+  description: string | null;
+  category: string | null;
+  sortOrder: number;
+  completed: boolean;
+  completedAt: string | null;
+  completionNotes: string | null;
+};
+
+export type SaveMobileTaskChecklistItemRequest = {
+  taskTemplateId?: string;
+  title: string;
+  description?: string;
+  category?: string;
+  sortOrder: number;
+  completed: boolean;
+  completedAt?: string;
+  completionNotes?: string;
+};
+
+export type SaveMobileTaskChecklistRequest = AuthenticatedRequestContext & {
+  executionSessionId: string;
+  items: SaveMobileTaskChecklistItemRequest[];
+};
+
+export type SaveMobileQuickNoteRequest = AuthenticatedRequestContext & {
+  executionSessionId: string;
+  status: MobileQuickNoteStatus;
+  noteText: string;
+  authoredAt?: string;
+};
+
+export type MobileQuickNote = {
+  id: string;
+  executionSessionId: string;
+  caregiverProfileId: string;
+  authoredAt: string;
+  noteText: string;
+  status: MobileQuickNoteStatus;
+};
+
+export type UploadMobileFieldArtifactRequest = AuthenticatedRequestContext & {
+  executionSessionId: string;
+  artifactType: MobileFieldArtifactType;
+  file: File;
+  description: string;
+};
+
+export type MobileFieldArtifact = {
+  id: string;
+  executionSessionId: string;
+  visitOccurrenceId: string;
+  artifactType: MobileFieldArtifactType;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  description: string | null;
+  status: MobileFieldArtifactStatus;
+  uploadedAt: string;
+};
+
+export type CreateMobileIncidentRequest = AuthenticatedRequestContext & {
+  executionSessionId: string;
+  incidentType: string;
+  severity?: string;
+  narrative: string;
+  reportedAt?: string;
+  escalationHook?: string;
+  artifactIds?: string[];
+};
+
+export type MobileIncident = {
+  id: string;
+  executionSessionId: string;
+  visitOccurrenceId: string;
+  incidentType: string;
+  severity: string | null;
+  narrative: string;
+  reportedAt: string;
+  status: MobileIncidentStatus;
+  escalationHook: string | null;
+  artifactIds: string[];
+};
+
+export type MobileMessageThreadSummary = {
+  threadId: string;
+  participantsSummary: string[];
+  lastMessagePreview: string | null;
+  unreadCount: number;
+  patientId: string | null;
+  visitOccurrenceId: string | null;
+  lastMessageAt: string | null;
+};
+
+export type MobileMessageThreadMessage = {
+  messageId: string;
+  senderMembershipId: string;
+  senderEmail: string;
+  sentAt: string;
+  messageText: string;
+};
+
+export type MobileMessageThreadDetail = {
+  threadId: string;
+  subject: string;
+  patientId: string | null;
+  visitOccurrenceId: string | null;
+  messages: MobileMessageThreadMessage[];
+};
+
+export type CreateMobileMessageThreadRequest = AuthenticatedRequestContext & {
+  executionSessionId: string;
+  subject: string;
+};
+
+export type MobileMessageThread = {
+  id: string;
+  subject: string;
+  patientId: string | null;
+  visitOccurrenceId: string | null;
+  lastMessageAt: string | null;
+  status: MobileMessageThreadStatus;
+};
+
+export type SendMobileMessageRequest = AuthenticatedRequestContext & {
+  threadId: string;
+  messageText: string;
+  sentAt?: string;
+};
+
+export type MobileMessageEntry = {
+  id: string;
+  threadId: string;
+  senderMembershipId: string;
+  sentAt: string;
+  messageText: string;
+};
+
 export type StartMobileVisitExecutionRequest = AuthenticatedRequestContext & {
   visitId: string;
   startedAt: string;
@@ -1945,6 +2097,289 @@ export async function endMobileVisitExecution(
   }
 
   return payload as MobileVisitExecutionSession;
+}
+
+export async function saveMobileTaskChecklist(
+  request: SaveMobileTaskChecklistRequest,
+): Promise<MobileTaskChecklistItem[]> {
+  const response = await fetch(
+    apiUrl(`/api/mobile/execution-sessions/${request.executionSessionId}/task-checklist`),
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify(
+        request.items.map((item) => ({
+          taskTemplateId: item.taskTemplateId || null,
+          title: item.title,
+          description: item.description || null,
+          category: item.category || null,
+          sortOrder: item.sortOrder,
+          completed: item.completed,
+          completedAt: item.completedAt || null,
+          completionNotes: item.completionNotes || null,
+        })),
+      ),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileTaskChecklistItem[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Task checklist save failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileTaskChecklistItem[];
+}
+
+export async function saveMobileQuickNote(
+  request: SaveMobileQuickNoteRequest,
+): Promise<MobileQuickNote> {
+  const response = await fetch(
+    apiUrl(`/api/mobile/execution-sessions/${request.executionSessionId}/quick-notes`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        status: request.status,
+        noteText: request.noteText,
+        authoredAt: request.authoredAt || null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileQuickNote
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Quick note save failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileQuickNote;
+}
+
+export async function uploadMobileFieldArtifact(
+  request: UploadMobileFieldArtifactRequest,
+): Promise<MobileFieldArtifact> {
+  const formData = new FormData();
+  formData.set('artifactType', request.artifactType);
+  formData.set('file', request.file);
+  if (request.description.trim()) {
+    formData.set('description', request.description.trim());
+  }
+
+  const response = await fetch(
+    apiUrl(`/api/mobile/execution-sessions/${request.executionSessionId}/artifacts`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+      body: formData,
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileFieldArtifact
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Artifact upload failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileFieldArtifact;
+}
+
+export async function downloadMobileFieldArtifact(
+  artifactId: string,
+  request: AuthenticatedRequestContext,
+): Promise<{ blob: Blob; fileName: string | null }> {
+  const response = await fetch(apiUrl(`/api/mobile/artifacts/${artifactId}/download`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+    throw new ApiError(
+      response.status,
+      payload?.message ?? `Mobile artifact download failed with status ${response.status}`,
+    );
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  const fileNameMatch = contentDisposition?.match(/filename\*?=(?:UTF-8'')?\"?([^\";]+)\"?/i);
+
+  return {
+    blob: await response.blob(),
+    fileName: fileNameMatch?.[1] ? decodeURIComponent(fileNameMatch[1]) : null,
+  };
+}
+
+export async function createMobileIncident(
+  request: CreateMobileIncidentRequest,
+): Promise<MobileIncident> {
+  const response = await fetch(
+    apiUrl(`/api/mobile/execution-sessions/${request.executionSessionId}/incidents`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        incidentType: request.incidentType,
+        severity: request.severity || null,
+        narrative: request.narrative,
+        reportedAt: request.reportedAt || null,
+        escalationHook: request.escalationHook || null,
+        artifactIds: request.artifactIds?.length ? request.artifactIds : [],
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileIncident
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Incident save failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileIncident;
+}
+
+export async function fetchMobileMessageThreads(
+  request: AuthenticatedRequestContext,
+): Promise<MobileMessageThreadSummary[]> {
+  const response = await fetch(apiUrl('/api/mobile/messages/threads'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileMessageThreadSummary[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Message thread request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileMessageThreadSummary[];
+}
+
+export async function fetchMobileMessageThread(
+  threadId: string,
+  request: AuthenticatedRequestContext,
+): Promise<MobileMessageThreadDetail> {
+  const response = await fetch(apiUrl(`/api/mobile/messages/threads/${threadId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileMessageThreadDetail
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Message thread detail failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileMessageThreadDetail;
+}
+
+export async function createMobileMessageThread(
+  request: CreateMobileMessageThreadRequest,
+): Promise<MobileMessageThread> {
+  const response = await fetch(
+    apiUrl(`/api/mobile/execution-sessions/${request.executionSessionId}/messages/threads`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        subject: request.subject,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileMessageThread
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Message thread create failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileMessageThread;
+}
+
+export async function sendMobileMessage(
+  request: SendMobileMessageRequest,
+): Promise<MobileMessageEntry> {
+  const response = await fetch(apiUrl(`/api/mobile/messages/threads/${request.threadId}/messages`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      messageText: request.messageText,
+      sentAt: request.sentAt || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileMessageEntry
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Message send failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileMessageEntry;
 }
 
 export async function loginWithPassword(request: LoginRequest): Promise<LoginResponse> {

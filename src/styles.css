@@ -2741,6 +2741,57 @@ code {
   color: #556779;
 }
 
+.mobile-form-stack,
+.mobile-queue-list,
+.mobile-thread-list,
+.mobile-thread-detail,
+.mobile-message-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mobile-card-row,
+.mobile-queue-item,
+.mobile-message-item,
+.mobile-thread-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: rgba(241, 247, 251, 0.9);
+}
+
+.mobile-thread-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(11, 77, 115, 0.08);
+}
+
+.mobile-thread-card-active {
+  border-color: rgba(11, 77, 115, 0.36);
+  background: rgba(231, 243, 250, 0.95);
+}
+
+.mobile-signature-pad {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mobile-signature-canvas {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid rgba(11, 77, 115, 0.16);
+  border-radius: 1rem;
+  background: #ffffff;
+  touch-action: none;
+}
+
+.mobile-inline-button-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .mobile-action-footer {
   align-items: stretch;
 }
@@ -2784,6 +2835,7 @@ code {
   .mobile-route-stop,
   .mobile-mutation-header,
   .mobile-action-footer,
+  .mobile-inline-button-row,
   .mobile-visit-card-meta div,
   .mobile-summary-list div {
     flex-direction: column;
