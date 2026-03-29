@@ -1281,6 +1281,10 @@ code {
   margin: 0;
 }
 
+.patient-record-id code {
+  overflow-wrap: anywhere;
+}
+
 .patient-section-nav {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
@@ -1487,6 +1491,25 @@ code {
   gap: 0.55rem;
 }
 
+.patient-helper-text {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.patient-audit-callout {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.patient-audit-callout p {
+  margin: 0;
+}
+
+.patient-audit-link {
+  color: var(--brand);
+}
+
 @media (max-width: 1200px) {
   .directory-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1511,6 +1534,10 @@ code {
   .config-hero,
   .patient-shell-content {
     grid-template-columns: 1fr;
+  }
+
+  .patient-section-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .toolbar-grid,
@@ -1593,7 +1620,10 @@ code {
   .config-row-actions,
   .config-panel-header,
   .config-module-card-header,
-  .patient-panel-header {
+  .patient-panel-header,
+  .patient-contact-card-header,
+  .patient-directory-actions,
+  .patient-toolbar-actions {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1601,5 +1631,15 @@ code {
   .patient-pagination {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .patient-section-link,
+  .patient-module-card {
+    min-height: 0;
+  }
+
+  .patient-record-header,
+  .patient-panel {
+    padding: 1rem;
   }
 }
