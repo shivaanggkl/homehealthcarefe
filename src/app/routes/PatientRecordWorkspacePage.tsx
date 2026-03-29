@@ -20,6 +20,7 @@ import {
   deactivatePatientPayerLink,
   fetchPatient,
   fetchPatientAddress,
+  fetchPatientAttachments,
   fetchPatientAuthorizations,
   fetchPatientContacts,
   fetchPatientDiagnoses,
@@ -34,6 +35,7 @@ import {
   ManagePatientPayerLinkRequest,
   ManagePatientServiceEligibilityRequest,
   PatientAddress,
+  PatientAttachment,
   PatientAuthorization,
   PatientContact,
   PatientDiagnosis,
@@ -45,12 +47,15 @@ import {
   PatientServiceEligibilityStatus,
   PatientSummary,
   ServiceLineSummary,
+  updatePatientAttachmentMetadata,
   updatePatient,
   updatePatientAuthorization,
   updatePatientContact,
   updatePatientDiagnosis,
   updatePatientEligibility,
   updatePatientPayerLink,
+  uploadPatientAttachment,
+  downloadPatientAttachment,
   upsertPatientAddress,
 } from '../auth/session-api';
 import {
@@ -63,6 +68,7 @@ import {
   PatientWorkspaceGrid,
   PatientWorkspaceShell,
 } from '../components/PatientWorkspaceFoundation';
+import { Link } from 'react-router-dom';
 
 type PatientSectionKey =
   | 'overview'
@@ -162,6 +168,11 @@ type AuthorizationFormState = {
   usedUnits: string;
   status: PatientEpisodeAuthorizationStatus;
   notes: string;
+};
+
+type AttachmentFormState = {
+  category: string;
+  description: string;
 };
 
 const SECTION_CONFIG: Record<
@@ -334,6 +345,20 @@ const EMPTY_AUTHORIZATION_FORM: AuthorizationFormState = {
   status: 'PENDING',
   notes: '',
 };
+
+const EMPTY_ATTACHMENT_FORM: AttachmentFormState = {
+  category: '',
+  description: '',
+};
+
+const ALLOWED_ATTACHMENT_CONTENT_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'text/plain',
+];
+
+const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
 
 function mapPatientToForm(patient: PatientSummary): PatientFormState {
   return {
@@ -538,6 +563,39 @@ function validateAuthorizationForm(
   return errors;
 }
 
+function validateAttachmentForm(
+  form: AttachmentFormState,
+  file: File | null,
+  editing: boolean,
+): Partial<Record<'category' | 'file', string>> {
+  const errors: Partial<Record<'category' | 'file', string>> = {};
+  if (!form.category.trim()) {
+    errors.category = 'Attachment category is required.';
+  }
+  if (!editing && !file) {
+    errors.file = 'Choose a file to upload.';
+    return errors;
+  }
+  if (file) {
+    if (!ALLOWED_ATTACHMENT_CONTENT_TYPES.includes(file.type)) {
+      errors.file = 'Allowed file types are PDF, JPEG, PNG, and plain text.';
+    } else if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+      errors.file = 'Files must be 10 MB or smaller.';
+    }
+  }
+  return errors;
+}
+
+function formatFileSize(sizeBytes: number): string {
+  if (sizeBytes >= 1024 * 1024) {
+    return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  if (sizeBytes >= 1024) {
+    return `${Math.round(sizeBytes / 1024)} KB`;
+  }
+  return `${sizeBytes} B`;
+}
+
 function buildSectionStates(
   basePath: string,
   profile: ReturnType<typeof useAccess>['profile'],
@@ -655,6 +713,18 @@ export function PatientRecordWorkspacePage({
   const [selectedAuthorizationId, setSelectedAuthorizationId] = useState<string | null>(null);
   const [authorizationSaving, setAuthorizationSaving] = useState(false);
   const [authorizationSuccessMessage, setAuthorizationSuccessMessage] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<PatientAttachment[]>([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [attachmentsError, setAttachmentsError] = useState<string | null>(null);
+  const [attachmentForm, setAttachmentForm] = useState<AttachmentFormState>(EMPTY_ATTACHMENT_FORM);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentFormErrors, setAttachmentFormErrors] = useState<
+    Partial<Record<'category' | 'file', string>>
+  >({});
+  const [selectedAttachmentId, setSelectedAttachmentId] = useState<string | null>(null);
+  const [attachmentSaving, setAttachmentSaving] = useState(false);
+  const [attachmentDownloadingId, setAttachmentDownloadingId] = useState<string | null>(null);
+  const [attachmentSuccessMessage, setAttachmentSuccessMessage] = useState<string | null>(null);
 
   const isNewPatient = patientId === 'new';
   const authContext = useMemo(() => {
@@ -738,6 +808,43 @@ export function PatientRecordWorkspacePage({
       .finally(() => {
         if (!cancelled) {
           setContactsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authContext, isNewPatient, patientId, section, state.status]);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated' || !patientId || isNewPatient) {
+      return;
+    }
+
+    if (section !== 'attachments') {
+      return;
+    }
+
+    let cancelled = false;
+    setAttachmentsLoading(true);
+    setAttachmentsError(null);
+
+    void fetchPatientAttachments(patientId, authContext)
+      .then((response) => {
+        if (!cancelled) {
+          setAttachments(response);
+        }
+      })
+      .catch((cause: unknown) => {
+        if (!cancelled) {
+          setAttachmentsError(
+            cause instanceof ApiError ? cause.message : 'Unable to load patient attachments right now.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAttachmentsLoading(false);
         }
       });
 
@@ -1315,6 +1422,80 @@ export function PatientRecordWorkspacePage({
       setAuthorizationsError(cause instanceof Error ? cause.message : 'Unable to deactivate authorization.');
     } finally {
       setAuthorizationSaving(false);
+    }
+  }
+
+  async function handleAttachmentSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const validationErrors = validateAttachmentForm(
+      attachmentForm,
+      attachmentFile,
+      Boolean(selectedAttachmentId),
+    );
+    setAttachmentFormErrors(validationErrors);
+    setAttachmentSuccessMessage(null);
+    setAttachmentsError(null);
+
+    if (Object.keys(validationErrors).length > 0 || !patientId || isNewPatient) {
+      return;
+    }
+
+    setAttachmentSaving(true);
+    try {
+      const response = selectedAttachmentId
+        ? await updatePatientAttachmentMetadata(selectedAttachmentId, {
+            ...authContext,
+            ...attachmentForm,
+          })
+        : await uploadPatientAttachment(patientId, {
+            ...authContext,
+            ...attachmentForm,
+            file: attachmentFile as File,
+          });
+
+      setAttachments((current) => {
+        const withoutCurrent = current.filter((item) => item.id !== response.id);
+        return [response, ...withoutCurrent];
+      });
+      setSelectedAttachmentId(null);
+      setAttachmentFile(null);
+      setAttachmentForm(EMPTY_ATTACHMENT_FORM);
+      setAttachmentSuccessMessage(
+        selectedAttachmentId
+          ? 'Attachment metadata updated successfully. Changes are logged by the backend.'
+          : 'Attachment uploaded successfully. The upload and future downloads are audit-logged.',
+      );
+    } catch (cause) {
+      setAttachmentsError(cause instanceof Error ? cause.message : 'Unable to save attachment.');
+    } finally {
+      setAttachmentSaving(false);
+    }
+  }
+
+  async function handleAttachmentDownload(attachment: PatientAttachment) {
+    setAttachmentDownloadingId(attachment.id);
+    setAttachmentSuccessMessage(null);
+    setAttachmentsError(null);
+
+    try {
+      const downloaded = await downloadPatientAttachment(attachment.id, authContext);
+      const url = window.URL.createObjectURL(downloaded.blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = downloaded.fileName ?? attachment.fileName;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+      setAttachmentSuccessMessage('Attachment download completed. The download action is audit-logged.');
+    } catch (cause) {
+      setAttachmentsError(
+        cause instanceof ApiError && cause.status === 403
+          ? 'You are not allowed to download this attachment.'
+          : cause instanceof Error
+            ? cause.message
+            : 'Unable to download this attachment.',
+      );
+    } finally {
+      setAttachmentDownloadingId(null);
     }
   }
 
@@ -2139,6 +2320,172 @@ export function PatientRecordWorkspacePage({
     );
   }
 
+  function renderAttachmentsContent() {
+    const canManageAttachments = canAccessPermission(profile, 'manage_patient_attachments');
+    const attachmentAuditHref = `/app/admin/audit?actionType=PATIENT_ATTACHMENT_UPLOADED`;
+
+    return (
+      <>
+        <PatientPanel
+          title="Attachment library"
+          description="File metadata is visible here without exposing storage-provider internals. Upload and download operations use the secure backend APIs only."
+        >
+          <div className="callout-card patient-audit-callout">
+            <strong>Audit-sensitive document handling</strong>
+            <p>
+              Attachment uploads and downloads are logged by the backend. Review recent attachment activity in
+              the audit log when you need to confirm who changed or accessed patient files.
+            </p>
+            <Link className="text-link patient-audit-link" to={attachmentAuditHref}>
+              Open attachment audit activity
+            </Link>
+          </div>
+          {attachmentsLoading ? <p>Loading attachments...</p> : null}
+          {attachmentsError ? <p className="alert">{attachmentsError}</p> : null}
+          {attachmentSuccessMessage ? <p className="success-note">{attachmentSuccessMessage}</p> : null}
+          {!attachmentsLoading && attachments.length === 0 ? (
+            <PatientModuleState
+              title="No attachments on file"
+              description="Upload the first patient document below to start the secure attachment history."
+              variant="empty"
+            />
+          ) : (
+            <div className="patient-phasec-list">
+              {attachments.map((item) => (
+                <article key={item.id} className="patient-phasec-card">
+                  <div className="patient-contact-card-header">
+                    <strong>{item.fileName}</strong>
+                    <div className="patient-contact-tags">
+                      <span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span>
+                      <span className="status-pill status-active">{item.category}</span>
+                    </div>
+                  </div>
+                  <p>{item.contentType} • {formatFileSize(item.sizeBytes)}</p>
+                  <p>
+                    Uploaded by {item.uploaderEmail} on{' '}
+                    {new Intl.DateTimeFormat(undefined, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    }).format(new Date(item.uploadedAt))}
+                  </p>
+                  <p>{item.description ?? 'No description'}</p>
+                  <div className="patient-directory-actions">
+                    <button
+                      className="button button-secondary"
+                      disabled={attachmentDownloadingId === item.id}
+                      onClick={() => void handleAttachmentDownload(item)}
+                      type="button"
+                    >
+                      {attachmentDownloadingId === item.id ? 'Downloading...' : 'Download'}
+                    </button>
+                    {canManageAttachments ? (
+                      <button
+                        className="button button-ghost"
+                        onClick={() => {
+                          setSelectedAttachmentId(item.id);
+                          setAttachmentFile(null);
+                          setAttachmentForm({
+                            category: item.category,
+                            description: item.description ?? '',
+                          });
+                          setAttachmentFormErrors({});
+                        }}
+                        type="button"
+                      >
+                        Edit metadata
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </PatientPanel>
+
+        <PatientPanel
+          title={selectedAttachmentId ? 'Edit attachment metadata' : 'Upload attachment'}
+          description={
+            canManageAttachments
+              ? 'The UI enforces the same allowed file types and size limit as the backend before upload.'
+              : 'This role can review attachments, but metadata changes and uploads require manage-attachment permission.'
+          }
+        >
+          {canManageAttachments ? (
+            <form className="stack-form-light patient-stack-form" onSubmit={handleAttachmentSubmit}>
+              {!selectedAttachmentId ? (
+                <label className="field field-light">
+                  <span>File</span>
+                  <input
+                    accept={ALLOWED_ATTACHMENT_CONTENT_TYPES.join(',')}
+                    className="input input-light"
+                    onChange={(event) => setAttachmentFile(event.target.files?.[0] ?? null)}
+                    type="file"
+                  />
+                  <small className="patient-helper-text">
+                    Allowed: PDF, JPEG, PNG, text/plain. Max size 10 MB.
+                  </small>
+                  {attachmentFormErrors.file ? <small className="field-error">{attachmentFormErrors.file}</small> : null}
+                </label>
+              ) : null}
+              <div className="patient-form-grid">
+                <label className="field field-light">
+                  <span>Category</span>
+                  <input
+                    className="input input-light"
+                    onChange={(event) =>
+                      setAttachmentForm((current) => ({ ...current, category: event.target.value }))
+                    }
+                    value={attachmentForm.category}
+                  />
+                  {attachmentFormErrors.category ? <small className="field-error">{attachmentFormErrors.category}</small> : null}
+                </label>
+              </div>
+              <label className="field field-light">
+                <span>Description</span>
+                <textarea
+                  className="input input-light"
+                  onChange={(event) =>
+                    setAttachmentForm((current) => ({ ...current, description: event.target.value }))
+                  }
+                  rows={3}
+                  value={attachmentForm.description}
+                />
+              </label>
+              <div className="button-row">
+                <button className="button" disabled={attachmentSaving} type="submit">
+                  {attachmentSaving
+                    ? 'Saving...'
+                    : selectedAttachmentId
+                      ? 'Save metadata'
+                      : 'Upload attachment'}
+                </button>
+                {selectedAttachmentId ? (
+                  <button
+                    className="button button-secondary"
+                    onClick={() => {
+                      setSelectedAttachmentId(null);
+                      setAttachmentForm(EMPTY_ATTACHMENT_FORM);
+                      setAttachmentFormErrors({});
+                    }}
+                    type="button"
+                  >
+                    Cancel edit
+                  </button>
+                ) : null}
+              </div>
+            </form>
+          ) : (
+            <PatientModuleState
+              title="Read-only attachment access"
+              description="This role can list and download patient documents but cannot upload or change attachment metadata."
+              variant="readonly"
+            />
+          )}
+        </PatientPanel>
+      </>
+    );
+  }
+
   function renderContactsContent() {
     return (
       <>
@@ -2449,6 +2796,8 @@ export function PatientRecordWorkspacePage({
                           ? renderPayerContent()
                           : section === 'authorizations'
                             ? renderAuthorizationsContent()
+                            : section === 'attachments'
+                              ? renderAttachmentsContent()
                     : renderScaffoldContent()}
 
             <PatientPanel

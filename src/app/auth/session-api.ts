@@ -394,6 +394,33 @@ export type PatientAuthorization = {
   notes: string | null;
 };
 
+export type PatientAttachmentStatus = 'ACTIVE' | 'ARCHIVED';
+
+export type PatientAttachment = {
+  id: string;
+  patientId: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  category: string;
+  uploaderMembershipId: string;
+  uploaderEmail: string;
+  uploadedAt: string;
+  status: PatientAttachmentStatus;
+  description: string | null;
+};
+
+export type UploadPatientAttachmentRequest = AuthenticatedRequestContext & {
+  file: File;
+  category: string;
+  description: string;
+};
+
+export type UpdatePatientAttachmentMetadataRequest = AuthenticatedRequestContext & {
+  category: string;
+  description: string;
+};
+
 export type ManagePatientAuthorizationRequest = AuthenticatedRequestContext & {
   patientPayerLinkId?: string;
   serviceLineId?: string;
@@ -2559,6 +2586,129 @@ export async function deactivatePatientAuthorization(
   }
 
   return payload as PatientAuthorization;
+}
+
+export async function fetchPatientAttachments(
+  patientId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientAttachment[]> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/attachments`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientAttachment[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient attachment request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAttachment[];
+}
+
+export async function uploadPatientAttachment(
+  patientId: string,
+  request: UploadPatientAttachmentRequest,
+): Promise<PatientAttachment> {
+  const formData = new FormData();
+  formData.set('file', request.file);
+  formData.set('category', request.category);
+  if (request.description.trim()) {
+    formData.set('description', request.description.trim());
+  }
+
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/attachments`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+    body: formData,
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientAttachment
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient attachment upload failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAttachment;
+}
+
+export async function updatePatientAttachmentMetadata(
+  attachmentId: string,
+  request: UpdatePatientAttachmentMetadataRequest,
+): Promise<PatientAttachment> {
+  const formData = new FormData();
+  formData.set('category', request.category);
+  if (request.description.trim()) {
+    formData.set('description', request.description.trim());
+  }
+
+  const response = await fetch(apiUrl(`/api/patient-attachments/${attachmentId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+    body: formData,
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientAttachment
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Attachment metadata update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAttachment;
+}
+
+export async function downloadPatientAttachment(
+  attachmentId: string,
+  request: AuthenticatedRequestContext,
+): Promise<{ blob: Blob; fileName: string | null }> {
+  const response = await fetch(apiUrl(`/api/patient-attachments/${attachmentId}/download`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+    throw new ApiError(
+      response.status,
+      payload?.message ?? `Attachment download failed with status ${response.status}`,
+    );
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  const fileNameMatch = contentDisposition?.match(/filename\*?=(?:UTF-8'')?\"?([^\";]+)\"?/i);
+
+  return {
+    blob: await response.blob(),
+    fileName: fileNameMatch?.[1] ? decodeURIComponent(fileNameMatch[1]) : null,
+  };
 }
 
 export async function fetchBranches(
