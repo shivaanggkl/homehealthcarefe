@@ -177,6 +177,64 @@ export type CurrentAccessResponse = {
   permissions: string[];
 };
 
+export type WorkforceLifecycleStatus =
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'SUSPENDED'
+  | 'UNSCHEDULABLE'
+  | 'ARCHIVED';
+
+export type CaregiverSummary = {
+  id: string;
+  status: WorkforceLifecycleStatus;
+  caregiverCode: string | null;
+  displayName: string;
+  agencyMembershipId: string;
+  userId: string;
+  userFullName: string | null;
+  userEmail: string | null;
+  userPhone: string | null;
+  branchId: string | null;
+  branchName: string | null;
+};
+
+export type CaregiverDirectoryQuery = AuthenticatedRequestContext & {
+  search?: string;
+  status?: WorkforceLifecycleStatus | 'ALL';
+  branchId?: string;
+  page?: number;
+  size?: number;
+};
+
+export type CaregiverDirectoryPage = {
+  content: CaregiverSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+};
+
+export type CaregiverProfile = {
+  id: string;
+  agencyId: string;
+  agencyMembershipId: string;
+  userId: string;
+  userFirstName: string | null;
+  userLastName: string | null;
+  userEmail: string | null;
+  userPhone: string | null;
+  membershipRole: string | null;
+  status: WorkforceLifecycleStatus;
+  caregiverCode: string | null;
+  displayName: string;
+  primaryBranchId: string | null;
+  primaryBranchName: string | null;
+  employmentType: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  notes: string | null;
+};
+
 export type PatientLifecycleStatus = 'ACTIVE' | 'INACTIVE';
 
 export type PatientSummary = {
@@ -1687,6 +1745,66 @@ export async function fetchCurrentAccess(
   }
 
   return payload as CurrentAccessResponse;
+}
+
+export async function fetchCaregivers(
+  request: CaregiverDirectoryQuery,
+): Promise<CaregiverDirectoryPage> {
+  const caregiversUrl = new URL(apiUrl('/api/caregivers'), window.location.origin);
+  appendOptionalSearchParams(caregiversUrl, {
+    search: request.search,
+    status: request.status === 'ALL' ? undefined : request.status,
+    branchId: request.branchId,
+    page: request.page,
+    size: request.size,
+  });
+
+  const response = await fetch(caregiversUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverDirectoryPage
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver directory request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverDirectoryPage;
+}
+
+export async function fetchCaregiver(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverProfile> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverProfile
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver record request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverProfile;
 }
 
 export async function fetchPatients(

@@ -21,4 +21,21 @@ describe('mapBackendPermissionsToFrontend', () => {
     expect(resolved).toContain('manage_patient_diagnoses');
     expect(resolved).toContain('view_patient_attachments');
   });
+
+  it('maps workforce backend permissions to the shared workforce workspace and module capabilities', () => {
+    const resolved = mapBackendPermissionsToFrontend(
+      [
+        'VIEW_WORKFORCE_DIRECTORY',
+        'MANAGE_CAREGIVER_PROFILES',
+        'MANAGE_CAREGIVER_AVAILABILITY',
+        'VIEW_CAREGIVER_PERFORMANCE',
+      ],
+      ['view_workforce_workspace'],
+    );
+
+    expect(resolved).toContain('view_workforce_workspace');
+    expect(resolved).toContain('manage_caregiver_profiles');
+    expect(resolved).toContain('manage_caregiver_availability');
+    expect(resolved).toContain('view_caregiver_performance');
+  });
 });

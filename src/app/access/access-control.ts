@@ -7,6 +7,12 @@ export type FrontendPermission =
   | 'manage_self_password'
   | 'manage_self_mfa'
   | 'manage_self_sessions'
+  | 'view_workforce_workspace'
+  | 'manage_caregiver_profiles'
+  | 'manage_caregiver_credentials'
+  | 'manage_caregiver_availability'
+  | 'manage_caregiver_unavailability'
+  | 'view_caregiver_performance'
   | 'view_patient_workspace'
   | 'manage_patient_demographics'
   | 'manage_patient_contacts'
@@ -59,6 +65,7 @@ export type AppRouteDefinition = {
   navBehavior: 'visible' | 'disabled';
   section:
     | 'workspace'
+    | 'workforce'
     | 'patients'
     | 'configuration'
     | 'people'
@@ -85,6 +92,12 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Agency-wide branch access',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_workforce_workspace',
+      'manage_caregiver_profiles',
+      'manage_caregiver_credentials',
+      'manage_caregiver_availability',
+      'manage_caregiver_unavailability',
+      'view_caregiver_performance',
       'view_patient_workspace',
       'manage_patient_demographics',
       'manage_patient_contacts',
@@ -125,6 +138,12 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_workforce_workspace',
+      'manage_caregiver_profiles',
+      'manage_caregiver_credentials',
+      'manage_caregiver_availability',
+      'manage_caregiver_unavailability',
+      'view_caregiver_performance',
       'view_patient_workspace',
       'manage_patient_demographics',
       'manage_patient_contacts',
@@ -161,7 +180,15 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     roleLabel: 'Scheduler Coordinator',
     branchScope: 'branch-assigned',
     branchScopeLabel: 'Assigned branches only',
-    permissions: [...COMMON_SELF_SERVICE_PERMISSIONS],
+    permissions: [
+      ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_workforce_workspace',
+      'manage_caregiver_profiles',
+      'manage_caregiver_credentials',
+      'manage_caregiver_availability',
+      'manage_caregiver_unavailability',
+      'view_caregiver_performance',
+    ],
     defaultRoute: '/app/home',
   },
   CAREGIVER: {
@@ -219,6 +246,23 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     description: 'Authenticated session dashboard and backend session snapshot.',
     navBehavior: 'visible',
     section: 'workspace',
+  },
+  {
+    path: '/app/workforce',
+    navLabel: 'Workforce Workspace',
+    permission: 'view_workforce_workspace',
+    description: 'Epic 4 caregiver workforce landing area and record workspace entry point.',
+    navBehavior: 'visible',
+    section: 'workforce',
+  },
+  {
+    path: '/app/workforce/new/profile',
+    navLabel: 'New Caregiver',
+    permission: 'manage_caregiver_profiles',
+    description: 'Create a new caregiver workforce profile with the shared workforce form shell.',
+    navBehavior: 'disabled',
+    section: 'workforce',
+    audience: 'admin',
   },
   {
     path: '/app/patients',
@@ -415,6 +459,15 @@ export const APP_ROUTES: AppRouteDefinition[] = [
 ];
 
 const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
+  VIEW_WORKFORCE_DIRECTORY: ['view_workforce_workspace'],
+  MANAGE_CAREGIVER_PROFILES: ['view_workforce_workspace', 'manage_caregiver_profiles'],
+  MANAGE_CAREGIVER_CREDENTIALS: ['view_workforce_workspace', 'manage_caregiver_credentials'],
+  MANAGE_CAREGIVER_AVAILABILITY: ['view_workforce_workspace', 'manage_caregiver_availability'],
+  MANAGE_CAREGIVER_UNAVAILABILITY: [
+    'view_workforce_workspace',
+    'manage_caregiver_unavailability',
+  ],
+  VIEW_CAREGIVER_PERFORMANCE: ['view_workforce_workspace', 'view_caregiver_performance'],
   VIEW_PATIENT_DIRECTORY: ['view_patient_workspace'],
   MANAGE_PATIENT_DEMOGRAPHICS: ['view_patient_workspace', 'manage_patient_demographics'],
   MANAGE_PATIENT_CONTACTS: ['view_patient_workspace', 'manage_patient_contacts'],
@@ -546,6 +599,7 @@ export const NAV_SECTIONS: Array<{
   label: string;
 }> = [
   { key: 'workspace', label: 'Workspace' },
+  { key: 'workforce', label: 'Workforce' },
   { key: 'patients', label: 'Patients' },
   { key: 'configuration', label: 'Agency Setup' },
   { key: 'people', label: 'People & Audit' },

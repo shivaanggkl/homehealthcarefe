@@ -1510,6 +1510,289 @@ code {
   color: var(--brand);
 }
 
+.workforce-shell {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.workforce-shell-hero {
+  border-radius: 30px;
+}
+
+.workforce-shell-hero h2 {
+  margin: 0.35rem 0 0.65rem;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+}
+
+.workforce-shell-content,
+.workforce-workspace-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.workforce-panel {
+  border-radius: 24px;
+  padding: 1.4rem;
+}
+
+.workforce-panel-header h3,
+.workforce-record-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.workforce-panel-header p,
+.workforce-record-subtitle,
+.workforce-record-id,
+.workforce-form-mode p,
+.workforce-module-card p,
+.workforce-module-state p {
+  color: var(--ink-soft);
+}
+
+.workforce-record-meta,
+.workforce-form-grid,
+.workforce-module-cards,
+.workforce-summary-cards {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.workforce-record-header {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.4rem;
+}
+
+.workforce-record-meta {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 0;
+}
+
+.workforce-record-meta div {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  background: rgba(15, 76, 129, 0.06);
+}
+
+.workforce-record-meta dt {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  margin-bottom: 0.25rem;
+}
+
+.workforce-record-meta dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.workforce-record-id {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.workforce-record-id code {
+  overflow-wrap: anywhere;
+}
+
+.workforce-section-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.workforce-section-link,
+.workforce-module-card,
+.workforce-summary-card,
+.workforce-directory-row,
+.workforce-module-state,
+.workforce-inline-state,
+.workforce-form-patterns span {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.workforce-section-link,
+.workforce-module-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+}
+
+.workforce-section-link-active,
+.workforce-module-card-available:hover,
+.workforce-module-card-read-only:hover {
+  border-color: rgba(15, 76, 129, 0.28);
+  transform: translateY(-1px);
+}
+
+.workforce-section-link span,
+.workforce-module-card strong,
+.workforce-module-state strong {
+  font-weight: 700;
+}
+
+.workforce-section-link small,
+.workforce-module-card span {
+  color: var(--ink-soft);
+}
+
+.workforce-section-link-read-only,
+.workforce-module-card-read-only,
+.workforce-module-state-readonly {
+  background: rgba(15, 76, 129, 0.08);
+}
+
+.workforce-section-link-restricted,
+.workforce-module-card-restricted,
+.workforce-module-state-error,
+.workforce-inline-state-conflict {
+  background: rgba(159, 48, 52, 0.06);
+}
+
+.workforce-module-state {
+  padding: 1rem 1.1rem;
+}
+
+.workforce-module-state-info,
+.workforce-inline-state-success {
+  background: rgba(15, 76, 129, 0.06);
+}
+
+.workforce-form-framework {
+  padding: 1.4rem;
+}
+
+.workforce-form-mode {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.workforce-mode-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.workforce-mode-badge-editable {
+  color: #11583d;
+  background: rgba(21, 143, 99, 0.12);
+}
+
+.workforce-mode-badge-read-only {
+  color: var(--brand-deep);
+  background: rgba(15, 76, 129, 0.1);
+}
+
+.workforce-form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.workforce-form-patterns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.workforce-form-patterns span {
+  padding: 0.45rem 0.8rem;
+  color: var(--ink-soft);
+}
+
+.workforce-inline-state {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.workforce-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.workforce-toolbar-actions,
+.workforce-directory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.workforce-directory-table,
+.workforce-summary-cards {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.workforce-directory-head,
+.workforce-directory-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.1fr) minmax(0, 1.3fr) minmax(120px, 0.8fr) auto;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.workforce-directory-head {
+  padding: 0 0.25rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.workforce-directory-row,
+.workforce-summary-card {
+  padding: 1rem;
+}
+
+.workforce-directory-row p,
+.workforce-summary-card p {
+  margin: 0.2rem 0 0;
+  color: var(--ink-soft);
+}
+
+.workforce-summary-cards {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.workforce-summary-card strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.workforce-pagination {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.workforce-audit-callout {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.workforce-audit-callout p {
+  margin: 0;
+}
+
+.workforce-audit-link {
+  color: var(--brand);
+}
+
 @media (max-width: 1200px) {
   .directory-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1532,11 +1815,13 @@ code {
 
   .config-workspace,
   .config-hero,
-  .patient-shell-content {
+  .patient-shell-content,
+  .workforce-shell-content {
     grid-template-columns: 1fr;
   }
 
-  .patient-section-nav {
+  .patient-section-nav,
+  .workforce-section-nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1554,7 +1839,9 @@ code {
   }
 
   .patient-directory-head,
-  .patient-directory-row {
+  .patient-directory-row,
+  .workforce-directory-head,
+  .workforce-directory-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1599,15 +1886,22 @@ code {
   }
 
   .patient-section-nav,
+  .workforce-section-nav,
   .patient-form-grid,
+  .workforce-form-grid,
   .patient-summary-metrics,
   .patient-record-meta,
+  .workforce-record-meta,
   .patient-directory-preview-row,
   .patient-summary-cards,
+  .workforce-summary-cards,
   .patient-completeness-grid,
   .patient-toolbar,
+  .workforce-toolbar,
   .patient-directory-head,
-  .patient-directory-row {
+  .patient-directory-row,
+  .workforce-directory-head,
+  .workforce-directory-row {
     grid-template-columns: 1fr;
   }
 
@@ -1621,25 +1915,33 @@ code {
   .config-panel-header,
   .config-module-card-header,
   .patient-panel-header,
+  .workforce-panel-header,
   .patient-contact-card-header,
   .patient-directory-actions,
-  .patient-toolbar-actions {
+  .patient-toolbar-actions,
+  .workforce-directory-actions,
+  .workforce-toolbar-actions {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .patient-pagination {
+  .patient-pagination,
+  .workforce-pagination {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .patient-section-link,
-  .patient-module-card {
+  .patient-module-card,
+  .workforce-section-link,
+  .workforce-module-card {
     min-height: 0;
   }
 
   .patient-record-header,
-  .patient-panel {
+  .patient-panel,
+  .workforce-record-header,
+  .workforce-panel {
     padding: 1rem;
   }
 }

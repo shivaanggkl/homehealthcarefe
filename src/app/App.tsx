@@ -13,6 +13,8 @@ import { AuditLogPage } from './routes/AuditLogPage';
 import { AlertRuleSetupPage } from './routes/AlertRuleSetupPage';
 import { BranchManagementPage } from './routes/BranchManagementPage';
 import { BranchPolicySetupPage } from './routes/BranchPolicySetupPage';
+import { CaregiverRecordWorkspacePage } from './routes/CaregiverRecordWorkspacePage';
+import { CaregiverWorkspacePage } from './routes/CaregiverWorkspacePage';
 import { ChangePasswordPage } from './routes/ChangePasswordPage';
 import { DocumentationTemplateSetupPage } from './routes/DocumentationTemplateSetupPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
@@ -89,6 +91,160 @@ function AppRoutes() {
           <ProtectedRoute requiredPermission="view_session_home">
             <AppShell>
               <HomePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with backend workforce directory access can open the Epic 4 workforce workspace."
+            deniedTitle="Workforce workspace is not available for this role."
+            requiredPermission="view_workforce_workspace"
+          >
+            <AppShell>
+              <CaregiverWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/new/profile"
+        element={
+          <ProtectedRoute
+            deniedMessage="Caregiver create routes follow backend workforce profile permissions."
+            deniedTitle="Caregiver creation is not available for this role."
+            requiredPermission="manage_caregiver_profiles"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage createMode section="profile" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with backend workforce directory access can open caregiver records."
+            deniedTitle="Caregiver record workspace is not available for this role."
+            requiredPermission="view_workforce_workspace"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="overview" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId/profile"
+        element={
+          <ProtectedRoute
+            deniedMessage="Caregiver profile routes follow backend workforce profile permissions."
+            deniedTitle="Caregiver profile is not available for this role."
+            requiredPermission="manage_caregiver_profiles"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="profile" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId/credentials"
+        element={
+          <ProtectedRoute
+            deniedMessage="Credential routes follow backend workforce credential permissions."
+            deniedTitle="Caregiver credentials are not available for this role."
+            requiredPermission="manage_caregiver_credentials"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="credentials" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId/capabilities"
+        element={
+          <ProtectedRoute
+            deniedMessage="Language and skill routes follow backend caregiver profile permissions."
+            deniedTitle="Caregiver capabilities are not available for this role."
+            requiredPermission="manage_caregiver_profiles"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="capabilities" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId/geography"
+        element={
+          <ProtectedRoute
+            deniedMessage="Geography routes follow backend caregiver profile permissions."
+            deniedTitle="Caregiver geography preferences are not available for this role."
+            requiredPermission="manage_caregiver_profiles"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="geography" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId/shifts"
+        element={
+          <ProtectedRoute
+            deniedMessage="Shift preference routes follow backend caregiver profile permissions."
+            deniedTitle="Caregiver shift preferences are not available for this role."
+            requiredPermission="manage_caregiver_profiles"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="shifts" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId/availability"
+        element={
+          <ProtectedRoute
+            deniedMessage="Availability routes follow backend workforce availability permissions."
+            deniedTitle="Caregiver availability is not available for this role."
+            requiredPermission="manage_caregiver_availability"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="availability" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId/unavailability"
+        element={
+          <ProtectedRoute
+            deniedMessage="PTO and blocked-time routes follow backend workforce unavailability permissions."
+            deniedTitle="Caregiver unavailability is not available for this role."
+            requiredPermission="manage_caregiver_unavailability"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="unavailability" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/workforce/:caregiverId/performance"
+        element={
+          <ProtectedRoute
+            deniedMessage="Performance routes follow backend workforce performance visibility permissions."
+            deniedTitle="Caregiver performance is not available for this role."
+            requiredPermission="view_caregiver_performance"
+          >
+            <AppShell>
+              <CaregiverRecordWorkspacePage section="performance" />
             </AppShell>
           </ProtectedRoute>
         }
