@@ -136,6 +136,20 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/app/patients/new/demographics"
+        element={
+          <ProtectedRoute
+            deniedMessage="Demographic create routes follow backend patient-management permissions."
+            deniedTitle="Patient creation is not available for this role."
+            requiredPermission="manage_patient_demographics"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="demographics" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/app/patients/:patientId/contacts"
         element={
           <ProtectedRoute

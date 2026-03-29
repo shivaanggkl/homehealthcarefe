@@ -1,73 +1,41 @@
-import { useEffect, useState } from 'react';
-import { canAccessPermission } from '../access/access-control';
-import { useAccess } from '../access/access-context';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import { loadDevSessionCredentials } from '../auth/session-storage';
-import { ApiError, fetchPatients, PatientDirectoryPage } from '../auth/session-api';
 import {
-  PatientModuleCards,
+  ApiError,
+  fetchPatients,
+  PatientDirectoryPage,
+  PatientLifecycleStatus,
+} from '../auth/session-api';
+import {
   PatientPanel,
   PatientWorkspaceGrid,
   PatientWorkspaceShell,
 } from '../components/PatientWorkspaceFoundation';
 
-const WORKSPACE_MODULES = [
-  {
-    key: 'manage_patient_demographics' as const,
-    path: '/app/patients/demo-record/demographics',
-    label: 'Demographics',
-    description: 'Identity, reference, and communication fields live here.',
-  },
-  {
-    key: 'manage_patient_contacts' as const,
-    path: '/app/patients/demo-record/contacts',
-    label: 'Contacts',
-    description: 'Emergency contacts and responsible-party details stay grouped together.',
-  },
-  {
-    key: 'manage_patient_address' as const,
-    path: '/app/patients/demo-record/address',
-    label: 'Address',
-    description: 'Service location and geo-context remain isolated from demographics edits.',
-  },
-  {
-    key: 'manage_patient_eligibility' as const,
-    path: '/app/patients/demo-record/eligibility',
-    label: 'Eligibility',
-    description: 'Active vs historical service windows will live in a dedicated record section.',
-  },
-  {
-    key: 'manage_patient_diagnoses' as const,
-    path: '/app/patients/demo-record/diagnoses',
-    label: 'Diagnoses',
-    description: 'Clinical condition history gets its own repeatable list pattern.',
-  },
-  {
-    key: 'manage_patient_payer_links' as const,
-    path: '/app/patients/demo-record/payer',
-    label: 'Payer',
-    description: 'Coverage context and primary payer workflows are isolated from clinical edits.',
-  },
-  {
-    key: 'manage_patient_authorizations' as const,
-    path: '/app/patients/demo-record/authorizations',
-    label: 'Authorizations',
-    description: 'Current and historical authorization windows will share one reusable timeline surface.',
-  },
-  {
-    key: 'view_patient_attachments' as const,
-    path: '/app/patients/demo-record/attachments',
-    label: 'Attachments',
-    description: 'Document handling can stay read-only or editable without changing the layout model.',
-  },
-];
+const PAGE_SIZE = 10;
 
 export function PatientWorkspacePage() {
+  const navigate = useNavigate();
   const { state } = useAuth();
-  const { profile } = useAccess();
   const [directory, setDirectory] = useState<PatientDirectoryPage | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<PatientLifecycleStatus | 'ALL'>('ALL');
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const authContext = useMemo(() => {
+    const devSession = loadDevSessionCredentials();
+    return {
+      accessToken: devSession?.accessToken,
+      sessionId:
+        devSession?.sessionId ??
+        (state.status === 'authenticated' ? state.session.sessionId : undefined),
+    };
+  }, [state]);
 
   useEffect(() => {
     if (state.status !== 'authenticated') {
@@ -75,14 +43,15 @@ export function PatientWorkspacePage() {
     }
 
     let cancelled = false;
-    const devSession = loadDevSessionCredentials();
+    setLoading(true);
+    setError(null);
 
     void fetchPatients({
-      accessToken: devSession?.accessToken,
-      sessionId: state.session.sessionId,
-      status: 'ALL',
-      page: 0,
-      size: 6,
+      ...authContext,
+      search,
+      status: statusFilter,
+      page,
+      size: PAGE_SIZE,
     })
       .then((response) => {
         if (!cancelled) {
@@ -94,7 +63,7 @@ export function PatientWorkspacePage() {
           setError(
             cause instanceof ApiError
               ? cause.message
-              : 'Unable to load the patient directory summary right now.',
+              : 'Unable to load the patient directory right now.',
           );
         }
       })
@@ -107,69 +76,151 @@ export function PatientWorkspacePage() {
     return () => {
       cancelled = true;
     };
-  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : null]);
+  }, [authContext, page, search, state.status, statusFilter]);
 
-  const visibleCards = WORKSPACE_MODULES.map((module) => ({
-    path: module.path,
-    label: module.label,
-    description: module.description,
-    state: canAccessPermission(profile, module.key) ? 'available' : 'restricted',
-  })) as Array<{
-    path: string;
-    label: string;
-    description: string;
-    state: 'available' | 'restricted';
-  }>;
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPage(0);
+    setSearch(searchInput.trim());
+  }
 
   return (
     <PatientWorkspaceShell
-      eyebrow="Epic 3 patient workspace"
-      title="Patient management information architecture"
-      description="Phase A establishes the navigation, route guards, and record-level workspace shell for Epic 3. The patient module pages share one layout model before the detailed CRUD stories land in later phases."
+      eyebrow="Epic 3 patient directory"
+      title="Patient directory and search"
+      description="Search, filter, and open patient records from one patient-management workspace. This screen now uses the live patient directory API and routes directly into the record workspace."
     >
       <PatientWorkspaceGrid>
         <PatientPanel
-          title="Workspace status"
-          description="This landing route is backend-aware already, so Phase A can prove patient permissions and live directory visibility before the dedicated directory screen arrives."
+          title="Directory controls"
+          description="Search and status filters are applied against `GET /api/patients`, with route entry points into the patient detail workspace and create demographics flow."
         >
-          {loading ? (
-            <p>Loading patient directory summary from `GET /api/patients`.</p>
-          ) : error ? (
-            <p className="alert">{error}</p>
-          ) : directory ? (
-            <div className="patient-summary-metrics">
-              <article>
-                <strong>{directory.totalElements}</strong>
-                <span>Total patient records</span>
-              </article>
-              <article>
-                <strong>{directory.content.filter((patient) => patient.status === 'ACTIVE').length}</strong>
-                <span>Active records on this page</span>
-              </article>
-              <article>
-                <strong>{directory.content.length}</strong>
-                <span>Preview rows loaded</span>
-              </article>
+          <form className="stack-form-light patient-toolbar" onSubmit={handleSearchSubmit}>
+            <label className="field field-light">
+              <span>Search patients</span>
+              <input
+                className="input input-light"
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search by patient name, preferred name, external reference, or email"
+                value={searchInput}
+              />
+            </label>
+            <label className="field field-light">
+              <span>Status</span>
+              <select
+                className="input input-light"
+                onChange={(event) => {
+                  setStatusFilter(event.target.value as PatientLifecycleStatus | 'ALL');
+                  setPage(0);
+                }}
+                value={statusFilter}
+              >
+                <option value="ALL">All statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+              </select>
+            </label>
+            <div className="patient-toolbar-actions">
+              <button className="button" type="submit">
+                Search
+              </button>
+              <button
+                className="button button-secondary"
+                onClick={() => navigate('/app/patients/new/demographics')}
+                type="button"
+              >
+                Add patient
+              </button>
             </div>
-          ) : null}
-          {directory?.content.length ? (
-            <div className="patient-directory-preview">
-              {directory.content.map((patient) => (
-                <div key={patient.id} className="patient-directory-preview-row">
-                  <strong>{`${patient.firstName} ${patient.lastName}`}</strong>
-                  <span>{patient.externalReference ?? patient.id}</span>
-                  <span>{patient.status}</span>
-                </div>
-              ))}
-            </div>
-          ) : null}
+          </form>
+          {error ? <p className="alert">{error}</p> : null}
         </PatientPanel>
 
         <PatientPanel
-          title="Patient module map"
-          description="The patient section is now grouped by record domain. Later stories can drop real list and edit screens into these routes without changing the shell or route permissions."
+          title="Patient directory"
+          description="Key identity fields remain visible at list level so staff can move into a record without opening every row first."
         >
-          <PatientModuleCards cards={visibleCards} />
+          {loading ? <p>Loading patient directory...</p> : null}
+          {!loading && directory && directory.content.length === 0 ? (
+            <div className="patient-module-state patient-module-state-empty">
+              <strong>No patient records match the current filters.</strong>
+              <p>
+                Adjust the search or status filter, or create a new patient record to begin the Epic 3
+                demographics workflow.
+              </p>
+            </div>
+          ) : null}
+          {directory?.content.length ? (
+            <>
+              <div className="patient-directory-table">
+                <div className="patient-directory-head">
+                  <span>Patient</span>
+                  <span>Reference</span>
+                  <span>Contact</span>
+                  <span>Status</span>
+                  <span>Actions</span>
+                </div>
+                {directory.content.map((patient) => (
+                  <div key={patient.id} className="patient-directory-row">
+                    <div>
+                      <strong>{`${patient.firstName} ${patient.lastName}`}</strong>
+                      <p>{patient.preferredName ? `Preferred: ${patient.preferredName}` : 'No preferred name'}</p>
+                    </div>
+                    <div>{patient.externalReference ?? 'Not set'}</div>
+                    <div>
+                      <p>{patient.primaryPhone ?? 'No phone'}</p>
+                      <p>{patient.email ?? 'No email'}</p>
+                    </div>
+                    <div>
+                      <span className={`status-pill status-${patient.status.toLowerCase()}`}>
+                        {patient.status}
+                      </span>
+                    </div>
+                    <div className="patient-directory-actions">
+                      <button
+                        className="button button-secondary"
+                        onClick={() => navigate(`/app/patients/${patient.id}`)}
+                        type="button"
+                      >
+                        Open workspace
+                      </button>
+                      <button
+                        className="button button-ghost"
+                        onClick={() => navigate(`/app/patients/${patient.id}/demographics`)}
+                        type="button"
+                      >
+                        Edit demographics
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="patient-pagination">
+                <span>
+                  Showing page {directory.page + 1} of {Math.max(directory.totalPages, 1)} with{' '}
+                  {directory.totalElements} total patient records.
+                </span>
+                <div className="button-row">
+                  <button
+                    className="button button-secondary"
+                    disabled={directory.page === 0}
+                    onClick={() => setPage((current) => Math.max(current - 1, 0))}
+                    type="button"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="button button-secondary"
+                    disabled={directory.page >= directory.totalPages - 1}
+                    onClick={() => setPage((current) => current + 1)}
+                    type="button"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : null}
         </PatientPanel>
       </PatientWorkspaceGrid>
     </PatientWorkspaceShell>

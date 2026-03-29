@@ -212,6 +212,78 @@ export type PatientDirectoryPage = {
   totalPages: number;
 };
 
+export type ManagePatientRequest = AuthenticatedRequestContext & {
+  externalReference: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  preferredName: string;
+  dateOfBirth: string;
+  sexMarker: string;
+  primaryPhone: string;
+  secondaryPhone: string;
+  email: string;
+  language: string;
+  notesSummary: string;
+};
+
+export type PatientContact = {
+  id: string;
+  patientId: string;
+  relationshipType: string | null;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  emergencyContact: boolean;
+  primaryContact: boolean;
+  responsibleParty: boolean;
+  notes: string | null;
+  status: PatientLifecycleStatus;
+};
+
+export type ManagePatientContactRequest = AuthenticatedRequestContext & {
+  relationshipType: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  address: string;
+  emergencyContact: boolean;
+  primaryContact: boolean;
+  responsibleParty: boolean;
+  notes: string;
+};
+
+export type PatientAddress = {
+  id: string;
+  patientId: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  geocodeStatus: string | null;
+  timezone: string | null;
+  locationNotes: string | null;
+};
+
+export type ManagePatientAddressRequest = AuthenticatedRequestContext & {
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  latitude?: number;
+  longitude?: number;
+  geocodeStatus: string;
+  timezone: string;
+  locationNotes: string;
+};
+
 export type BranchSummary = {
   id: string;
   agencyId: string;
@@ -1525,6 +1597,284 @@ export async function fetchPatient(
   }
 
   return payload as PatientSummary;
+}
+
+export async function createPatient(
+  request: ManagePatientRequest,
+): Promise<PatientSummary> {
+  const response = await fetch(apiUrl('/api/patients'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      externalReference: request.externalReference || null,
+      firstName: request.firstName,
+      middleName: request.middleName || null,
+      lastName: request.lastName,
+      preferredName: request.preferredName || null,
+      dateOfBirth: request.dateOfBirth,
+      sexMarker: request.sexMarker || null,
+      primaryPhone: request.primaryPhone || null,
+      secondaryPhone: request.secondaryPhone || null,
+      email: request.email || null,
+      language: request.language || null,
+      notesSummary: request.notesSummary || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientSummary | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientSummary;
+}
+
+export async function updatePatient(
+  patientId: string,
+  request: ManagePatientRequest,
+): Promise<PatientSummary> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      externalReference: request.externalReference || null,
+      firstName: request.firstName,
+      middleName: request.middleName || null,
+      lastName: request.lastName,
+      preferredName: request.preferredName || null,
+      dateOfBirth: request.dateOfBirth,
+      sexMarker: request.sexMarker || null,
+      primaryPhone: request.primaryPhone || null,
+      secondaryPhone: request.secondaryPhone || null,
+      email: request.email || null,
+      language: request.language || null,
+      notesSummary: request.notesSummary || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientSummary | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientSummary;
+}
+
+export async function deactivatePatient(
+  patientId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientSummary> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientSummary | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientSummary;
+}
+
+export async function fetchPatientContacts(
+  patientId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientContact[]> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/contacts`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientContact[] | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient contacts request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientContact[];
+}
+
+export async function createPatientContact(
+  patientId: string,
+  request: ManagePatientContactRequest,
+): Promise<PatientContact> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/contacts`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      relationshipType: request.relationshipType || null,
+      fullName: request.fullName,
+      phone: request.phone || null,
+      email: request.email || null,
+      address: request.address || null,
+      emergencyContact: request.emergencyContact,
+      primaryContact: request.primaryContact,
+      responsibleParty: request.responsibleParty,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientContact | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient contact create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientContact;
+}
+
+export async function updatePatientContact(
+  contactId: string,
+  request: ManagePatientContactRequest,
+): Promise<PatientContact> {
+  const response = await fetch(apiUrl(`/api/patient-contacts/${contactId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      relationshipType: request.relationshipType || null,
+      fullName: request.fullName,
+      phone: request.phone || null,
+      email: request.email || null,
+      address: request.address || null,
+      emergencyContact: request.emergencyContact,
+      primaryContact: request.primaryContact,
+      responsibleParty: request.responsibleParty,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientContact | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient contact update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientContact;
+}
+
+export async function deactivatePatientContact(
+  contactId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientContact> {
+  const response = await fetch(apiUrl(`/api/patient-contacts/${contactId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientContact | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient contact deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientContact;
+}
+
+export async function fetchPatientAddress(
+  patientId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientAddress> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/address`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientAddress | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient address request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAddress;
+}
+
+export async function upsertPatientAddress(
+  patientId: string,
+  request: ManagePatientAddressRequest,
+): Promise<PatientAddress> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/address`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      addressLine1: request.addressLine1,
+      addressLine2: request.addressLine2 || null,
+      city: request.city,
+      state: request.state,
+      postalCode: request.postalCode,
+      country: request.country || null,
+      latitude: request.latitude ?? null,
+      longitude: request.longitude ?? null,
+      geocodeStatus: request.geocodeStatus || null,
+      timezone: request.timezone || null,
+      locationNotes: request.locationNotes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as { message?: string } | PatientAddress | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient address update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAddress;
 }
 
 export async function fetchBranches(

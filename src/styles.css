@@ -1366,6 +1366,115 @@ code {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
+.patient-toolbar,
+.patient-stack-form {
+  gap: 1rem;
+}
+
+.patient-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr) auto;
+  align-items: end;
+}
+
+.patient-toolbar-actions,
+.patient-directory-actions,
+.patient-contact-card-header,
+.patient-contact-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+
+.patient-directory-table,
+.patient-contact-list,
+.patient-summary-cards,
+.patient-completeness-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.patient-directory-head,
+.patient-directory-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(120px, 0.8fr) auto;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.patient-directory-head {
+  padding: 0 0.25rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.patient-directory-row,
+.patient-contact-card,
+.patient-summary-card,
+.patient-address-summary,
+.patient-completeness-grid article {
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.patient-directory-row p,
+.patient-contact-card p,
+.patient-summary-card p,
+.patient-address-summary p,
+.patient-completeness-grid span {
+  margin: 0.2rem 0 0;
+  color: var(--ink-soft);
+}
+
+.patient-pagination {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.patient-summary-cards {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.patient-summary-card strong,
+.patient-completeness-grid strong,
+.patient-address-summary strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.patient-completeness-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.patient-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.patient-toggle-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
 @media (max-width: 1200px) {
   .directory-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1402,6 +1511,11 @@ code {
   }
 
   .patient-directory-preview-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-directory-head,
+  .patient-directory-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1449,7 +1563,12 @@ code {
   .patient-form-grid,
   .patient-summary-metrics,
   .patient-record-meta,
-  .patient-directory-preview-row {
+  .patient-directory-preview-row,
+  .patient-summary-cards,
+  .patient-completeness-grid,
+  .patient-toolbar,
+  .patient-directory-head,
+  .patient-directory-row {
     grid-template-columns: 1fr;
   }
 
@@ -1463,6 +1582,11 @@ code {
   .config-panel-header,
   .config-module-card-header,
   .patient-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .patient-pagination {
     flex-direction: column;
     align-items: flex-start;
   }
