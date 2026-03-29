@@ -17,6 +17,7 @@ import {
 import { AccessDeniedPanel } from '../components/AccessDeniedPanel';
 import { confirmDestructiveConfigurationAction, formatConfigurationError } from '../components/ConfigurationSupport';
 import {
+  DocumentationAuditCallout,
   DocumentationEditorFrame,
   DocumentationModuleState,
   DocumentationMutationNotice,
@@ -248,6 +249,13 @@ export function DocumentationTaskLibraryPage() {
           <DocumentationMutationNotice
             message={success ?? 'Task library changes are saved directly through the Epic 8 backend task-library API.'}
             state={saving ? 'saving' : success ? 'saved' : error ? 'retry' : 'idle'}
+          />
+          <DocumentationAuditCallout
+            title="Task-library changes are audit-visible"
+            body="Reusable task defaults influence later note completion, so saves and deactivations are treated as controlled documentation configuration changes."
+            links={[
+              { to: '/app/admin/audit?actionType=DOC_TASK_LIBRARY_UPDATED', label: 'Open task-library audit activity' },
+            ]}
           />
           <form onSubmit={handleSave}>
             <DocumentationEditorFrame

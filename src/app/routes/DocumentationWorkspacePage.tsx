@@ -111,6 +111,11 @@ export function DocumentationWorkspacePage() {
             label: 'Task library',
             state: canManageTaskLibrary ? 'available' : 'restricted',
           },
+          {
+            path: '/app/documentation/status',
+            label: 'Status list',
+            state: canViewRecords ? 'available' : 'restricted',
+          },
         ]}
       />
 
@@ -138,6 +143,12 @@ export function DocumentationWorkspacePage() {
                 label: 'Printable summary',
                 description: 'Read-only print route backed by the backend printable summary contract.',
                 state: canPrint ? 'available' : 'restricted',
+              },
+              {
+                path: '/app/documentation/status',
+                label: 'Documentation status',
+                description: 'Coordinator-facing draft, incomplete, and submitted note visibility with focused filtering.',
+                state: canViewRecords ? 'available' : 'restricted',
               },
             ]}
           />

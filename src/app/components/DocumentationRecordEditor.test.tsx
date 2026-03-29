@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { DocumentationRecordEditor } from './DocumentationRecordEditor';
 
 vi.mock('../auth/session-api', async () => {
@@ -171,18 +172,24 @@ describe('DocumentationRecordEditor', () => {
 
   it('saves draft changes through the Epic 8 backend', async () => {
     render(
-      <DocumentationRecordEditor
-        authContext={{ sessionId: 'session-1' }}
-        role="CAREGIVER"
-        surface="desktop"
-        visitId="visit-1"
-      />,
+      <MemoryRouter>
+        <DocumentationRecordEditor
+          authContext={{ sessionId: 'session-1' }}
+          role="CAREGIVER"
+          surface="desktop"
+          visitId="visit-1"
+        />
+      </MemoryRouter>,
     );
 
     expect(await screen.findByDisplayValue('Existing note')).toBeInTheDocument();
     fireEvent.change(screen.getByDisplayValue('Existing note'), {
       target: { value: 'Updated narrative' },
     });
+    expect(screen.getByRole('link', { name: 'Open draft-save audit activity' })).toHaveAttribute(
+      'href',
+      '/app/admin/audit?actionType=DOC_DRAFT_SAVED',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Quick save draft' }));
 
     await waitFor(() => {
@@ -200,12 +207,14 @@ describe('DocumentationRecordEditor', () => {
     );
 
     render(
-      <DocumentationRecordEditor
-        authContext={{ sessionId: 'session-1' }}
-        role="CAREGIVER"
-        surface="desktop"
-        visitId="visit-1"
-      />,
+      <MemoryRouter>
+        <DocumentationRecordEditor
+          authContext={{ sessionId: 'session-1' }}
+          role="CAREGIVER"
+          surface="desktop"
+          visitId="visit-1"
+        />
+      </MemoryRouter>,
     );
 
     expect(await screen.findByDisplayValue('Existing note')).toBeInTheDocument();
@@ -218,12 +227,14 @@ describe('DocumentationRecordEditor', () => {
 
   it('links patient attachments into the note through the backend', async () => {
     render(
-      <DocumentationRecordEditor
-        authContext={{ sessionId: 'session-1' }}
-        role="CAREGIVER"
-        surface="desktop"
-        visitId="visit-1"
-      />,
+      <MemoryRouter>
+        <DocumentationRecordEditor
+          authContext={{ sessionId: 'session-1' }}
+          role="CAREGIVER"
+          surface="desktop"
+          visitId="visit-1"
+        />
+      </MemoryRouter>,
     );
 
     expect(await screen.findByDisplayValue('Existing note')).toBeInTheDocument();

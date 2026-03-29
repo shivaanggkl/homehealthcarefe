@@ -27,6 +27,7 @@ import {
   unlinkVisitDocumentationAttachment,
 } from '../auth/session-api';
 import {
+  DocumentationAuditCallout,
   DocumentationEditorFrame,
   DocumentationModuleState,
   DocumentationMutationNotice,
@@ -129,6 +130,10 @@ function extractValidation(error: unknown): ValidationSummary {
       details.error ??
       (details.fieldErrors?.length || details.taskErrors?.length ? error.message : null),
   };
+}
+
+function documentationAuditHref(actionType: string) {
+  return `/app/admin/audit?actionType=${encodeURIComponent(actionType)}`;
 }
 
 export function DocumentationRecordEditor({ authContext, role, visitId, surface }: Props) {
@@ -497,6 +502,23 @@ export function DocumentationRecordEditor({ authContext, role, visitId, surface 
       {record && templateDetail ? (
         <>
           <DocumentationMutationNotice state={saveState} message={saveMessage} />
+          <DocumentationAuditCallout
+            title={surface === 'mobile' ? 'Documentation updates are controlled' : 'Documentation activity is audit-visible'}
+            body={
+              surface === 'mobile'
+                ? 'Draft saves, submissions, and attachment links are controlled documentation operations. The caregiver flow keeps patient detail focused while admin review happens later in the audit log.'
+                : 'Template-driven note changes, submissions, and linked attachments are logged. Use the filtered audit view when you need to confirm who changed documentation state or opened printable summaries.'
+            }
+            links={
+              surface === 'mobile'
+                ? [{ to: documentationAuditHref('DOC_SUBMITTED'), label: 'Open documentation audit activity' }]
+                : [
+                    { to: documentationAuditHref('DOC_DRAFT_SAVED'), label: 'Open draft-save audit activity' },
+                    { to: documentationAuditHref('DOC_SUBMITTED'), label: 'Open submission audit activity' },
+                    { to: documentationAuditHref('DOC_ATTACHMENT_LINKED'), label: 'Open attachment-link audit activity' },
+                  ]
+            }
+          />
 
           <DocumentationEditorFrame
             title={templateDetail.template.name}
@@ -671,7 +693,7 @@ export function DocumentationRecordEditor({ authContext, role, visitId, surface 
                   <article key={attachment.id} className="documentation-list-row">
                     <div>
                       <strong>
-                        {attachment.patientAttachmentId ? `Patient attachment ${attachment.patientAttachmentId}` : `Mobile artifact ${attachment.mobileArtifactId}`}
+                        {attachment.patientAttachmentId ? 'Linked patient attachment' : 'Linked mobile artifact'}
                       </strong>
                       <p>{attachment.caption ?? attachment.description ?? 'No note-specific caption or description.'}</p>
                     </div>

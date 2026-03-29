@@ -2986,6 +2986,22 @@ code {
   gap: 1rem;
 }
 
+.documentation-form-grid,
+.documentation-status-toolbar,
+.documentation-role-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.documentation-form-grid,
+.documentation-status-toolbar {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.documentation-field-block {
+  grid-column: 1 / -1;
+}
+
 .documentation-panel,
 .documentation-editor-frame,
 .documentation-module-card,
@@ -3004,7 +3020,8 @@ code {
 .documentation-editor-frame,
 .documentation-module-state,
 .documentation-status-banner,
-.documentation-mutation-notice {
+.documentation-mutation-notice,
+.documentation-audit-callout {
   padding: 1rem;
 }
 
@@ -3014,7 +3031,8 @@ code {
 .documentation-select-row,
 .documentation-print-meta,
 .documentation-definition-grid,
-.documentation-summary-grid {
+.documentation-summary-grid,
+.documentation-record-row {
   display: flex;
   gap: 0.75rem;
   justify-content: space-between;
@@ -3023,7 +3041,12 @@ code {
 
 .documentation-section-nav,
 .documentation-module-cards,
-.documentation-definition-list {
+.documentation-definition-list,
+.documentation-builder-section,
+.documentation-task-list,
+.documentation-linked-attachments,
+.documentation-record-status-list,
+.documentation-audit-links {
   display: grid;
   gap: 0.75rem;
 }
@@ -3061,6 +3084,29 @@ code {
   cursor: pointer;
 }
 
+.documentation-builder-header,
+.documentation-record-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.documentation-builder-card,
+.documentation-task-item,
+.documentation-audit-callout,
+.documentation-record-row {
+  border: 1px solid var(--border-subtle, #d4d8dd);
+  border-radius: 16px;
+  background: var(--surface-raised, #ffffff);
+  padding: 0.9rem 1rem;
+}
+
+.documentation-audit-callout {
+  background: #f5f8fc;
+}
+
 .documentation-select-row + .documentation-select-row,
 .documentation-list-row + .documentation-list-row,
 .documentation-print-row + .documentation-print-row {
@@ -3093,6 +3139,72 @@ code {
 .documentation-definition-item:first-child,
 .documentation-print-row:first-child {
   border-top: 0;
+}
+
+.documentation-audit-link,
+.documentation-record-actions .text-link {
+  white-space: nowrap;
+}
+
+.documentation-record-primary,
+.documentation-record-secondary,
+.documentation-print-preview {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.documentation-record-secondary {
+  justify-items: end;
+}
+
+.documentation-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #eef3f8;
+  color: #24435b;
+}
+
+.documentation-status-pill-draft,
+.documentation-status-pill-in_progress {
+  background: #fff4d8;
+  color: #7b5a00;
+}
+
+.documentation-status-pill-submitted,
+.documentation-status-pill-amended {
+  background: #e8f6ec;
+  color: #1d6b3a;
+}
+
+.documentation-status-pill-locked {
+  background: #eef1f5;
+  color: #4e5963;
+}
+
+.documentation-attachment-editor,
+.documentation-print-preview,
+.documentation-inline-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.documentation-inline-list {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.documentation-print-preview .button,
+.documentation-audit-link {
+  justify-self: start;
+}
+
+.form-error {
+  color: #9f1f1f;
+  font-weight: 600;
 }
 
 .documentation-printable {
@@ -3135,7 +3247,8 @@ code {
   .documentation-select-row,
   .documentation-print-meta,
   .documentation-definition-grid,
-  .documentation-summary-grid {
+  .documentation-summary-grid,
+  .documentation-record-row {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -3188,12 +3301,33 @@ code {
 
   .documentation-module-card,
   .documentation-section-link,
-  .documentation-select-row {
+  .documentation-select-row,
+  .documentation-task-item,
+  .documentation-builder-card,
+  .documentation-record-row,
+  .documentation-audit-callout {
     padding: 0.85rem;
   }
 
+  .documentation-status-toolbar,
+  .documentation-form-grid,
+  .documentation-role-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .documentation-record-secondary,
+  .documentation-print-preview .button,
+  .documentation-audit-link,
+  .documentation-record-actions .text-link,
   .mobile-audit-link,
   .mobile-action-footer .button {
     width: 100%;
+  }
+
+  .documentation-record-actions,
+  .documentation-builder-header {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 }

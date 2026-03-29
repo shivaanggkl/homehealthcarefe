@@ -457,6 +457,15 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     audience: 'admin',
   },
   {
+    path: '/app/documentation/status',
+    navLabel: 'Documentation Status',
+    permission: 'view_visit_documentation',
+    description: 'Focused documentation status visibility for draft, incomplete, and submitted visit notes.',
+    navBehavior: 'visible',
+    section: 'documentation',
+    audience: 'admin',
+  },
+  {
     path: '/app/documentation/visits/:visitId',
     navLabel: 'Visit Documentation',
     permission: 'view_visit_documentation',

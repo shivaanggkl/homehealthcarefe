@@ -17,6 +17,7 @@ import { CaregiverRecordWorkspacePage } from './routes/CaregiverRecordWorkspaceP
 import { CaregiverWorkspacePage } from './routes/CaregiverWorkspacePage';
 import { ChangePasswordPage } from './routes/ChangePasswordPage';
 import { DocumentationRecordWorkspacePage } from './routes/DocumentationRecordWorkspacePage';
+import { DocumentationStatusPage } from './routes/DocumentationStatusPage';
 import { DocumentationTaskLibraryPage } from './routes/DocumentationTaskLibraryPage';
 import { DocumentationTemplateWorkspacePage } from './routes/DocumentationTemplateWorkspacePage';
 import { DocumentationWorkspacePage } from './routes/DocumentationWorkspacePage';
@@ -284,6 +285,20 @@ function AppRoutes() {
           >
             <AppShell>
               <DocumentationTaskLibraryPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/documentation/status"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized coordinators and admins can open the Epic 8 documentation status list."
+            deniedTitle="Documentation status visibility is not available for this role."
+            requiredPermission="view_visit_documentation"
+          >
+            <AppShell>
+              <DocumentationStatusPage />
             </AppShell>
           </ProtectedRoute>
         }

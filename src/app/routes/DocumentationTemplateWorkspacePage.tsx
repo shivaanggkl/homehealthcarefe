@@ -23,6 +23,7 @@ import {
 import { AccessDeniedPanel } from '../components/AccessDeniedPanel';
 import { confirmDestructiveConfigurationAction, formatConfigurationError } from '../components/ConfigurationSupport';
 import {
+  DocumentationAuditCallout,
   DocumentationEditorFrame,
   DocumentationModuleState,
   DocumentationMutationNotice,
@@ -389,6 +390,13 @@ export function DocumentationTemplateWorkspacePage() {
               'Template saves are audited and go straight to the Epic 8 backend template API.'
             }
             state={saving ? 'saving' : success ? 'saved' : error ? 'retry' : 'idle'}
+          />
+          <DocumentationAuditCallout
+            title="Template changes are controlled"
+            body="Template saves and deactivations affect later caregiver note entry, so the frontend keeps audit-aware messaging visible without exposing backend-only identifiers."
+            links={[
+              { to: '/app/admin/audit?actionType=DOC_TEMPLATE_UPDATED', label: 'Open template audit activity' },
+            ]}
           />
           <form onSubmit={handleSave}>
             <DocumentationEditorFrame

@@ -186,3 +186,27 @@ export function DocumentationMutationNotice({
     </div>
   );
 }
+
+export function DocumentationAuditCallout({
+  title,
+  body,
+  links,
+}: {
+  title: string;
+  body: string;
+  links: Array<{ to: string; label: string }>;
+}) {
+  return (
+    <div className="documentation-audit-callout">
+      <strong>{title}</strong>
+      <p>{body}</p>
+      <div className="documentation-audit-links">
+        {links.map((link) => (
+          <Link className="documentation-audit-link" key={link.to} to={link.to}>
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}

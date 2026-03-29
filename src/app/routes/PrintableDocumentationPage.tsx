@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import { loadDevSessionCredentials } from '../auth/session-storage';
 import { ApiError, fetchPrintableDocumentationSummary } from '../auth/session-api';
 import {
+  DocumentationAuditCallout,
   DocumentationModuleState,
   DocumentationPanel,
   DocumentationWorkspaceGrid,
@@ -68,6 +70,13 @@ export function PrintableDocumentationPage() {
           title="Printable summary"
           description="Editing controls stay out of this route so the printable experience remains clean and review-focused."
         >
+          <DocumentationAuditCallout
+            title="Printable access is controlled"
+            body="Printable summaries are read-only and audit-visible so later review can confirm when documentation was opened for print or downstream use."
+            links={[
+              { to: '/app/admin/audit?actionType=DOC_PRINTABLE_SUMMARY_GENERATED', label: 'Open printable-summary audit activity' },
+            ]}
+          />
           {loading ? <p className="session-note">Loading printable summary...</p> : null}
           {error ? (
             <DocumentationModuleState title="Printable summary unavailable" description={error} variant="error" />
@@ -128,6 +137,9 @@ export function PrintableDocumentationPage() {
                   </article>
                 ))}
               </section>
+              <Link className="text-link" to="/app/documentation/status">
+                Back to documentation status list
+              </Link>
             </div>
           ) : null}
         </DocumentationPanel>
