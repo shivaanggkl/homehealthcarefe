@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { MobileWorkspacePage } from './MobileWorkspacePage';
 
@@ -18,9 +18,11 @@ vi.mock('../auth/session-api', async () => {
   const actual = await vi.importActual('../auth/session-api');
   return {
     ...actual,
+    endMobileVisitExecution: vi.fn(),
     fetchMobileHome: vi.fn(),
     fetchMobileRoute: vi.fn(),
     fetchMobileVisitDetail: vi.fn(),
+    startMobileVisitExecution: vi.fn(),
   };
 });
 
@@ -30,6 +32,19 @@ const sessionApi = await import('../auth/session-api');
 
 describe('MobileWorkspacePage', () => {
   beforeEach(() => {
+    vi.stubGlobal('navigator', {
+      geolocation: {
+        getCurrentPosition: vi.fn((success: (position: { coords: { latitude: number; longitude: number } }) => void) =>
+          success({
+            coords: {
+              latitude: 41.881,
+              longitude: -87.623,
+            },
+          }),
+        ),
+      },
+    });
+
     vi.mocked(useAuth).mockReturnValue({
       state: {
         status: 'authenticated',
@@ -122,6 +137,40 @@ describe('MobileWorkspacePage', () => {
         patientSpecificCareNotes: 'Patient prefers morning visits.',
       },
     });
+    vi.mocked(sessionApi.startMobileVisitExecution).mockResolvedValue({
+      id: 'execution-1',
+      visitOccurrenceId: 'visit-1',
+      caregiverProfileId: 'caregiver-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      startedAt: '2026-04-21T09:01:00-05:00',
+      endedAt: null,
+      startedLatitude: 41.881,
+      startedLongitude: -87.623,
+      endedLatitude: null,
+      endedLongitude: null,
+      startSource: 'mobile_web',
+      endSource: null,
+      executionStatus: 'IN_PROGRESS',
+      syncStatus: 'ACCEPTED',
+    });
+    vi.mocked(sessionApi.endMobileVisitExecution).mockResolvedValue({
+      id: 'execution-1',
+      visitOccurrenceId: 'visit-1',
+      caregiverProfileId: 'caregiver-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      startedAt: '2026-04-21T09:01:00-05:00',
+      endedAt: '2026-04-21T09:59:00-05:00',
+      startedLatitude: 41.881,
+      startedLongitude: -87.623,
+      endedLatitude: 41.8811,
+      endedLongitude: -87.6231,
+      startSource: 'mobile_web',
+      endSource: 'mobile_web',
+      executionStatus: 'COMPLETED',
+      syncStatus: 'ACCEPTED',
+    });
   });
 
   it('renders backend-backed today work and visit detail in the mobile shell', async () => {
@@ -146,7 +195,35 @@ describe('MobileWorkspacePage', () => {
     expect(await screen.findByText('Ava Patient')).toBeInTheDocument();
     expect(screen.getByText('Care instructions')).toBeInTheDocument();
     expect(screen.getByText('Visit action framework')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start visit lands in Phase B' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Start visit' })).toBeInTheDocument();
+  });
+
+  it('starts a visit, shows captured field state, and refreshes the mobile board', async () => {
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Start visit' }));
+
+    await waitFor(() => {
+      expect(sessionApi.startMobileVisitExecution).toHaveBeenCalledWith({
+        accessToken: undefined,
+        sessionId: 'session-1',
+        visitId: 'visit-1',
+        startedAt: expect.any(String),
+        startedLatitude: 41.881,
+        startedLongitude: -87.623,
+        startSource: 'mobile_web',
+        syncStatus: 'ACCEPTED',
+      });
+    });
+
+    expect(await screen.findByText('Visit started. The field session is now active and recorded.')).toBeInTheDocument();
+    expect(screen.getByText(/Latitude 41.8810, longitude -87.6230/)).toBeInTheDocument();
   });
 
   it('renders a controlled read-only message state when message permission is missing', async () => {

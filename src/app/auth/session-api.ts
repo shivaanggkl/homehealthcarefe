@@ -249,6 +249,42 @@ export type MobileVisitDetailResponse = {
   careInstructions: MobileCareInstructionSummary;
 };
 
+export type MobileVisitExecutionSession = {
+  id: string;
+  visitOccurrenceId: string;
+  caregiverProfileId: string;
+  patientId: string;
+  branchId: string;
+  startedAt: string;
+  endedAt: string | null;
+  startedLatitude: number | null;
+  startedLongitude: number | null;
+  endedLatitude: number | null;
+  endedLongitude: number | null;
+  startSource: string | null;
+  endSource: string | null;
+  executionStatus: MobileExecutionSessionStatus;
+  syncStatus: MobileSyncDisposition | null;
+};
+
+export type StartMobileVisitExecutionRequest = AuthenticatedRequestContext & {
+  visitId: string;
+  startedAt: string;
+  startedLatitude?: number;
+  startedLongitude?: number;
+  startSource?: string;
+  syncStatus?: MobileSyncDisposition;
+};
+
+export type EndMobileVisitExecutionRequest = AuthenticatedRequestContext & {
+  executionSessionId: string;
+  endedAt: string;
+  endedLatitude?: number;
+  endedLongitude?: number;
+  endSource?: string;
+  syncStatus?: MobileSyncDisposition;
+};
+
 export type MobileDayQuery = AuthenticatedRequestContext & {
   day: string;
   timezone?: string;
@@ -1842,6 +1878,73 @@ export async function fetchMobileVisitDetail(
   }
 
   return payload as MobileVisitDetailResponse;
+}
+
+export async function startMobileVisitExecution(
+  request: StartMobileVisitExecutionRequest,
+): Promise<MobileVisitExecutionSession> {
+  const response = await fetch(apiUrl(`/api/mobile/visits/${request.visitId}/execution/start`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      startedAt: request.startedAt,
+      startedLatitude: request.startedLatitude,
+      startedLongitude: request.startedLongitude,
+      startSource: request.startSource,
+      syncStatus: request.syncStatus,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileVisitExecutionSession
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Start visit failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileVisitExecutionSession;
+}
+
+export async function endMobileVisitExecution(
+  request: EndMobileVisitExecutionRequest,
+): Promise<MobileVisitExecutionSession> {
+  const response = await fetch(
+    apiUrl(`/api/mobile/execution-sessions/${request.executionSessionId}/end`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        endedAt: request.endedAt,
+        endedLatitude: request.endedLatitude,
+        endedLongitude: request.endedLongitude,
+        endSource: request.endSource,
+        syncStatus: request.syncStatus,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileVisitExecutionSession
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `End visit failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileVisitExecutionSession;
 }
 
 export async function loginWithPassword(request: LoginRequest): Promise<LoginResponse> {

@@ -2614,6 +2614,14 @@ code {
   background: linear-gradient(180deg, rgba(255, 247, 226, 0.95), rgba(255, 255, 255, 0.98));
 }
 
+.mobile-visit-card-upcoming {
+  background: linear-gradient(180deg, rgba(233, 246, 255, 0.95), rgba(255, 255, 255, 0.98));
+}
+
+.mobile-visit-card-completed {
+  background: linear-gradient(180deg, rgba(239, 247, 241, 0.95), rgba(255, 255, 255, 0.98));
+}
+
 .mobile-visit-card-header,
 .mobile-route-stop,
 .mobile-mutation-header,
@@ -2663,6 +2671,16 @@ code {
 .mobile-sync-chip-failed {
   background: rgba(172, 55, 34, 0.12);
   color: #ac3722;
+}
+
+.mobile-button-success {
+  background: #1f7a50;
+  border-color: #1f7a50;
+}
+
+.mobile-button-success:hover {
+  background: #17623f;
+  border-color: #17623f;
 }
 
 .mobile-visit-card-time,

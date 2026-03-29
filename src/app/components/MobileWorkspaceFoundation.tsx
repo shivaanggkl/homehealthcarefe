@@ -39,6 +39,7 @@ type MobileActionFooterProps = {
   primaryLabel: string;
   onPrimaryClick?: () => void;
   primaryDisabled?: boolean;
+  primaryTone?: 'default' | 'success';
   secondaryLabel?: string;
   onSecondaryClick?: () => void;
   secondaryDisabled?: boolean;
@@ -141,7 +142,7 @@ export function MobileVisitCard({
 }: {
   item: MobileHomeTodayWorkItem;
   to: string;
-  emphasis?: 'current' | 'upcoming';
+  emphasis?: 'current' | 'upcoming' | 'completed';
 }) {
   return (
     <NavLink className={`mobile-visit-card${emphasis ? ` mobile-visit-card-${emphasis}` : ''}`} to={to}>
@@ -257,6 +258,7 @@ export function MobileActionFooter({
   primaryLabel,
   onPrimaryClick,
   primaryDisabled,
+  primaryTone = 'default',
   secondaryLabel,
   onSecondaryClick,
   secondaryDisabled,
@@ -264,7 +266,7 @@ export function MobileActionFooter({
   return (
     <div className="mobile-action-footer">
       <button
-        className="button"
+        className={`button${primaryTone === 'success' ? ' mobile-button-success' : ''}`}
         disabled={primaryDisabled}
         onClick={onPrimaryClick}
         type="button"
