@@ -368,7 +368,7 @@ const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
   EDIT_USER_PROFILE: ['edit_user_accounts'],
   MANAGE_USER_STATUS: ['manage_user_status'],
   VIEW_AUDIT_LOG: ['view_audit_log'],
-  MANAGE_AGENCY_SETTINGS: ['manage_agency_settings'],
+  MANAGE_AGENCY_SETTINGS: ['manage_agency_settings', 'manage_security_settings'],
   MANAGE_BRANCHES: ['manage_branches'],
   MANAGE_AGENCY_MFA_POLICY: ['manage_agency_mfa_policy'],
   MANAGE_ADMIN_NOTIFICATIONS: ['manage_admin_notifications'],
@@ -441,7 +441,10 @@ export function buildAccessProfile(
     );
   }
 
-  return buildAccessProfileForRole('CAREGIVER', undefined, 'fallback');
+  return {
+    ...buildAccessProfileForRole('CAREGIVER', undefined, 'fallback'),
+    defaultRoute: '/app/home',
+  };
 }
 
 export function canAccessPermission(

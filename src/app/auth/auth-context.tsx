@@ -83,6 +83,7 @@ const initialState: AuthState = {
 export function AuthProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<AuthState>(initialState);
   const stateRef = useRef<AuthState>(initialState);
+  const warningRequired = state.status === 'authenticated' ? state.session.warningRequired : false;
 
   useEffect(() => {
     stateRef.current = state;
@@ -163,7 +164,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const pollEveryMs = state.session.warningRequired ? 5000 : 60000;
+    const pollEveryMs = warningRequired ? 5000 : 60000;
     const intervalId = window.setInterval(() => {
       void syncAuth('background');
     }, pollEveryMs);
@@ -171,7 +172,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [state, syncAuth]);
+  }, [state.status, warningRequired, syncAuth]);
 
   const clearLocalAuthState = useCallback(() => {
     clearDevSessionCredentials();

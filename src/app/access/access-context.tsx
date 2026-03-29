@@ -36,7 +36,9 @@ export function AccessProvider({ children }: PropsWithChildren) {
   const { state } = useAuth();
   const [override, setOverride] = useState(() => loadFrontendAccessOverride());
   const [backendAccess, setBackendAccess] = useState<CurrentAccessResponse | null>(null);
+  const [backendAccessResolved, setBackendAccessResolved] = useState(false);
   const [loading, setLoading] = useState(false);
+  const authenticatedSessionId = state.status === 'authenticated' ? state.session.sessionId : null;
 
   useEffect(() => {
     const handleStorage = () => {
@@ -52,6 +54,7 @@ export function AccessProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (state.status !== 'authenticated') {
       setBackendAccess(null);
+      setBackendAccessResolved(false);
       setLoading(false);
       return;
     }
@@ -60,18 +63,20 @@ export function AccessProvider({ children }: PropsWithChildren) {
     const devSession = loadDevSessionCredentials();
 
     setLoading(true);
+    setBackendAccessResolved(false);
     void fetchCurrentAccess({
       accessToken: devSession?.accessToken,
-      sessionId: devSession?.sessionId ?? state.session.sessionId,
+      sessionId: devSession?.sessionId ?? authenticatedSessionId ?? undefined,
     })
       .then((response) => {
         if (!cancelled) {
           setBackendAccess(response);
+          setBackendAccessResolved(true);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setBackendAccess(null);
+          setBackendAccessResolved(true);
         }
       })
       .finally(() => {
@@ -83,7 +88,7 @@ export function AccessProvider({ children }: PropsWithChildren) {
     return () => {
       cancelled = true;
     };
-  }, [state]);
+  }, [state.status, authenticatedSessionId]);
 
   const setRoleOverride = useCallback((role: AgencyRole) => {
     const currentOverride = loadFrontendAccessOverride();
@@ -110,6 +115,9 @@ export function AccessProvider({ children }: PropsWithChildren) {
     setOverride(null);
   }, []);
 
+  const effectiveLoading =
+    loading || (state.status === 'authenticated' && !override && !backendAccessResolved);
+
   const value = useMemo<AccessContextValue>(
     () => ({
       profile:
@@ -132,12 +140,19 @@ export function AccessProvider({ children }: PropsWithChildren) {
                 ),
               }
             : buildAccessProfile(null),
-      loading,
+      loading: effectiveLoading,
       setRoleOverride,
       setAssignedBranches,
       clearOverride,
     }),
-    [backendAccess, clearOverride, loading, override, setAssignedBranches, setRoleOverride],
+    [
+      backendAccess,
+      clearOverride,
+      effectiveLoading,
+      override,
+      setAssignedBranches,
+      setRoleOverride,
+    ],
   );
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;

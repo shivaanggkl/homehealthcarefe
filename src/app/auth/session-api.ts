@@ -977,7 +977,7 @@ export async function requestPasswordReset(
 ): Promise<ForgotPasswordResponse> {
   const response = await fetch(apiUrl('/api/auth/forgot-password'), {
     method: 'POST',
-    credentials: 'include',
+    credentials: 'omit',
     headers: {
       'Content-Type': 'application/json',
     },

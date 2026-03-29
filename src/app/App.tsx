@@ -46,7 +46,12 @@ function BootstrapScreen() {
 }
 
 function DefaultLandingRoute() {
-  const { profile } = useAccess();
+  const { loading, profile } = useAccess();
+
+  if (loading) {
+    return <BootstrapScreen />;
+  }
+
   return <Navigate replace to={profile.defaultRoute} />;
 }
 
