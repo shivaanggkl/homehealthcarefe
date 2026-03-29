@@ -26,6 +26,7 @@ export function PatientWorkspacePage() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeCount, setActiveCount] = useState<number | null>(null);
 
   const authContext = useMemo(() => {
     const devSession = loadDevSessionCredentials();
@@ -73,6 +74,23 @@ export function PatientWorkspacePage() {
         }
       });
 
+    void fetchPatients({
+      ...authContext,
+      status: 'ACTIVE',
+      page: 0,
+      size: 1,
+    })
+      .then((response) => {
+        if (!cancelled) {
+          setActiveCount(response.totalElements);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setActiveCount(null);
+        }
+      });
+
     return () => {
       cancelled = true;
     };
@@ -91,6 +109,50 @@ export function PatientWorkspacePage() {
       description="Search, filter, and open patient records from one patient-management workspace. This screen now uses the live patient directory API and routes directly into the record workspace."
     >
       <PatientWorkspaceGrid>
+        <PatientPanel
+          title="Patient overview and quick entry"
+          description="FE3-18 is anchored in the directory workspace so owners and coordinators can see high-value counts and jump directly into the most common patient-management actions."
+        >
+          <div className="patient-summary-cards">
+            <article className="patient-summary-card">
+              <span className="eyebrow">Active patients</span>
+              <strong>{activeCount ?? 'Unavailable'}</strong>
+              <p>Live count from the active-patient directory query.</p>
+            </article>
+            <article className="patient-summary-card">
+              <span className="eyebrow">Filtered results</span>
+              <strong>{directory?.totalElements ?? 0}</strong>
+              <p>Records matching the current search and status filter.</p>
+            </article>
+            <article className="patient-summary-card">
+              <span className="eyebrow">Quick entry</span>
+              <strong>Create demographics</strong>
+              <p>Start a new patient record and then continue into contacts, address, and the Phase C modules.</p>
+            </article>
+            <article className="patient-summary-card">
+              <span className="eyebrow">Authorization watch</span>
+              <strong>Later aggregate API</strong>
+              <p>Expiring or exhausted authorization counts will surface here when an agency-level aggregate contract exists.</p>
+            </article>
+          </div>
+          <div className="button-row">
+            <button
+              className="button"
+              onClick={() => navigate('/app/patients/new/demographics')}
+              type="button"
+            >
+              New patient
+            </button>
+            <button
+              className="button button-secondary"
+              onClick={() => navigate('/app/patients')}
+              type="button"
+            >
+              Refresh directory view
+            </button>
+          </div>
+        </PatientPanel>
+
         <PatientPanel
           title="Directory controls"
           description="Search and status filters are applied against `GET /api/patients`, with route entry points into the patient detail workspace and create demographics flow."

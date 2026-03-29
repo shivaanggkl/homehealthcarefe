@@ -284,6 +284,128 @@ export type ManagePatientAddressRequest = AuthenticatedRequestContext & {
   locationNotes: string;
 };
 
+export type PatientServiceEligibilityStatus =
+  | 'ELIGIBLE'
+  | 'INELIGIBLE'
+  | 'PENDING'
+  | 'EXPIRED';
+
+export type PatientDiagnosisStatus =
+  | 'ACTIVE'
+  | 'RESOLVED'
+  | 'HISTORICAL'
+  | 'INACTIVE';
+
+export type PatientPayerLinkStatus =
+  | 'ACTIVE'
+  | 'PENDING'
+  | 'INACTIVE'
+  | 'TERMINATED'
+  | 'EXPIRED';
+
+export type PatientEpisodeAuthorizationStatus =
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'EXPIRED'
+  | 'EXHAUSTED'
+  | 'CANCELLED';
+
+export type PatientServiceEligibility = {
+  id: string;
+  patientId: string;
+  serviceLineId: string | null;
+  status: PatientServiceEligibilityStatus;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  verificationSource: string | null;
+  notes: string | null;
+};
+
+export type ManagePatientServiceEligibilityRequest = AuthenticatedRequestContext & {
+  serviceLineId?: string;
+  status: PatientServiceEligibilityStatus;
+  effectiveFrom: string;
+  effectiveTo: string;
+  verificationSource: string;
+  notes: string;
+};
+
+export type PatientDiagnosis = {
+  id: string;
+  patientId: string;
+  diagnosisCode: string | null;
+  description: string;
+  diagnosisType: string | null;
+  primaryCondition: boolean;
+  onsetDate: string | null;
+  resolvedDate: string | null;
+  status: PatientDiagnosisStatus;
+  notes: string | null;
+};
+
+export type ManagePatientDiagnosisRequest = AuthenticatedRequestContext & {
+  diagnosisCode: string;
+  description: string;
+  diagnosisType: string;
+  primaryCondition: boolean;
+  onsetDate: string;
+  resolvedDate: string;
+  status: PatientDiagnosisStatus;
+  notes: string;
+};
+
+export type PatientPayerLink = {
+  id: string;
+  patientId: string;
+  payerName: string | null;
+  payerExternalId: string | null;
+  memberPolicyNumber: string | null;
+  groupNumber: string | null;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  primaryPayer: boolean;
+  status: PatientPayerLinkStatus;
+  notes: string | null;
+};
+
+export type ManagePatientPayerLinkRequest = AuthenticatedRequestContext & {
+  payerName: string;
+  payerExternalId: string;
+  memberPolicyNumber: string;
+  groupNumber: string;
+  effectiveFrom: string;
+  effectiveTo: string;
+  primaryPayer: boolean;
+  status: PatientPayerLinkStatus;
+  notes: string;
+};
+
+export type PatientAuthorization = {
+  id: string;
+  patientId: string;
+  patientPayerLinkId: string | null;
+  serviceLineId: string | null;
+  authorizationNumber: string | null;
+  startDate: string;
+  endDate: string;
+  authorizedUnits: number | null;
+  usedUnits: number | null;
+  status: PatientEpisodeAuthorizationStatus;
+  notes: string | null;
+};
+
+export type ManagePatientAuthorizationRequest = AuthenticatedRequestContext & {
+  patientPayerLinkId?: string;
+  serviceLineId?: string;
+  authorizationNumber: string;
+  startDate: string;
+  endDate: string;
+  authorizedUnits?: number;
+  usedUnits?: number;
+  status: PatientEpisodeAuthorizationStatus;
+  notes: string;
+};
+
 export type BranchSummary = {
   id: string;
   agencyId: string;
@@ -1875,6 +1997,568 @@ export async function upsertPatientAddress(
   }
 
   return payload as PatientAddress;
+}
+
+export async function fetchPatientEligibilities(
+  patientId: string,
+  request: AuthenticatedRequestContext & {
+    status?: PatientServiceEligibilityStatus | 'ALL';
+    serviceLineId?: string | 'ALL';
+  },
+): Promise<PatientServiceEligibility[]> {
+  const url = new URL(apiUrl(`/api/patients/${patientId}/eligibilities`), window.location.origin);
+  appendOptionalSearchParams(url, {
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    serviceLineId:
+      request.serviceLineId && request.serviceLineId !== 'ALL' ? request.serviceLineId : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientServiceEligibility[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient eligibility request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientServiceEligibility[];
+}
+
+export async function createPatientEligibility(
+  patientId: string,
+  request: ManagePatientServiceEligibilityRequest,
+): Promise<PatientServiceEligibility> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/eligibilities`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      serviceLineId: request.serviceLineId || null,
+      status: request.status,
+      effectiveFrom: request.effectiveFrom,
+      effectiveTo: request.effectiveTo || null,
+      verificationSource: request.verificationSource || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientServiceEligibility
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient eligibility create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientServiceEligibility;
+}
+
+export async function updatePatientEligibility(
+  eligibilityId: string,
+  request: ManagePatientServiceEligibilityRequest,
+): Promise<PatientServiceEligibility> {
+  const response = await fetch(apiUrl(`/api/patient-eligibilities/${eligibilityId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      serviceLineId: request.serviceLineId || null,
+      status: request.status,
+      effectiveFrom: request.effectiveFrom,
+      effectiveTo: request.effectiveTo || null,
+      verificationSource: request.verificationSource || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientServiceEligibility
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient eligibility update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientServiceEligibility;
+}
+
+export async function deactivatePatientEligibility(
+  eligibilityId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientServiceEligibility> {
+  const response = await fetch(apiUrl(`/api/patient-eligibilities/${eligibilityId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientServiceEligibility
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient eligibility deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientServiceEligibility;
+}
+
+export async function fetchPatientDiagnoses(
+  patientId: string,
+  request: AuthenticatedRequestContext & {
+    status?: PatientDiagnosisStatus | 'ALL';
+  },
+): Promise<PatientDiagnosis[]> {
+  const url = new URL(apiUrl(`/api/patients/${patientId}/diagnoses`), window.location.origin);
+  appendOptionalSearchParams(url, {
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientDiagnosis[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient diagnosis request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientDiagnosis[];
+}
+
+export async function createPatientDiagnosis(
+  patientId: string,
+  request: ManagePatientDiagnosisRequest,
+): Promise<PatientDiagnosis> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/diagnoses`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      diagnosisCode: request.diagnosisCode || null,
+      description: request.description,
+      diagnosisType: request.diagnosisType || null,
+      primaryCondition: request.primaryCondition,
+      onsetDate: request.onsetDate || null,
+      resolvedDate: request.resolvedDate || null,
+      status: request.status,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientDiagnosis
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient diagnosis create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientDiagnosis;
+}
+
+export async function updatePatientDiagnosis(
+  diagnosisId: string,
+  request: ManagePatientDiagnosisRequest,
+): Promise<PatientDiagnosis> {
+  const response = await fetch(apiUrl(`/api/patient-diagnoses/${diagnosisId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      diagnosisCode: request.diagnosisCode || null,
+      description: request.description,
+      diagnosisType: request.diagnosisType || null,
+      primaryCondition: request.primaryCondition,
+      onsetDate: request.onsetDate || null,
+      resolvedDate: request.resolvedDate || null,
+      status: request.status,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientDiagnosis
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient diagnosis update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientDiagnosis;
+}
+
+export async function deactivatePatientDiagnosis(
+  diagnosisId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientDiagnosis> {
+  const response = await fetch(apiUrl(`/api/patient-diagnoses/${diagnosisId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientDiagnosis
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient diagnosis deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientDiagnosis;
+}
+
+export async function fetchPatientPayerLinks(
+  patientId: string,
+  request: AuthenticatedRequestContext & {
+    status?: PatientPayerLinkStatus | 'ALL';
+    primaryPayer?: 'ALL' | 'ONLY_PRIMARY' | 'ONLY_NON_PRIMARY';
+  },
+): Promise<PatientPayerLink[]> {
+  const url = new URL(apiUrl(`/api/patients/${patientId}/payer-links`), window.location.origin);
+  appendOptionalSearchParams(url, {
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    primaryPayer:
+      request.primaryPayer === 'ONLY_PRIMARY'
+        ? 'true'
+        : request.primaryPayer === 'ONLY_NON_PRIMARY'
+          ? 'false'
+          : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientPayerLink[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient payer request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientPayerLink[];
+}
+
+export async function createPatientPayerLink(
+  patientId: string,
+  request: ManagePatientPayerLinkRequest,
+): Promise<PatientPayerLink> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/payer-links`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      payerName: request.payerName || null,
+      payerExternalId: request.payerExternalId || null,
+      memberPolicyNumber: request.memberPolicyNumber || null,
+      groupNumber: request.groupNumber || null,
+      effectiveFrom: request.effectiveFrom,
+      effectiveTo: request.effectiveTo || null,
+      primaryPayer: request.primaryPayer,
+      status: request.status,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientPayerLink
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient payer create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientPayerLink;
+}
+
+export async function updatePatientPayerLink(
+  payerLinkId: string,
+  request: ManagePatientPayerLinkRequest,
+): Promise<PatientPayerLink> {
+  const response = await fetch(apiUrl(`/api/patient-payer-links/${payerLinkId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      payerName: request.payerName || null,
+      payerExternalId: request.payerExternalId || null,
+      memberPolicyNumber: request.memberPolicyNumber || null,
+      groupNumber: request.groupNumber || null,
+      effectiveFrom: request.effectiveFrom,
+      effectiveTo: request.effectiveTo || null,
+      primaryPayer: request.primaryPayer,
+      status: request.status,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientPayerLink
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient payer update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientPayerLink;
+}
+
+export async function deactivatePatientPayerLink(
+  payerLinkId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientPayerLink> {
+  const response = await fetch(apiUrl(`/api/patient-payer-links/${payerLinkId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientPayerLink
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient payer deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientPayerLink;
+}
+
+export async function fetchPatientAuthorizations(
+  patientId: string,
+  request: AuthenticatedRequestContext & {
+    status?: PatientEpisodeAuthorizationStatus | 'ALL';
+    currentOnly?: boolean;
+    patientPayerLinkId?: string | 'ALL';
+    serviceLineId?: string | 'ALL';
+  },
+): Promise<PatientAuthorization[]> {
+  const url = new URL(apiUrl(`/api/patients/${patientId}/authorizations`), window.location.origin);
+  appendOptionalSearchParams(url, {
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    currentOnly: request.currentOnly ? 'true' : undefined,
+    patientPayerLinkId:
+      request.patientPayerLinkId && request.patientPayerLinkId !== 'ALL'
+        ? request.patientPayerLinkId
+        : undefined,
+    serviceLineId:
+      request.serviceLineId && request.serviceLineId !== 'ALL'
+        ? request.serviceLineId
+        : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientAuthorization[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient authorization request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAuthorization[];
+}
+
+export async function createPatientAuthorization(
+  patientId: string,
+  request: ManagePatientAuthorizationRequest,
+): Promise<PatientAuthorization> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}/authorizations`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      patientPayerLinkId: request.patientPayerLinkId || null,
+      serviceLineId: request.serviceLineId || null,
+      authorizationNumber: request.authorizationNumber || null,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      authorizedUnits: request.authorizedUnits ?? null,
+      usedUnits: request.usedUnits ?? null,
+      status: request.status,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientAuthorization
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient authorization create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAuthorization;
+}
+
+export async function updatePatientAuthorization(
+  authorizationId: string,
+  request: ManagePatientAuthorizationRequest,
+): Promise<PatientAuthorization> {
+  const response = await fetch(apiUrl(`/api/patient-authorizations/${authorizationId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      patientPayerLinkId: request.patientPayerLinkId || null,
+      serviceLineId: request.serviceLineId || null,
+      authorizationNumber: request.authorizationNumber || null,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      authorizedUnits: request.authorizedUnits ?? null,
+      usedUnits: request.usedUnits ?? null,
+      status: request.status,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientAuthorization
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient authorization update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAuthorization;
+}
+
+export async function deactivatePatientAuthorization(
+  authorizationId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientAuthorization> {
+  const response = await fetch(apiUrl(`/api/patient-authorizations/${authorizationId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientAuthorization
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient authorization deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientAuthorization;
 }
 
 export async function fetchBranches(

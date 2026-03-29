@@ -1420,7 +1420,8 @@ code {
 .patient-contact-card,
 .patient-summary-card,
 .patient-address-summary,
-.patient-completeness-grid article {
+.patient-completeness-grid article,
+.patient-phasec-card {
   padding: 1rem;
   border-radius: 18px;
   border: 1px solid var(--border);
@@ -1431,7 +1432,8 @@ code {
 .patient-contact-card p,
 .patient-summary-card p,
 .patient-address-summary p,
-.patient-completeness-grid span {
+.patient-completeness-grid span,
+.patient-phasec-card p {
   margin: 0.2rem 0 0;
   color: var(--ink-soft);
 }
@@ -1473,6 +1475,16 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 0.85rem;
+}
+
+.patient-phasec-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.patient-phasec-card {
+  display: grid;
+  gap: 0.55rem;
 }
 
 @media (max-width: 1200px) {

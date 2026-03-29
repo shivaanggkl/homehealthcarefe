@@ -7,20 +7,50 @@ import { loadDevSessionCredentials } from '../auth/session-storage';
 import {
   ApiError,
   createPatient,
+  createPatientAuthorization,
   createPatientContact,
+  createPatientDiagnosis,
+  createPatientEligibility,
+  createPatientPayerLink,
   deactivatePatient,
+  deactivatePatientAuthorization,
   deactivatePatientContact,
+  deactivatePatientDiagnosis,
+  deactivatePatientEligibility,
+  deactivatePatientPayerLink,
   fetchPatient,
   fetchPatientAddress,
+  fetchPatientAuthorizations,
   fetchPatientContacts,
+  fetchPatientDiagnoses,
+  fetchPatientEligibilities,
+  fetchPatientPayerLinks,
+  fetchServiceLines,
   ManagePatientAddressRequest,
+  ManagePatientAuthorizationRequest,
   ManagePatientContactRequest,
+  ManagePatientDiagnosisRequest,
   ManagePatientRequest,
+  ManagePatientPayerLinkRequest,
+  ManagePatientServiceEligibilityRequest,
   PatientAddress,
+  PatientAuthorization,
   PatientContact,
+  PatientDiagnosis,
+  PatientDiagnosisStatus,
+  PatientEpisodeAuthorizationStatus,
+  PatientPayerLink,
+  PatientPayerLinkStatus,
+  PatientServiceEligibility,
+  PatientServiceEligibilityStatus,
   PatientSummary,
+  ServiceLineSummary,
   updatePatient,
+  updatePatientAuthorization,
   updatePatientContact,
+  updatePatientDiagnosis,
+  updatePatientEligibility,
+  updatePatientPayerLink,
   upsertPatientAddress,
 } from '../auth/session-api';
 import {
@@ -88,6 +118,50 @@ type AddressFormState = {
   geocodeStatus: string;
   timezone: string;
   locationNotes: string;
+};
+
+type EligibilityFormState = {
+  serviceLineId: string;
+  status: PatientServiceEligibilityStatus;
+  effectiveFrom: string;
+  effectiveTo: string;
+  verificationSource: string;
+  notes: string;
+};
+
+type DiagnosisFormState = {
+  diagnosisCode: string;
+  description: string;
+  diagnosisType: string;
+  primaryCondition: boolean;
+  onsetDate: string;
+  resolvedDate: string;
+  status: PatientDiagnosisStatus;
+  notes: string;
+};
+
+type PayerFormState = {
+  payerName: string;
+  payerExternalId: string;
+  memberPolicyNumber: string;
+  groupNumber: string;
+  effectiveFrom: string;
+  effectiveTo: string;
+  primaryPayer: boolean;
+  status: PatientPayerLinkStatus;
+  notes: string;
+};
+
+type AuthorizationFormState = {
+  patientPayerLinkId: string;
+  serviceLineId: string;
+  authorizationNumber: string;
+  startDate: string;
+  endDate: string;
+  authorizedUnits: string;
+  usedUnits: string;
+  status: PatientEpisodeAuthorizationStatus;
+  notes: string;
 };
 
 const SECTION_CONFIG: Record<
@@ -217,6 +291,50 @@ const EMPTY_ADDRESS_FORM: AddressFormState = {
   locationNotes: '',
 };
 
+const EMPTY_ELIGIBILITY_FORM: EligibilityFormState = {
+  serviceLineId: '',
+  status: 'ELIGIBLE',
+  effectiveFrom: '',
+  effectiveTo: '',
+  verificationSource: '',
+  notes: '',
+};
+
+const EMPTY_DIAGNOSIS_FORM: DiagnosisFormState = {
+  diagnosisCode: '',
+  description: '',
+  diagnosisType: '',
+  primaryCondition: false,
+  onsetDate: '',
+  resolvedDate: '',
+  status: 'ACTIVE',
+  notes: '',
+};
+
+const EMPTY_PAYER_FORM: PayerFormState = {
+  payerName: '',
+  payerExternalId: '',
+  memberPolicyNumber: '',
+  groupNumber: '',
+  effectiveFrom: '',
+  effectiveTo: '',
+  primaryPayer: false,
+  status: 'ACTIVE',
+  notes: '',
+};
+
+const EMPTY_AUTHORIZATION_FORM: AuthorizationFormState = {
+  patientPayerLinkId: '',
+  serviceLineId: '',
+  authorizationNumber: '',
+  startDate: '',
+  endDate: '',
+  authorizedUnits: '',
+  usedUnits: '',
+  status: 'PENDING',
+  notes: '',
+};
+
 function mapPatientToForm(patient: PatientSummary): PatientFormState {
   return {
     externalReference: patient.externalReference ?? '',
@@ -264,6 +382,58 @@ function mapAddressToForm(address: PatientAddress): AddressFormState {
   };
 }
 
+function mapEligibilityToForm(item: PatientServiceEligibility): EligibilityFormState {
+  return {
+    serviceLineId: item.serviceLineId ?? '',
+    status: item.status,
+    effectiveFrom: item.effectiveFrom,
+    effectiveTo: item.effectiveTo ?? '',
+    verificationSource: item.verificationSource ?? '',
+    notes: item.notes ?? '',
+  };
+}
+
+function mapDiagnosisToForm(item: PatientDiagnosis): DiagnosisFormState {
+  return {
+    diagnosisCode: item.diagnosisCode ?? '',
+    description: item.description,
+    diagnosisType: item.diagnosisType ?? '',
+    primaryCondition: item.primaryCondition,
+    onsetDate: item.onsetDate ?? '',
+    resolvedDate: item.resolvedDate ?? '',
+    status: item.status,
+    notes: item.notes ?? '',
+  };
+}
+
+function mapPayerToForm(item: PatientPayerLink): PayerFormState {
+  return {
+    payerName: item.payerName ?? '',
+    payerExternalId: item.payerExternalId ?? '',
+    memberPolicyNumber: item.memberPolicyNumber ?? '',
+    groupNumber: item.groupNumber ?? '',
+    effectiveFrom: item.effectiveFrom,
+    effectiveTo: item.effectiveTo ?? '',
+    primaryPayer: item.primaryPayer,
+    status: item.status,
+    notes: item.notes ?? '',
+  };
+}
+
+function mapAuthorizationToForm(item: PatientAuthorization): AuthorizationFormState {
+  return {
+    patientPayerLinkId: item.patientPayerLinkId ?? '',
+    serviceLineId: item.serviceLineId ?? '',
+    authorizationNumber: item.authorizationNumber ?? '',
+    startDate: item.startDate,
+    endDate: item.endDate,
+    authorizedUnits: item.authorizedUnits != null ? String(item.authorizedUnits) : '',
+    usedUnits: item.usedUnits != null ? String(item.usedUnits) : '',
+    status: item.status,
+    notes: item.notes ?? '',
+  };
+}
+
 function validatePatientForm(form: PatientFormState): Partial<Record<keyof PatientFormState, string>> {
   const errors: Partial<Record<keyof PatientFormState, string>> = {};
   if (!form.firstName.trim()) {
@@ -305,6 +475,65 @@ function validateAddressForm(form: AddressFormState): Partial<Record<keyof Addre
   }
   if (form.longitude && Number.isNaN(Number(form.longitude))) {
     errors.longitude = 'Longitude must be numeric.';
+  }
+  return errors;
+}
+
+function validateEligibilityForm(
+  form: EligibilityFormState,
+): Partial<Record<keyof EligibilityFormState, string>> {
+  const errors: Partial<Record<keyof EligibilityFormState, string>> = {};
+  if (!form.effectiveFrom.trim()) {
+    errors.effectiveFrom = 'Effective start date is required.';
+  }
+  if (form.effectiveTo && form.effectiveFrom && form.effectiveTo < form.effectiveFrom) {
+    errors.effectiveTo = 'End date must be on or after the start date.';
+  }
+  return errors;
+}
+
+function validateDiagnosisForm(
+  form: DiagnosisFormState,
+): Partial<Record<keyof DiagnosisFormState, string>> {
+  const errors: Partial<Record<keyof DiagnosisFormState, string>> = {};
+  if (!form.description.trim()) {
+    errors.description = 'Diagnosis description is required.';
+  }
+  if (form.resolvedDate && form.onsetDate && form.resolvedDate < form.onsetDate) {
+    errors.resolvedDate = 'Resolved date must be on or after onset date.';
+  }
+  return errors;
+}
+
+function validatePayerForm(form: PayerFormState): Partial<Record<keyof PayerFormState, string>> {
+  const errors: Partial<Record<keyof PayerFormState, string>> = {};
+  if (!form.effectiveFrom.trim()) {
+    errors.effectiveFrom = 'Effective start date is required.';
+  }
+  if (form.effectiveTo && form.effectiveFrom && form.effectiveTo < form.effectiveFrom) {
+    errors.effectiveTo = 'End date must be on or after the start date.';
+  }
+  return errors;
+}
+
+function validateAuthorizationForm(
+  form: AuthorizationFormState,
+): Partial<Record<keyof AuthorizationFormState, string>> {
+  const errors: Partial<Record<keyof AuthorizationFormState, string>> = {};
+  if (!form.startDate.trim()) {
+    errors.startDate = 'Start date is required.';
+  }
+  if (!form.endDate.trim()) {
+    errors.endDate = 'End date is required.';
+  }
+  if (form.startDate && form.endDate && form.endDate < form.startDate) {
+    errors.endDate = 'End date must be on or after the start date.';
+  }
+  if (form.authorizedUnits && Number.isNaN(Number(form.authorizedUnits))) {
+    errors.authorizedUnits = 'Authorized units must be numeric.';
+  }
+  if (form.usedUnits && Number.isNaN(Number(form.usedUnits))) {
+    errors.usedUnits = 'Used units must be numeric.';
   }
   return errors;
 }
@@ -381,6 +610,51 @@ export function PatientRecordWorkspacePage({
   >({});
   const [addressSaving, setAddressSaving] = useState(false);
   const [addressSuccessMessage, setAddressSuccessMessage] = useState<string | null>(null);
+
+  const [serviceLines, setServiceLines] = useState<ServiceLineSummary[]>([]);
+  const [eligibilities, setEligibilities] = useState<PatientServiceEligibility[]>([]);
+  const [eligibilitiesLoading, setEligibilitiesLoading] = useState(false);
+  const [eligibilitiesError, setEligibilitiesError] = useState<string | null>(null);
+  const [eligibilityForm, setEligibilityForm] = useState<EligibilityFormState>(EMPTY_ELIGIBILITY_FORM);
+  const [eligibilityFormErrors, setEligibilityFormErrors] = useState<
+    Partial<Record<keyof EligibilityFormState, string>>
+  >({});
+  const [selectedEligibilityId, setSelectedEligibilityId] = useState<string | null>(null);
+  const [eligibilitySaving, setEligibilitySaving] = useState(false);
+  const [eligibilitySuccessMessage, setEligibilitySuccessMessage] = useState<string | null>(null);
+
+  const [diagnoses, setDiagnoses] = useState<PatientDiagnosis[]>([]);
+  const [diagnosesLoading, setDiagnosesLoading] = useState(false);
+  const [diagnosesError, setDiagnosesError] = useState<string | null>(null);
+  const [diagnosisForm, setDiagnosisForm] = useState<DiagnosisFormState>(EMPTY_DIAGNOSIS_FORM);
+  const [diagnosisFormErrors, setDiagnosisFormErrors] = useState<
+    Partial<Record<keyof DiagnosisFormState, string>>
+  >({});
+  const [selectedDiagnosisId, setSelectedDiagnosisId] = useState<string | null>(null);
+  const [diagnosisSaving, setDiagnosisSaving] = useState(false);
+  const [diagnosisSuccessMessage, setDiagnosisSuccessMessage] = useState<string | null>(null);
+
+  const [payerLinks, setPayerLinks] = useState<PatientPayerLink[]>([]);
+  const [payerLinksLoading, setPayerLinksLoading] = useState(false);
+  const [payerLinksError, setPayerLinksError] = useState<string | null>(null);
+  const [payerForm, setPayerForm] = useState<PayerFormState>(EMPTY_PAYER_FORM);
+  const [payerFormErrors, setPayerFormErrors] = useState<
+    Partial<Record<keyof PayerFormState, string>>
+  >({});
+  const [selectedPayerId, setSelectedPayerId] = useState<string | null>(null);
+  const [payerSaving, setPayerSaving] = useState(false);
+  const [payerSuccessMessage, setPayerSuccessMessage] = useState<string | null>(null);
+
+  const [authorizations, setAuthorizations] = useState<PatientAuthorization[]>([]);
+  const [authorizationsLoading, setAuthorizationsLoading] = useState(false);
+  const [authorizationsError, setAuthorizationsError] = useState<string | null>(null);
+  const [authorizationForm, setAuthorizationForm] = useState<AuthorizationFormState>(EMPTY_AUTHORIZATION_FORM);
+  const [authorizationFormErrors, setAuthorizationFormErrors] = useState<
+    Partial<Record<keyof AuthorizationFormState, string>>
+  >({});
+  const [selectedAuthorizationId, setSelectedAuthorizationId] = useState<string | null>(null);
+  const [authorizationSaving, setAuthorizationSaving] = useState(false);
+  const [authorizationSuccessMessage, setAuthorizationSuccessMessage] = useState<string | null>(null);
 
   const isNewPatient = patientId === 'new';
   const authContext = useMemo(() => {
@@ -466,6 +740,128 @@ export function PatientRecordWorkspacePage({
           setContactsLoading(false);
         }
       });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authContext, isNewPatient, patientId, section, state.status]);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated' || isNewPatient) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void fetchServiceLines({
+      ...authContext,
+      status: 'ALL',
+      page: 0,
+      size: 100,
+    })
+      .then((response) => {
+        if (!cancelled) {
+          setServiceLines(response.content);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setServiceLines([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authContext, isNewPatient, state.status]);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated' || !patientId || isNewPatient) {
+      return;
+    }
+
+    const shouldLoadPhaseC =
+      section === 'overview' ||
+      section === 'eligibility' ||
+      section === 'diagnoses' ||
+      section === 'payer' ||
+      section === 'authorizations';
+
+    if (!shouldLoadPhaseC) {
+      return;
+    }
+
+    let cancelled = false;
+    setEligibilitiesLoading(true);
+    setDiagnosesLoading(true);
+    setPayerLinksLoading(true);
+    setAuthorizationsLoading(true);
+    setEligibilitiesError(null);
+    setDiagnosesError(null);
+    setPayerLinksError(null);
+    setAuthorizationsError(null);
+
+    void Promise.allSettled([
+      fetchPatientEligibilities(patientId, { ...authContext, status: 'ALL', serviceLineId: 'ALL' }),
+      fetchPatientDiagnoses(patientId, { ...authContext, status: 'ALL' }),
+      fetchPatientPayerLinks(patientId, { ...authContext, status: 'ALL', primaryPayer: 'ALL' }),
+      fetchPatientAuthorizations(patientId, {
+        ...authContext,
+        status: 'ALL',
+        patientPayerLinkId: 'ALL',
+        serviceLineId: 'ALL',
+      }),
+    ]).then((results) => {
+      if (cancelled) {
+        return;
+      }
+
+      const [eligibilityResult, diagnosisResult, payerResult, authorizationResult] = results;
+
+      if (eligibilityResult.status === 'fulfilled') {
+        setEligibilities(eligibilityResult.value);
+      } else {
+        setEligibilitiesError(
+          eligibilityResult.reason instanceof Error
+            ? eligibilityResult.reason.message
+            : 'Unable to load eligibilities.',
+        );
+      }
+      setEligibilitiesLoading(false);
+
+      if (diagnosisResult.status === 'fulfilled') {
+        setDiagnoses(diagnosisResult.value);
+      } else {
+        setDiagnosesError(
+          diagnosisResult.reason instanceof Error
+            ? diagnosisResult.reason.message
+            : 'Unable to load diagnoses.',
+        );
+      }
+      setDiagnosesLoading(false);
+
+      if (payerResult.status === 'fulfilled') {
+        setPayerLinks(payerResult.value);
+      } else {
+        setPayerLinksError(
+          payerResult.reason instanceof Error
+            ? payerResult.reason.message
+            : 'Unable to load payer links.',
+        );
+      }
+      setPayerLinksLoading(false);
+
+      if (authorizationResult.status === 'fulfilled') {
+        setAuthorizations(authorizationResult.value);
+      } else {
+        setAuthorizationsError(
+          authorizationResult.reason instanceof Error
+            ? authorizationResult.reason.message
+            : 'Unable to load authorizations.',
+        );
+      }
+      setAuthorizationsLoading(false);
+    });
 
     return () => {
       cancelled = true;
@@ -686,6 +1082,249 @@ export function PatientRecordWorkspacePage({
     }
   }
 
+  async function handleEligibilitySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const validationErrors = validateEligibilityForm(eligibilityForm);
+    setEligibilityFormErrors(validationErrors);
+    setEligibilitySuccessMessage(null);
+    setEligibilitiesError(null);
+
+    if (Object.keys(validationErrors).length > 0 || !patientId || isNewPatient) {
+      return;
+    }
+
+    setEligibilitySaving(true);
+    try {
+      const response = selectedEligibilityId
+        ? await updatePatientEligibility(selectedEligibilityId, {
+            ...authContext,
+            ...eligibilityForm,
+          } satisfies ManagePatientServiceEligibilityRequest)
+        : await createPatientEligibility(patientId, {
+            ...authContext,
+            ...eligibilityForm,
+          } satisfies ManagePatientServiceEligibilityRequest);
+      setEligibilities((current) => {
+        const withoutCurrent = current.filter((item) => item.id !== response.id);
+        return [response, ...withoutCurrent];
+      });
+      setSelectedEligibilityId(null);
+      setEligibilityForm(EMPTY_ELIGIBILITY_FORM);
+      setEligibilitySuccessMessage(
+        selectedEligibilityId ? 'Eligibility updated successfully.' : 'Eligibility created successfully.',
+      );
+    } catch (cause) {
+      setEligibilitiesError(cause instanceof Error ? cause.message : 'Unable to save eligibility.');
+    } finally {
+      setEligibilitySaving(false);
+    }
+  }
+
+  async function handleEligibilityDeactivate(eligibilityId: string) {
+    if (!window.confirm('Deactivate this eligibility record?')) {
+      return;
+    }
+
+    setEligibilitySaving(true);
+    try {
+      const response = await deactivatePatientEligibility(eligibilityId, authContext);
+      setEligibilities((current) => current.map((item) => (item.id === response.id ? response : item)));
+      setEligibilitySuccessMessage('Eligibility marked inactive.');
+    } catch (cause) {
+      setEligibilitiesError(cause instanceof Error ? cause.message : 'Unable to deactivate eligibility.');
+    } finally {
+      setEligibilitySaving(false);
+    }
+  }
+
+  async function handleDiagnosisSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const validationErrors = validateDiagnosisForm(diagnosisForm);
+    setDiagnosisFormErrors(validationErrors);
+    setDiagnosisSuccessMessage(null);
+    setDiagnosesError(null);
+
+    if (Object.keys(validationErrors).length > 0 || !patientId || isNewPatient) {
+      return;
+    }
+
+    setDiagnosisSaving(true);
+    try {
+      const response = selectedDiagnosisId
+        ? await updatePatientDiagnosis(selectedDiagnosisId, {
+            ...authContext,
+            ...diagnosisForm,
+          } satisfies ManagePatientDiagnosisRequest)
+        : await createPatientDiagnosis(patientId, {
+            ...authContext,
+            ...diagnosisForm,
+          } satisfies ManagePatientDiagnosisRequest);
+      setDiagnoses((current) => {
+        const withoutCurrent = current.filter((item) => item.id !== response.id);
+        return [response, ...withoutCurrent].sort(
+          (left, right) => Number(right.primaryCondition) - Number(left.primaryCondition),
+        );
+      });
+      setSelectedDiagnosisId(null);
+      setDiagnosisForm(EMPTY_DIAGNOSIS_FORM);
+      setDiagnosisSuccessMessage(
+        selectedDiagnosisId ? 'Diagnosis updated successfully.' : 'Diagnosis created successfully.',
+      );
+    } catch (cause) {
+      setDiagnosesError(cause instanceof Error ? cause.message : 'Unable to save diagnosis.');
+    } finally {
+      setDiagnosisSaving(false);
+    }
+  }
+
+  async function handleDiagnosisDeactivate(diagnosisId: string) {
+    if (!window.confirm('Deactivate this diagnosis record?')) {
+      return;
+    }
+
+    setDiagnosisSaving(true);
+    try {
+      const response = await deactivatePatientDiagnosis(diagnosisId, authContext);
+      setDiagnoses((current) => current.map((item) => (item.id === response.id ? response : item)));
+      setDiagnosisSuccessMessage('Diagnosis marked inactive.');
+    } catch (cause) {
+      setDiagnosesError(cause instanceof Error ? cause.message : 'Unable to deactivate diagnosis.');
+    } finally {
+      setDiagnosisSaving(false);
+    }
+  }
+
+  async function handlePayerSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const validationErrors = validatePayerForm(payerForm);
+    setPayerFormErrors(validationErrors);
+    setPayerSuccessMessage(null);
+    setPayerLinksError(null);
+
+    if (Object.keys(validationErrors).length > 0 || !patientId || isNewPatient) {
+      return;
+    }
+
+    setPayerSaving(true);
+    try {
+      const response = selectedPayerId
+        ? await updatePatientPayerLink(selectedPayerId, {
+            ...authContext,
+            ...payerForm,
+          } satisfies ManagePatientPayerLinkRequest)
+        : await createPatientPayerLink(patientId, {
+            ...authContext,
+            ...payerForm,
+          } satisfies ManagePatientPayerLinkRequest);
+      setPayerLinks((current) => {
+        const withoutCurrent = current.filter((item) => item.id !== response.id);
+        return [response, ...withoutCurrent].sort(
+          (left, right) => Number(right.primaryPayer) - Number(left.primaryPayer),
+        );
+      });
+      setSelectedPayerId(null);
+      setPayerForm(EMPTY_PAYER_FORM);
+      setPayerSuccessMessage(
+        selectedPayerId ? 'Payer link updated successfully.' : 'Payer link created successfully.',
+      );
+    } catch (cause) {
+      setPayerLinksError(cause instanceof Error ? cause.message : 'Unable to save payer link.');
+    } finally {
+      setPayerSaving(false);
+    }
+  }
+
+  async function handlePayerDeactivate(payerLinkId: string) {
+    if (!window.confirm('Deactivate this payer link?')) {
+      return;
+    }
+
+    setPayerSaving(true);
+    try {
+      const response = await deactivatePatientPayerLink(payerLinkId, authContext);
+      setPayerLinks((current) => current.map((item) => (item.id === response.id ? response : item)));
+      setPayerSuccessMessage('Payer link marked inactive.');
+    } catch (cause) {
+      setPayerLinksError(cause instanceof Error ? cause.message : 'Unable to deactivate payer link.');
+    } finally {
+      setPayerSaving(false);
+    }
+  }
+
+  async function handleAuthorizationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const validationErrors = validateAuthorizationForm(authorizationForm);
+    setAuthorizationFormErrors(validationErrors);
+    setAuthorizationSuccessMessage(null);
+    setAuthorizationsError(null);
+
+    if (Object.keys(validationErrors).length > 0 || !patientId || isNewPatient) {
+      return;
+    }
+
+    setAuthorizationSaving(true);
+    try {
+      const response = selectedAuthorizationId
+        ? await updatePatientAuthorization(selectedAuthorizationId, {
+            ...authContext,
+            ...authorizationForm,
+            authorizedUnits: authorizationForm.authorizedUnits
+              ? Number(authorizationForm.authorizedUnits)
+              : undefined,
+            usedUnits: authorizationForm.usedUnits ? Number(authorizationForm.usedUnits) : undefined,
+          } satisfies ManagePatientAuthorizationRequest)
+        : await createPatientAuthorization(patientId, {
+            ...authContext,
+            ...authorizationForm,
+            authorizedUnits: authorizationForm.authorizedUnits
+              ? Number(authorizationForm.authorizedUnits)
+              : undefined,
+            usedUnits: authorizationForm.usedUnits ? Number(authorizationForm.usedUnits) : undefined,
+          } satisfies ManagePatientAuthorizationRequest);
+      setAuthorizations((current) => {
+        const withoutCurrent = current.filter((item) => item.id !== response.id);
+        return [response, ...withoutCurrent];
+      });
+      setSelectedAuthorizationId(null);
+      setAuthorizationForm(EMPTY_AUTHORIZATION_FORM);
+      setAuthorizationSuccessMessage(
+        selectedAuthorizationId
+          ? 'Authorization updated successfully.'
+          : 'Authorization created successfully.',
+      );
+    } catch (cause) {
+      setAuthorizationsError(cause instanceof Error ? cause.message : 'Unable to save authorization.');
+    } finally {
+      setAuthorizationSaving(false);
+    }
+  }
+
+  async function handleAuthorizationDeactivate(authorizationId: string) {
+    if (!window.confirm('Deactivate this authorization?')) {
+      return;
+    }
+
+    setAuthorizationSaving(true);
+    try {
+      const response = await deactivatePatientAuthorization(authorizationId, authContext);
+      setAuthorizations((current) =>
+        current.map((item) => (item.id === response.id ? response : item)),
+      );
+      setAuthorizationSuccessMessage('Authorization marked inactive.');
+    } catch (cause) {
+      setAuthorizationsError(cause instanceof Error ? cause.message : 'Unable to deactivate authorization.');
+    } finally {
+      setAuthorizationSaving(false);
+    }
+  }
+
+  function serviceLineLabel(serviceLineId: string | null) {
+    if (!serviceLineId) {
+      return 'All services';
+    }
+    return serviceLines.find((item) => item.id === serviceLineId)?.name ?? serviceLineId;
+  }
+
   function renderOverviewContent() {
     return (
       <>
@@ -714,13 +1353,30 @@ export function PatientRecordWorkspacePage({
             </article>
             <article className="patient-summary-card">
               <span className="eyebrow">Eligibility</span>
-              <strong>Available in Phase C</strong>
-              <p>Eligibility highlights will appear here once service windows are connected.</p>
+              <strong>
+                {eligibilities.find((item) => item.status === 'ELIGIBLE')
+                  ? `${eligibilities.filter((item) => item.status === 'ELIGIBLE').length} active / eligible`
+                  : 'No active eligibility'}
+              </strong>
+              <p>
+                {eligibilities.find((item) => item.status === 'ELIGIBLE')
+                  ? serviceLineLabel(
+                      eligibilities.find((item) => item.status === 'ELIGIBLE')?.serviceLineId ?? null,
+                    )
+                  : 'Eligibility tracking is now live in the record workspace.'}
+              </p>
             </article>
             <article className="patient-summary-card">
               <span className="eyebrow">Coverage and authorizations</span>
-              <strong>Available in Phase C</strong>
-              <p>Payer and authorization summaries will appear here when those modules are implemented.</p>
+              <strong>
+                {payerLinks.find((item) => item.primaryPayer)?.payerName ??
+                  `${authorizations.filter((item) => item.status === 'ACTIVE').length} active authorization(s)`}
+              </strong>
+              <p>
+                {authorizations.find((item) => item.status === 'EXHAUSTED')
+                  ? `${authorizations.filter((item) => item.status === 'EXHAUSTED').length} exhausted authorization(s)`
+                  : 'No exhausted authorizations in the current record.'}
+              </p>
             </article>
           </div>
         </PatientPanel>
@@ -751,6 +1407,10 @@ export function PatientRecordWorkspacePage({
               <article>
                 <strong>{patient?.status ?? 'Unknown'}</strong>
                 <span>Record lifecycle</span>
+              </article>
+              <article>
+                <strong>{diagnoses.find((item) => item.primaryCondition)?.description ?? 'Missing'}</strong>
+                <span>Primary diagnosis</span>
               </article>
             </div>
           )}
@@ -834,6 +1494,647 @@ export function PatientRecordWorkspacePage({
           mode="editable"
           title={sectionConfig.formTitle}
         />
+      </>
+    );
+  }
+
+  function renderEligibilityContent() {
+    return (
+      <>
+        <PatientPanel
+          title="Eligibility history"
+          description="Active vs historical service eligibility is visible here, with service-line linkage and date windows backed by the Epic 3 eligibility API."
+        >
+          {eligibilitiesLoading ? <p>Loading eligibilities...</p> : null}
+          {eligibilitiesError ? <p className="alert">{eligibilitiesError}</p> : null}
+          {eligibilitySuccessMessage ? <p className="success-note">{eligibilitySuccessMessage}</p> : null}
+          {!eligibilitiesLoading && eligibilities.length === 0 ? (
+            <PatientModuleState
+              title="No eligibility records on file"
+              description="Create an eligibility record below to establish which services the patient can receive."
+              variant="empty"
+            />
+          ) : (
+            <div className="patient-phasec-list">
+              {eligibilities.map((item) => (
+                <article key={item.id} className="patient-phasec-card">
+                  <div className="patient-contact-card-header">
+                    <strong>{serviceLineLabel(item.serviceLineId)}</strong>
+                    <span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span>
+                  </div>
+                  <p>
+                    {item.effectiveFrom}
+                    {item.effectiveTo ? ` to ${item.effectiveTo}` : ' onward'}
+                  </p>
+                  <p>{item.verificationSource ?? 'No verification source'}</p>
+                  <div className="patient-directory-actions">
+                    <button
+                      className="button button-secondary"
+                      onClick={() => {
+                        setSelectedEligibilityId(item.id);
+                        setEligibilityForm(mapEligibilityToForm(item));
+                        setEligibilityFormErrors({});
+                      }}
+                      type="button"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="button button-ghost"
+                      onClick={() => void handleEligibilityDeactivate(item.id)}
+                      type="button"
+                    >
+                      Deactivate
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </PatientPanel>
+        <PatientPanel
+          title={selectedEligibilityId ? 'Edit eligibility' : 'Add eligibility'}
+          description="Date windows, service-line selection, and overlap/conflict handling are standardized here."
+        >
+          <form className="stack-form-light patient-stack-form" onSubmit={handleEligibilitySubmit}>
+            <div className="patient-form-grid">
+              <label className="field field-light">
+                <span>Service line</span>
+                <select
+                  className="input input-light"
+                  onChange={(event) =>
+                    setEligibilityForm((current) => ({ ...current, serviceLineId: event.target.value }))
+                  }
+                  value={eligibilityForm.serviceLineId}
+                >
+                  <option value="">All services</option>
+                  {serviceLines.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field field-light">
+                <span>Status</span>
+                <select
+                  className="input input-light"
+                  onChange={(event) =>
+                    setEligibilityForm((current) => ({
+                      ...current,
+                      status: event.target.value as PatientServiceEligibilityStatus,
+                    }))
+                  }
+                  value={eligibilityForm.status}
+                >
+                  <option value="ELIGIBLE">Eligible</option>
+                  <option value="INELIGIBLE">Ineligible</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="EXPIRED">Expired</option>
+                </select>
+              </label>
+              {(
+                [
+                  ['effectiveFrom', 'Effective from'],
+                  ['effectiveTo', 'Effective to'],
+                  ['verificationSource', 'Verification source'],
+                ] as Array<[keyof EligibilityFormState, string]>
+              ).map(([key, label]) => (
+                <label key={key} className="field field-light">
+                  <span>{label}</span>
+                  <input
+                    className="input input-light"
+                    onChange={(event) =>
+                      setEligibilityForm((current) => ({ ...current, [key]: event.target.value }))
+                    }
+                    type={key.includes('effective') ? 'date' : 'text'}
+                    value={eligibilityForm[key]}
+                  />
+                  {eligibilityFormErrors[key] ? <small className="field-error">{eligibilityFormErrors[key]}</small> : null}
+                </label>
+              ))}
+            </div>
+            <label className="field field-light">
+              <span>Notes</span>
+              <textarea
+                className="input input-light"
+                onChange={(event) =>
+                  setEligibilityForm((current) => ({ ...current, notes: event.target.value }))
+                }
+                rows={3}
+                value={eligibilityForm.notes}
+              />
+            </label>
+            <div className="button-row">
+              <button className="button" disabled={eligibilitySaving} type="submit">
+                {eligibilitySaving ? 'Saving...' : selectedEligibilityId ? 'Save eligibility' : 'Add eligibility'}
+              </button>
+              {selectedEligibilityId ? (
+                <button
+                  className="button button-secondary"
+                  onClick={() => {
+                    setSelectedEligibilityId(null);
+                    setEligibilityForm(EMPTY_ELIGIBILITY_FORM);
+                    setEligibilityFormErrors({});
+                  }}
+                  type="button"
+                >
+                  Cancel edit
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </PatientPanel>
+      </>
+    );
+  }
+
+  function renderDiagnosesContent() {
+    return (
+      <>
+        <PatientPanel
+          title="Diagnosis history"
+          description="Primary vs secondary and active vs resolved condition states are visible in one clinical module."
+        >
+          {diagnosesLoading ? <p>Loading diagnoses...</p> : null}
+          {diagnosesError ? <p className="alert">{diagnosesError}</p> : null}
+          {diagnosisSuccessMessage ? <p className="success-note">{diagnosisSuccessMessage}</p> : null}
+          {!diagnosesLoading && diagnoses.length === 0 ? (
+            <PatientModuleState
+              title="No diagnoses on file"
+              description="Add the first condition below to establish clinical context."
+              variant="empty"
+            />
+          ) : (
+            <div className="patient-phasec-list">
+              {diagnoses.map((item) => (
+                <article key={item.id} className="patient-phasec-card">
+                  <div className="patient-contact-card-header">
+                    <strong>{item.description}</strong>
+                    <div className="patient-contact-tags">
+                      {item.primaryCondition ? <span className="status-pill status-active">Primary</span> : null}
+                      <span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span>
+                    </div>
+                  </div>
+                  <p>{item.diagnosisCode ?? 'No diagnosis code'} • {item.diagnosisType ?? 'No type'}</p>
+                  <p>
+                    {item.onsetDate ?? 'No onset date'}
+                    {item.resolvedDate ? ` • Resolved ${item.resolvedDate}` : ''}
+                  </p>
+                  <div className="patient-directory-actions">
+                    <button
+                      className="button button-secondary"
+                      onClick={() => {
+                        setSelectedDiagnosisId(item.id);
+                        setDiagnosisForm(mapDiagnosisToForm(item));
+                        setDiagnosisFormErrors({});
+                      }}
+                      type="button"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="button button-ghost"
+                      onClick={() => void handleDiagnosisDeactivate(item.id)}
+                      type="button"
+                    >
+                      Deactivate
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </PatientPanel>
+        <PatientPanel
+          title={selectedDiagnosisId ? 'Edit diagnosis' : 'Add diagnosis'}
+          description="Primary-condition, active/resolved status, and validation states are handled in one reusable diagnosis form."
+        >
+          <form className="stack-form-light patient-stack-form" onSubmit={handleDiagnosisSubmit}>
+            <div className="patient-form-grid">
+              {(
+                [
+                  ['diagnosisCode', 'Diagnosis code'],
+                  ['description', 'Description'],
+                  ['diagnosisType', 'Diagnosis type'],
+                  ['onsetDate', 'Onset date'],
+                  ['resolvedDate', 'Resolved date'],
+                ] as Array<[keyof DiagnosisFormState, string]>
+              ).map(([key, label]) => (
+                <label key={key} className="field field-light">
+                  <span>{label}</span>
+                  <input
+                    className="input input-light"
+                    onChange={(event) =>
+                      setDiagnosisForm((current) => ({ ...current, [key]: event.target.value }))
+                    }
+                    type={key.includes('Date') ? 'date' : 'text'}
+                    value={diagnosisForm[key] as string}
+                  />
+                  {diagnosisFormErrors[key] ? <small className="field-error">{diagnosisFormErrors[key]}</small> : null}
+                </label>
+              ))}
+              <label className="field field-light">
+                <span>Status</span>
+                <select
+                  className="input input-light"
+                  onChange={(event) =>
+                    setDiagnosisForm((current) => ({
+                      ...current,
+                      status: event.target.value as PatientDiagnosisStatus,
+                    }))
+                  }
+                  value={diagnosisForm.status}
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="HISTORICAL">Historical</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </label>
+            </div>
+            <div className="patient-toggle-grid">
+              <label className="patient-checkbox">
+                <input
+                  checked={diagnosisForm.primaryCondition}
+                  onChange={(event) =>
+                    setDiagnosisForm((current) => ({ ...current, primaryCondition: event.target.checked }))
+                  }
+                  type="checkbox"
+                />
+                <span>Primary diagnosis</span>
+              </label>
+            </div>
+            <label className="field field-light">
+              <span>Notes</span>
+              <textarea
+                className="input input-light"
+                onChange={(event) =>
+                  setDiagnosisForm((current) => ({ ...current, notes: event.target.value }))
+                }
+                rows={3}
+                value={diagnosisForm.notes}
+              />
+            </label>
+            <div className="button-row">
+              <button className="button" disabled={diagnosisSaving} type="submit">
+                {diagnosisSaving ? 'Saving...' : selectedDiagnosisId ? 'Save diagnosis' : 'Add diagnosis'}
+              </button>
+              {selectedDiagnosisId ? (
+                <button
+                  className="button button-secondary"
+                  onClick={() => {
+                    setSelectedDiagnosisId(null);
+                    setDiagnosisForm(EMPTY_DIAGNOSIS_FORM);
+                    setDiagnosisFormErrors({});
+                  }}
+                  type="button"
+                >
+                  Cancel edit
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </PatientPanel>
+      </>
+    );
+  }
+
+  function renderPayerContent() {
+    return (
+      <>
+        <PatientPanel
+          title="Payer links"
+          description="Primary payer visibility, effective dates, and overlap-sensitive updates all live in one financial context module."
+        >
+          {payerLinksLoading ? <p>Loading payer links...</p> : null}
+          {payerLinksError ? <p className="alert">{payerLinksError}</p> : null}
+          {payerSuccessMessage ? <p className="success-note">{payerSuccessMessage}</p> : null}
+          {!payerLinksLoading && payerLinks.length === 0 ? (
+            <PatientModuleState
+              title="No payer links on file"
+              description="Add the first payer record below to establish coverage context."
+              variant="empty"
+            />
+          ) : (
+            <div className="patient-phasec-list">
+              {payerLinks.map((item) => (
+                <article key={item.id} className="patient-phasec-card">
+                  <div className="patient-contact-card-header">
+                    <strong>{item.payerName ?? 'Unnamed payer'}</strong>
+                    <div className="patient-contact-tags">
+                      {item.primaryPayer ? <span className="status-pill status-active">Primary</span> : null}
+                      <span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span>
+                    </div>
+                  </div>
+                  <p>{item.memberPolicyNumber ?? 'No member policy'} • {item.groupNumber ?? 'No group number'}</p>
+                  <p>
+                    {item.effectiveFrom}
+                    {item.effectiveTo ? ` to ${item.effectiveTo}` : ' onward'}
+                  </p>
+                  <div className="patient-directory-actions">
+                    <button
+                      className="button button-secondary"
+                      onClick={() => {
+                        setSelectedPayerId(item.id);
+                        setPayerForm(mapPayerToForm(item));
+                        setPayerFormErrors({});
+                      }}
+                      type="button"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="button button-ghost"
+                      onClick={() => void handlePayerDeactivate(item.id)}
+                      type="button"
+                    >
+                      Deactivate
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </PatientPanel>
+        <PatientPanel
+          title={selectedPayerId ? 'Edit payer link' : 'Add payer link'}
+          description="Primary payer state, effective dates, and payer identifiers are managed in one reusable form."
+        >
+          <form className="stack-form-light patient-stack-form" onSubmit={handlePayerSubmit}>
+            <div className="patient-form-grid">
+              {(
+                [
+                  ['payerName', 'Payer name'],
+                  ['payerExternalId', 'Payer external ID'],
+                  ['memberPolicyNumber', 'Member / policy number'],
+                  ['groupNumber', 'Group number'],
+                  ['effectiveFrom', 'Effective from'],
+                  ['effectiveTo', 'Effective to'],
+                ] as Array<[keyof PayerFormState, string]>
+              ).map(([key, label]) => (
+                <label key={key} className="field field-light">
+                  <span>{label}</span>
+                  <input
+                    className="input input-light"
+                    onChange={(event) =>
+                      setPayerForm((current) => ({ ...current, [key]: event.target.value }))
+                    }
+                    type={key.includes('effective') ? 'date' : 'text'}
+                    value={payerForm[key] as string}
+                  />
+                  {payerFormErrors[key] ? <small className="field-error">{payerFormErrors[key]}</small> : null}
+                </label>
+              ))}
+              <label className="field field-light">
+                <span>Status</span>
+                <select
+                  className="input input-light"
+                  onChange={(event) =>
+                    setPayerForm((current) => ({
+                      ...current,
+                      status: event.target.value as PatientPayerLinkStatus,
+                    }))
+                  }
+                  value={payerForm.status}
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="INACTIVE">Inactive</option>
+                  <option value="TERMINATED">Terminated</option>
+                  <option value="EXPIRED">Expired</option>
+                </select>
+              </label>
+            </div>
+            <div className="patient-toggle-grid">
+              <label className="patient-checkbox">
+                <input
+                  checked={payerForm.primaryPayer}
+                  onChange={(event) =>
+                    setPayerForm((current) => ({ ...current, primaryPayer: event.target.checked }))
+                  }
+                  type="checkbox"
+                />
+                <span>Primary payer</span>
+              </label>
+            </div>
+            <label className="field field-light">
+              <span>Notes</span>
+              <textarea
+                className="input input-light"
+                onChange={(event) =>
+                  setPayerForm((current) => ({ ...current, notes: event.target.value }))
+                }
+                rows={3}
+                value={payerForm.notes}
+              />
+            </label>
+            <div className="button-row">
+              <button className="button" disabled={payerSaving} type="submit">
+                {payerSaving ? 'Saving...' : selectedPayerId ? 'Save payer link' : 'Add payer link'}
+              </button>
+              {selectedPayerId ? (
+                <button
+                  className="button button-secondary"
+                  onClick={() => {
+                    setSelectedPayerId(null);
+                    setPayerForm(EMPTY_PAYER_FORM);
+                    setPayerFormErrors({});
+                  }}
+                  type="button"
+                >
+                  Cancel edit
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </PatientPanel>
+      </>
+    );
+  }
+
+  function renderAuthorizationsContent() {
+    return (
+      <>
+        <PatientPanel
+          title="Authorization tracking"
+          description="Current, expired, exhausted, and pending authorizations are visible with their service-line and payer context."
+        >
+          {authorizationsLoading ? <p>Loading authorizations...</p> : null}
+          {authorizationsError ? <p className="alert">{authorizationsError}</p> : null}
+          {authorizationSuccessMessage ? <p className="success-note">{authorizationSuccessMessage}</p> : null}
+          {!authorizationsLoading && authorizations.length === 0 ? (
+            <PatientModuleState
+              title="No authorizations on file"
+              description="Add an authorization below to track service windows and remaining usage."
+              variant="empty"
+            />
+          ) : (
+            <div className="patient-phasec-list">
+              {authorizations.map((item) => (
+                <article key={item.id} className="patient-phasec-card">
+                  <div className="patient-contact-card-header">
+                    <strong>{item.authorizationNumber ?? 'Authorization without number'}</strong>
+                    <span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span>
+                  </div>
+                  <p>{serviceLineLabel(item.serviceLineId)} • {item.patientPayerLinkId ? 'Linked payer' : 'No payer link'}</p>
+                  <p>
+                    {item.startDate} to {item.endDate}
+                  </p>
+                  <p>
+                    {item.authorizedUnits ?? 0} authorized / {item.usedUnits ?? 0} used
+                  </p>
+                  <div className="patient-directory-actions">
+                    <button
+                      className="button button-secondary"
+                      onClick={() => {
+                        setSelectedAuthorizationId(item.id);
+                        setAuthorizationForm(mapAuthorizationToForm(item));
+                        setAuthorizationFormErrors({});
+                      }}
+                      type="button"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="button button-ghost"
+                      onClick={() => void handleAuthorizationDeactivate(item.id)}
+                      type="button"
+                    >
+                      Deactivate
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </PatientPanel>
+        <PatientPanel
+          title={selectedAuthorizationId ? 'Edit authorization' : 'Add authorization'}
+          description="Authorization windows, remaining usage, payer linkage, and service-line linkage are editable here."
+        >
+          <form className="stack-form-light patient-stack-form" onSubmit={handleAuthorizationSubmit}>
+            <div className="patient-form-grid">
+              <label className="field field-light">
+                <span>Payer link</span>
+                <select
+                  className="input input-light"
+                  onChange={(event) =>
+                    setAuthorizationForm((current) => ({
+                      ...current,
+                      patientPayerLinkId: event.target.value,
+                    }))
+                  }
+                  value={authorizationForm.patientPayerLinkId}
+                >
+                  <option value="">No payer link</option>
+                  {payerLinks.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.payerName ?? item.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field field-light">
+                <span>Service line</span>
+                <select
+                  className="input input-light"
+                  onChange={(event) =>
+                    setAuthorizationForm((current) => ({ ...current, serviceLineId: event.target.value }))
+                  }
+                  value={authorizationForm.serviceLineId}
+                >
+                  <option value="">No service line</option>
+                  {serviceLines.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {(
+                [
+                  ['authorizationNumber', 'Authorization number'],
+                  ['startDate', 'Start date'],
+                  ['endDate', 'End date'],
+                  ['authorizedUnits', 'Authorized units'],
+                  ['usedUnits', 'Used units'],
+                ] as Array<[keyof AuthorizationFormState, string]>
+              ).map(([key, label]) => (
+                <label key={key} className="field field-light">
+                  <span>{label}</span>
+                  <input
+                    className="input input-light"
+                    onChange={(event) =>
+                      setAuthorizationForm((current) => ({ ...current, [key]: event.target.value }))
+                    }
+                    type={
+                      key === 'startDate' || key === 'endDate'
+                        ? 'date'
+                        : key === 'authorizedUnits' || key === 'usedUnits'
+                          ? 'number'
+                          : 'text'
+                    }
+                    value={authorizationForm[key] as string}
+                  />
+                  {authorizationFormErrors[key] ? <small className="field-error">{authorizationFormErrors[key]}</small> : null}
+                </label>
+              ))}
+              <label className="field field-light">
+                <span>Status</span>
+                <select
+                  className="input input-light"
+                  onChange={(event) =>
+                    setAuthorizationForm((current) => ({
+                      ...current,
+                      status: event.target.value as PatientEpisodeAuthorizationStatus,
+                    }))
+                  }
+                  value={authorizationForm.status}
+                >
+                  <option value="PENDING">Pending</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="EXPIRED">Expired</option>
+                  <option value="EXHAUSTED">Exhausted</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </label>
+            </div>
+            <label className="field field-light">
+              <span>Notes</span>
+              <textarea
+                className="input input-light"
+                onChange={(event) =>
+                  setAuthorizationForm((current) => ({ ...current, notes: event.target.value }))
+                }
+                rows={3}
+                value={authorizationForm.notes}
+              />
+            </label>
+            <div className="button-row">
+              <button className="button" disabled={authorizationSaving} type="submit">
+                {authorizationSaving
+                  ? 'Saving...'
+                  : selectedAuthorizationId
+                    ? 'Save authorization'
+                    : 'Add authorization'}
+              </button>
+              {selectedAuthorizationId ? (
+                <button
+                  className="button button-secondary"
+                  onClick={() => {
+                    setSelectedAuthorizationId(null);
+                    setAuthorizationForm(EMPTY_AUTHORIZATION_FORM);
+                    setAuthorizationFormErrors({});
+                  }}
+                  type="button"
+                >
+                  Cancel edit
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </PatientPanel>
       </>
     );
   }
@@ -1140,6 +2441,14 @@ export function PatientRecordWorkspacePage({
                   ? renderContactsContent()
                   : section === 'address'
                     ? renderAddressContent()
+                    : section === 'eligibility'
+                      ? renderEligibilityContent()
+                      : section === 'diagnoses'
+                        ? renderDiagnosesContent()
+                        : section === 'payer'
+                          ? renderPayerContent()
+                          : section === 'authorizations'
+                            ? renderAuthorizationsContent()
                     : renderScaffoldContent()}
 
             <PatientPanel
