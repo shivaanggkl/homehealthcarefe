@@ -486,6 +486,173 @@ export type MobileEvvSummaryResponse = {
   blockers: string[];
 };
 
+export type EvvClockEventType = 'CLOCK_IN' | 'CLOCK_OUT';
+
+export type SignatureVerificationStatus =
+  | 'PRESENT'
+  | 'MISSING'
+  | 'REFUSED'
+  | 'NOT_APPLICABLE';
+
+export type SignatureSignerRole = 'PATIENT' | 'CAREGIVER' | 'REPRESENTATIVE';
+
+export type VisitExceptionType =
+  | 'LATE_START'
+  | 'GEOFENCE_OUT_OF_RANGE'
+  | 'MISSING_SIGNATURE'
+  | 'NO_SHOW'
+  | 'PATIENT_REFUSED'
+  | 'CAREGIVER_UNAVAILABLE'
+  | 'DOCUMENTATION_GAP';
+
+export type VisitExceptionSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export type VisitExceptionStatus = 'OPEN' | 'ACKNOWLEDGED' | 'ESCALATED' | 'RESOLVED';
+
+export type MobileMissedVisitStatus = 'REPORTED' | 'NOTIFIED' | 'ESCALATED' | 'RESOLVED';
+
+export type SupervisorNotificationStatus = 'QUEUED' | 'SENT' | 'FAILED';
+
+export type EscalationStatus = 'OPEN' | 'ACKNOWLEDGED' | 'COMPLETED' | 'CANCELLED';
+
+export type MobileEvvClockEventResponse = {
+  eventId: string;
+  verificationSessionId: string;
+  eventType: EvvClockEventType;
+  capturedAt: string;
+  verificationStatus: EvvVerificationStatus;
+  geofenceOutcome: GeofenceEvaluationOutcome | null;
+  geofenceReasonCode: string | null;
+  distanceFromExpectedMeters: number | null;
+  toleranceMetersUsed: number | null;
+  overallOutcome: EvvComplianceOutcome;
+  warnings: string[];
+  blockers: string[];
+};
+
+export type RecordMobileEvvClockEventRequest = AuthenticatedRequestContext & {
+  visitId: string;
+  executionSessionId?: string;
+  capturedAt: string;
+  capturedLatitude?: number;
+  capturedLongitude?: number;
+  timezone: string;
+  captureSource: string;
+  platformSummary?: string;
+  appVersion?: string;
+  deviceClass?: string;
+  timezoneOffsetMinutes?: number;
+  userAgentHash?: string;
+  sessionFingerprintHash?: string;
+};
+
+export type MobileEvvSignatureResponse = {
+  id: string;
+  verificationSessionId: string;
+  artifactId: string | null;
+  signerRole: SignatureSignerRole;
+  verificationStatus: SignatureVerificationStatus;
+  recordedAt: string;
+};
+
+export type RecordMobileEvvSignatureRequest = AuthenticatedRequestContext & {
+  verificationSessionId: string;
+  artifactId?: string;
+  signerRole: SignatureSignerRole;
+  verificationStatus: SignatureVerificationStatus;
+  recordedAt: string;
+};
+
+export type ReportMobileMissedVisitRequest = AuthenticatedRequestContext & {
+  visitId: string;
+  reasonCode: string;
+  narrative: string;
+  reportedAt: string;
+};
+
+export type MobileMissedVisitResponse = {
+  id: string;
+  visitId: string;
+  caregiverProfileId: string | null;
+  patientId: string;
+  branchId: string | null;
+  reasonCode: string;
+  narrative: string;
+  reportedAt: string;
+  status: MobileMissedVisitStatus;
+};
+
+export type CreateMobileVisitExceptionRequest = AuthenticatedRequestContext & {
+  verificationSessionId: string;
+  exceptionType: VisitExceptionType;
+  severity: VisitExceptionSeverity;
+  reasonCode: string;
+  narrative: string;
+};
+
+export type MobileVisitExceptionResponse = {
+  id: string;
+  verificationSessionId: string | null;
+  visitId: string;
+  caregiverProfileId: string | null;
+  patientId: string;
+  branchId: string | null;
+  exceptionType: VisitExceptionType;
+  severity: VisitExceptionSeverity;
+  reasonCode: string;
+  narrative: string;
+  status: VisitExceptionStatus;
+  acknowledgedAt: string | null;
+  resolvedAt: string | null;
+};
+
+export type ListMobileVisitExceptionsQuery = AuthenticatedRequestContext & {
+  visitId?: string;
+  status?: VisitExceptionStatus;
+};
+
+export type UpdateMobileVisitExceptionStatusRequest = AuthenticatedRequestContext & {
+  exceptionId: string;
+  status: VisitExceptionStatus;
+  actedAt: string;
+};
+
+export type NotifyMobileEvvSupervisorRequest = AuthenticatedRequestContext & {
+  recipientMembershipId: string;
+  channel: string;
+  rationale: string;
+  createdAt: string;
+};
+
+export type MobileEvvNotificationResponse = {
+  id: string;
+  missedVisitRecordId: string | null;
+  visitExceptionRecordId: string | null;
+  recipientMembershipId: string;
+  channel: string;
+  rationale: string;
+  createdAt: string;
+  status: SupervisorNotificationStatus;
+};
+
+export type CreateMobileEvvEscalationRequest = AuthenticatedRequestContext & {
+  targetRoleKey: string;
+  severity: VisitExceptionSeverity;
+  rationale: string;
+  slaDueAt?: string;
+};
+
+export type MobileEvvEscalationResponse = {
+  id: string;
+  missedVisitRecordId: string | null;
+  visitExceptionRecordId: string | null;
+  targetRoleKey: string;
+  severity: VisitExceptionSeverity;
+  rationale: string;
+  slaDueAt: string | null;
+  status: EscalationStatus;
+};
+
 export type ScheduleBoardView = 'DAY' | 'WEEK' | 'MONTH';
 
 export type SchedulingVisitStatus =
@@ -2096,6 +2263,388 @@ export async function fetchOwnMobileEvvSummary(
   }
 
   return payload as MobileEvvSummaryResponse;
+}
+
+export async function recordMobileEvvClockIn(
+  request: RecordMobileEvvClockEventRequest,
+): Promise<MobileEvvClockEventResponse> {
+  const response = await fetch(apiUrl(`/api/evv/visits/${request.visitId}/clock-in`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      executionSessionId: request.executionSessionId ?? null,
+      capturedAt: request.capturedAt,
+      capturedLatitude: request.capturedLatitude ?? null,
+      capturedLongitude: request.capturedLongitude ?? null,
+      timezone: request.timezone,
+      captureSource: request.captureSource,
+      platformSummary: request.platformSummary ?? null,
+      appVersion: request.appVersion ?? null,
+      deviceClass: request.deviceClass ?? null,
+      timezoneOffsetMinutes: request.timezoneOffsetMinutes ?? null,
+      userAgentHash: request.userAgentHash ?? null,
+      sessionFingerprintHash: request.sessionFingerprintHash ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvClockEventResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `EVV clock-in failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvClockEventResponse;
+}
+
+export async function recordMobileEvvClockOut(
+  request: RecordMobileEvvClockEventRequest,
+): Promise<MobileEvvClockEventResponse> {
+  const response = await fetch(apiUrl(`/api/evv/visits/${request.visitId}/clock-out`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      executionSessionId: request.executionSessionId ?? null,
+      capturedAt: request.capturedAt,
+      capturedLatitude: request.capturedLatitude ?? null,
+      capturedLongitude: request.capturedLongitude ?? null,
+      timezone: request.timezone,
+      captureSource: request.captureSource,
+      platformSummary: request.platformSummary ?? null,
+      appVersion: request.appVersion ?? null,
+      deviceClass: request.deviceClass ?? null,
+      timezoneOffsetMinutes: request.timezoneOffsetMinutes ?? null,
+      userAgentHash: request.userAgentHash ?? null,
+      sessionFingerprintHash: request.sessionFingerprintHash ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvClockEventResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `EVV clock-out failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvClockEventResponse;
+}
+
+export async function recordMobileEvvSignature(
+  request: RecordMobileEvvSignatureRequest,
+): Promise<MobileEvvSignatureResponse> {
+  const response = await fetch(
+    apiUrl(`/api/evv/verification-sessions/${request.verificationSessionId}/signatures`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        artifactId: request.artifactId ?? null,
+        signerRole: request.signerRole,
+        verificationStatus: request.verificationStatus,
+        recordedAt: request.recordedAt,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvSignatureResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `EVV signature save failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvSignatureResponse;
+}
+
+export async function reportMobileMissedVisit(
+  request: ReportMobileMissedVisitRequest,
+): Promise<MobileMissedVisitResponse> {
+  const response = await fetch(apiUrl(`/api/evv/visits/${request.visitId}/missed-visits`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      reasonCode: request.reasonCode,
+      narrative: request.narrative,
+      reportedAt: request.reportedAt,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileMissedVisitResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `Missed visit report failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileMissedVisitResponse;
+}
+
+export async function createMobileVisitException(
+  request: CreateMobileVisitExceptionRequest,
+): Promise<MobileVisitExceptionResponse> {
+  const response = await fetch(
+    apiUrl(`/api/evv/verification-sessions/${request.verificationSessionId}/exceptions`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        exceptionType: request.exceptionType,
+        severity: request.severity,
+        reasonCode: request.reasonCode,
+        narrative: request.narrative,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileVisitExceptionResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `EVV exception save failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileVisitExceptionResponse;
+}
+
+export async function fetchMobileVisitExceptions(
+  request: ListMobileVisitExceptionsQuery,
+): Promise<MobileVisitExceptionResponse[]> {
+  const url = new URL(apiUrl('/api/evv/exceptions'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    visitId: request.visitId,
+    status: request.status,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileVisitExceptionResponse[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      !Array.isArray(payload) &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `EVV exceptions failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileVisitExceptionResponse[];
+}
+
+export async function updateMobileVisitExceptionStatus(
+  request: UpdateMobileVisitExceptionStatusRequest,
+): Promise<MobileVisitExceptionResponse> {
+  const response = await fetch(apiUrl(`/api/evv/exceptions/${request.exceptionId}/status`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      status: request.status,
+      actedAt: request.actedAt,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileVisitExceptionResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `EVV exception update failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileVisitExceptionResponse;
+}
+
+export async function notifySupervisorForMobileMissedVisit(
+  missedVisitId: string,
+  request: NotifyMobileEvvSupervisorRequest,
+): Promise<MobileEvvNotificationResponse> {
+  const response = await fetch(
+    apiUrl(`/api/evv/missed-visits/${missedVisitId}/notify-supervisor`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        recipientMembershipId: request.recipientMembershipId,
+        channel: request.channel,
+        rationale: request.rationale,
+        createdAt: request.createdAt,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvNotificationResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `Supervisor notification failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvNotificationResponse;
+}
+
+export async function notifySupervisorForMobileException(
+  exceptionId: string,
+  request: NotifyMobileEvvSupervisorRequest,
+): Promise<MobileEvvNotificationResponse> {
+  const response = await fetch(
+    apiUrl(`/api/evv/exceptions/${exceptionId}/notify-supervisor`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        recipientMembershipId: request.recipientMembershipId,
+        channel: request.channel,
+        rationale: request.rationale,
+        createdAt: request.createdAt,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvNotificationResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `Exception notification failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvNotificationResponse;
+}
+
+export async function createMobileMissedVisitEscalation(
+  missedVisitId: string,
+  request: CreateMobileEvvEscalationRequest,
+): Promise<MobileEvvEscalationResponse> {
+  const response = await fetch(apiUrl(`/api/evv/missed-visits/${missedVisitId}/escalations`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      targetRoleKey: request.targetRoleKey,
+      severity: request.severity,
+      rationale: request.rationale,
+      slaDueAt: request.slaDueAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvEscalationResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `Missed visit escalation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvEscalationResponse;
+}
+
+export async function createMobileExceptionEscalation(
+  exceptionId: string,
+  request: CreateMobileEvvEscalationRequest,
+): Promise<MobileEvvEscalationResponse> {
+  const response = await fetch(apiUrl(`/api/evv/exceptions/${exceptionId}/escalations`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      targetRoleKey: request.targetRoleKey,
+      severity: request.severity,
+      rationale: request.rationale,
+      slaDueAt: request.slaDueAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvEscalationResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `Exception escalation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvEscalationResponse;
 }
 
 export async function startMobileVisitExecution(

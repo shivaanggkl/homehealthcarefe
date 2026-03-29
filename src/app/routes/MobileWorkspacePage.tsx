@@ -6,34 +6,59 @@ import { useAuth } from '../auth/auth-context';
 import { loadDevSessionCredentials } from '../auth/session-storage';
 import {
   ApiError,
+  createMobileExceptionEscalation,
   createMobileIncident,
   createMobileMessageThread,
+  createMobileMissedVisitEscalation,
+  createMobileVisitException,
   downloadMobileFieldArtifact,
   endMobileVisitExecution,
+  EvvComplianceOutcome,
+  EvvVerificationStatus,
   fetchOwnMobileEvvSummary,
   fetchMobileHome,
   fetchMobileMessageThread,
   fetchMobileMessageThreads,
   fetchMobileRoute,
+  fetchMobileVisitExceptions,
   fetchMobileVisitDetail,
+  GeofenceEvaluationOutcome,
+  MobileEvvClockEventResponse,
+  MobileEvvEscalationResponse,
+  MobileEvvNotificationResponse,
   MobileEvvSummaryResponse,
   MobileFieldArtifact,
   MobileHomeResponse,
   MobileIncident,
   MobileMessageThreadDetail,
   MobileMessageThreadSummary,
+  MobileMissedVisitResponse,
   MobileQuickNote,
   MobileQuickNoteStatus,
   MobileRouteProjectionResponse,
   SaveMobileTaskChecklistItemRequest,
+  MobileEvvSignatureResponse,
   MobileTaskChecklistItem,
+  MobileVisitExceptionResponse,
   MobileVisitDetailResponse,
   MobileVisitExecutionSession,
+  notifySupervisorForMobileException,
+  notifySupervisorForMobileMissedVisit,
+  recordMobileEvvClockIn,
+  recordMobileEvvClockOut,
+  recordMobileEvvSignature,
+  reportMobileMissedVisit,
   saveMobileQuickNote,
   saveMobileTaskChecklist,
   sendMobileMessage,
   startMobileVisitExecution,
+  SignatureSignerRole,
+  SignatureVerificationStatus,
   uploadMobileFieldArtifact,
+  updateMobileVisitExceptionStatus,
+  VisitExceptionSeverity,
+  VisitExceptionStatus,
+  VisitExceptionType,
 } from '../auth/session-api';
 import {
   MobileEvvActionFramework,
@@ -82,6 +107,31 @@ type IncidentDraft = {
   severity: string;
   narrative: string;
   escalationHook: string;
+};
+
+type MissedVisitDraft = {
+  reasonCode: string;
+  narrative: string;
+};
+
+type EvvExceptionDraft = {
+  exceptionType: VisitExceptionType;
+  severity: VisitExceptionSeverity;
+  reasonCode: string;
+  narrative: string;
+};
+
+type EvvNotificationDraft = {
+  recipientMembershipId: string;
+  channel: string;
+  rationale: string;
+};
+
+type EvvEscalationDraft = {
+  targetRoleKey: string;
+  severity: VisitExceptionSeverity;
+  rationale: string;
+  slaDueAt: string;
 };
 
 const MOBILE_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -156,6 +206,111 @@ function emptyIncident(): IncidentDraft {
     narrative: '',
     escalationHook: 'NOTIFY_BRANCH_CLINICAL',
   };
+}
+
+function emptyMissedVisitDraft(): MissedVisitDraft {
+  return {
+    reasonCode: 'PATIENT_UNAVAILABLE',
+    narrative: '',
+  };
+}
+
+function emptyEvvExceptionDraft(): EvvExceptionDraft {
+  return {
+    exceptionType: 'GEOFENCE_OUT_OF_RANGE',
+    severity: 'MEDIUM',
+    reasonCode: 'gps_out_of_range',
+    narrative: '',
+  };
+}
+
+function emptyEvvNotificationDraft(): EvvNotificationDraft {
+  return {
+    recipientMembershipId: '',
+    channel: 'SMS',
+    rationale: '',
+  };
+}
+
+function emptyEvvEscalationDraft(): EvvEscalationDraft {
+  return {
+    targetRoleKey: 'BRANCH_ADMIN',
+    severity: 'HIGH',
+    rationale: '',
+    slaDueAt: '',
+  };
+}
+
+function humanizeEnum(value: string) {
+  return value.split('_').join(' ').toLowerCase().replace(/(^|\s)\S/g, (character) => character.toUpperCase());
+}
+
+function hashText(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return `h${Math.abs(hash)}`;
+}
+
+function describeCompliance(outcome: EvvComplianceOutcome) {
+  switch (outcome) {
+    case 'READY':
+      return 'Verification is complete and no blocking EVV issue remains.';
+    case 'READY_WITH_WARNING':
+      return 'Verification completed, but warnings still need attention.';
+    case 'MISSED_VISIT':
+      return 'This visit has moved into a missed-visit state.';
+    case 'BLOCKED':
+      return 'Blocking EVV requirements still need follow-up.';
+  }
+}
+
+function describeVerificationStatus(status: EvvVerificationStatus) {
+  switch (status) {
+    case 'VERIFIED':
+      return 'Visit proof has been fully verified.';
+    case 'VERIFIED_WITH_WARNING':
+      return 'Visit proof is recorded with warning conditions.';
+    case 'EXCEPTION_OPEN':
+      return 'An EVV exception is open for follow-up.';
+    case 'EXCEPTION_ACKNOWLEDGED':
+      return 'An EVV exception has been acknowledged.';
+    case 'MISSED_VISIT_REPORTED':
+      return 'A missed visit was reported for this visit.';
+    case 'ESCALATED':
+      return 'An EVV issue has been escalated.';
+    case 'RESOLVED':
+      return 'The EVV issue has been resolved.';
+    case 'PENDING_VERIFICATION':
+      return 'EVV verification has not been completed yet.';
+  }
+}
+
+function describeGeofenceOutcome(outcome: GeofenceEvaluationOutcome) {
+  switch (outcome) {
+    case 'WITHIN_TOLERANCE':
+      return 'Location verified within the allowed visit area.';
+    case 'OUTSIDE_TOLERANCE_WARNING':
+      return 'Location was outside tolerance, but only a warning was recorded.';
+    case 'OUTSIDE_TOLERANCE_BLOCKED':
+      return 'Location was outside tolerance and created a blocking EVV result.';
+    case 'NOT_EVALUABLE':
+      return 'Location proof could not be fully evaluated.';
+  }
+}
+
+function evvResultTone(outcome: EvvComplianceOutcome) {
+  switch (outcome) {
+    case 'READY':
+      return 'info';
+    case 'READY_WITH_WARNING':
+      return 'warning';
+    case 'MISSED_VISIT':
+    case 'BLOCKED':
+      return 'error';
+  }
 }
 
 function nextActionLabel(
@@ -249,7 +404,7 @@ function SignaturePad({
 }: {
   disabled: boolean;
   saving: boolean;
-  onSave: (file: File) => Promise<void>;
+  onSave: (file: File) => Promise<unknown>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
@@ -367,6 +522,38 @@ export function MobileWorkspacePage() {
   const [routeProjection, setRouteProjection] = useState<MobileRouteProjectionResponse | null>(null);
   const [visitDetail, setVisitDetail] = useState<MobileVisitDetailResponse | null>(null);
   const [evvSummary, setEvvSummary] = useState<MobileEvvSummaryResponse | null>(null);
+  const [evvClockEvents, setEvvClockEvents] = useState<MobileEvvClockEventResponse[]>([]);
+  const [evvClockPending, setEvvClockPending] = useState(false);
+  const [evvClockError, setEvvClockError] = useState<string | null>(null);
+  const [evvClockSuccess, setEvvClockSuccess] = useState<string | null>(null);
+  const [evvLocationCapture, setEvvLocationCapture] = useState<LocationCapture>({ status: 'idle' });
+  const [signatureRole, setSignatureRole] = useState<SignatureSignerRole>('PATIENT');
+  const [signatureStatus, setSignatureStatus] = useState<SignatureVerificationStatus>('PRESENT');
+  const [recordedSignatures, setRecordedSignatures] = useState<MobileEvvSignatureResponse[]>([]);
+  const [signatureSaving, setSignatureSaving] = useState(false);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
+  const [signatureSuccess, setSignatureSuccess] = useState<string | null>(null);
+  const [missedVisitDraft, setMissedVisitDraft] = useState<MissedVisitDraft>(emptyMissedVisitDraft());
+  const [missedVisitRecord, setMissedVisitRecord] = useState<MobileMissedVisitResponse | null>(null);
+  const [missedVisitSaving, setMissedVisitSaving] = useState(false);
+  const [missedVisitError, setMissedVisitError] = useState<string | null>(null);
+  const [missedVisitSuccess, setMissedVisitSuccess] = useState<string | null>(null);
+  const [evvExceptionDraft, setEvvExceptionDraft] = useState<EvvExceptionDraft>(emptyEvvExceptionDraft());
+  const [evvExceptions, setEvvExceptions] = useState<MobileVisitExceptionResponse[]>([]);
+  const [evvExceptionsLoading, setEvvExceptionsLoading] = useState(false);
+  const [evvExceptionSaving, setEvvExceptionSaving] = useState(false);
+  const [evvExceptionError, setEvvExceptionError] = useState<string | null>(null);
+  const [evvExceptionSuccess, setEvvExceptionSuccess] = useState<string | null>(null);
+  const [selectedExceptionId, setSelectedExceptionId] = useState<string | null>(null);
+  const [exceptionStatusSaving, setExceptionStatusSaving] = useState(false);
+  const [notifyDraft, setNotifyDraft] = useState<EvvNotificationDraft>(emptyEvvNotificationDraft());
+  const [notifySaving, setNotifySaving] = useState(false);
+  const [notifyError, setNotifyError] = useState<string | null>(null);
+  const [lastNotification, setLastNotification] = useState<MobileEvvNotificationResponse | null>(null);
+  const [escalationDraft, setEscalationDraft] = useState<EvvEscalationDraft>(emptyEvvEscalationDraft());
+  const [escalationSaving, setEscalationSaving] = useState(false);
+  const [escalationError, setEscalationError] = useState<string | null>(null);
+  const [lastEscalation, setLastEscalation] = useState<MobileEvvEscalationResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [evvLoading, setEvvLoading] = useState(false);
@@ -450,7 +637,12 @@ export function MobileWorkspacePage() {
   const canExecuteVisits = canAccessPermission(profile, 'execute_mobile_visits');
   const canViewMessages = canAccessPermission(profile, 'view_mobile_messages');
   const canSendMessages = canAccessPermission(profile, 'send_mobile_messages');
+  const canManageEvvExceptions = canAccessPermission(profile, 'manage_mobile_evv_exceptions');
+  const canReceiveEvvNotifications = canAccessPermission(profile, 'receive_mobile_evv_notifications');
+  const canResolveMissedVisits = canAccessPermission(profile, 'resolve_mobile_missed_visits');
   const executionSessionId = executionSession?.id ?? null;
+  const selectedException =
+    evvExceptions.find((record) => record.id === selectedExceptionId) ?? evvExceptions[0] ?? null;
 
   async function loadMobileData(mode: 'initial' | 'manual') {
     if (state.status !== 'authenticated') {
@@ -575,6 +767,66 @@ export function MobileWorkspacePage() {
     }
   }
 
+  async function refreshEvvSummary() {
+    if (!visitId || state.status !== 'authenticated' || !canAccessPermission(profile, 'view_mobile_evv')) {
+      setEvvSummary(null);
+      setEvvError(null);
+      setEvvLoading(false);
+      return;
+    }
+
+    setEvvLoading(true);
+    setEvvError(null);
+
+    try {
+      const summary = await fetchOwnMobileEvvSummary({
+        ...authContext,
+        visitId,
+      });
+      setEvvSummary(summary);
+    } catch (summaryError) {
+      setEvvSummary(null);
+      setEvvError(
+        summaryError instanceof ApiError
+          ? summaryError.message
+          : 'Unable to load EVV readiness right now.',
+      );
+    } finally {
+      setEvvLoading(false);
+    }
+  }
+
+  async function loadEvvExceptions() {
+    if (
+      !visitId ||
+      state.status !== 'authenticated' ||
+      !canAccessPermission(profile, 'view_mobile_evv')
+    ) {
+      setEvvExceptions([]);
+      return;
+    }
+
+    setEvvExceptionsLoading(true);
+    setEvvExceptionError(null);
+
+    try {
+      const records = await fetchMobileVisitExceptions({
+        ...authContext,
+        visitId,
+      });
+      setEvvExceptions(records);
+      setSelectedExceptionId((current) => current ?? records[0]?.id ?? null);
+    } catch (exceptionError) {
+      setEvvExceptionError(
+        exceptionError instanceof ApiError
+          ? exceptionError.message
+          : 'Unable to load EVV exceptions right now.',
+      );
+    } finally {
+      setEvvExceptionsLoading(false);
+    }
+  }
+
   useEffect(() => {
     void loadMobileData('initial');
   }, [day, timezone, visitId, authContext.accessToken, authContext.sessionId, state.status]);
@@ -586,46 +838,25 @@ export function MobileWorkspacePage() {
   }, [inMessages, selectedThreadId, canViewMessages]);
 
   useEffect(() => {
-    if (!visitId || state.status !== 'authenticated' || !canAccessPermission(profile, 'view_mobile_evv')) {
-      setEvvSummary(null);
-      setEvvError(null);
-      setEvvLoading(false);
-      return;
-    }
-
     let cancelled = false;
-    setEvvLoading(true);
-    setEvvError(null);
 
-    void fetchOwnMobileEvvSummary({
-      ...authContext,
-      visitId,
-    })
-      .then((summary) => {
-        if (!cancelled) {
-          setEvvSummary(summary);
-        }
-      })
-      .catch((summaryError) => {
-        if (!cancelled) {
-          setEvvSummary(null);
-          setEvvError(
-            summaryError instanceof ApiError
-              ? summaryError.message
-              : 'Unable to load EVV readiness right now.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setEvvLoading(false);
-        }
-      });
+    void refreshEvvSummary().then(() => {
+      if (cancelled) {
+        return;
+      }
+    });
 
     return () => {
       cancelled = true;
     };
   }, [visitId, authContext.accessToken, authContext.sessionId, state.status, profile]);
+
+  useEffect(() => {
+    if (!inExceptionRoute) {
+      return;
+    }
+    void loadEvvExceptions();
+  }, [inExceptionRoute, visitId, authContext.accessToken, authContext.sessionId, state.status, profile]);
 
   useEffect(() => {
     setChecklistError(null);
@@ -641,7 +872,18 @@ export function MobileWorkspacePage() {
     setMessageError(null);
     setMessageSuccess(null);
     setEvvError(null);
+    setEvvClockError(null);
+    setEvvClockSuccess(null);
+    setSignatureError(null);
+    setSignatureSuccess(null);
+    setMissedVisitError(null);
+    setMissedVisitSuccess(null);
+    setEvvExceptionError(null);
+    setEvvExceptionSuccess(null);
+    setNotifyError(null);
+    setEscalationError(null);
     setLocationCapture({ status: 'idle' });
+    setEvvLocationCapture({ status: 'idle' });
     setChecklistDraft(defaultChecklist());
     setQuickNoteText('');
     setQuickNoteStatus('DRAFT');
@@ -650,6 +892,17 @@ export function MobileWorkspacePage() {
     setArtifacts([]);
     setIncidents([]);
     setIncidentDraft(emptyIncident());
+    setMissedVisitDraft(emptyMissedVisitDraft());
+    setMissedVisitRecord(null);
+    setEvvExceptionDraft(emptyEvvExceptionDraft());
+    setEvvExceptions([]);
+    setSelectedExceptionId(null);
+    setRecordedSignatures([]);
+    setLastNotification(null);
+    setNotifyDraft(emptyEvvNotificationDraft());
+    setLastEscalation(null);
+    setEscalationDraft(emptyEvvEscalationDraft());
+    setEvvClockEvents([]);
   }, [visitId]);
 
   async function handleLogout() {
@@ -823,6 +1076,355 @@ export function MobileWorkspacePage() {
     }
   }
 
+  function buildEvvClockRequest(action: 'clock-in' | 'clock-out', capture: LocationCapture) {
+    const userAgentCandidate =
+      typeof window !== 'undefined' && typeof window.navigator !== 'undefined'
+        ? window.navigator.userAgent
+        : undefined;
+    const platformCandidate =
+      typeof window !== 'undefined' && typeof window.navigator !== 'undefined'
+        ? window.navigator.platform
+        : undefined;
+    const userAgent =
+      typeof userAgentCandidate === 'string' && userAgentCandidate.trim()
+        ? userAgentCandidate
+        : 'unknown-user-agent';
+    const platform =
+      typeof platformCandidate === 'string' && platformCandidate.trim()
+        ? platformCandidate
+        : 'unknown-platform';
+
+    return {
+      ...authContext,
+      visitId: visitId!,
+      executionSessionId: executionSessionId ?? undefined,
+      capturedAt: new Date().toISOString(),
+      capturedLatitude: capture.status === 'captured' ? capture.latitude : undefined,
+      capturedLongitude: capture.status === 'captured' ? capture.longitude : undefined,
+      timezone,
+      captureSource: action === 'clock-in' ? 'mobile_web_clock_in' : 'mobile_web_clock_out',
+      platformSummary: `${platform} · mobile web`,
+      appVersion: 'web-epic7',
+      deviceClass: 'browser',
+      timezoneOffsetMinutes: new Date().getTimezoneOffset() * -1,
+      userAgentHash: hashText(userAgent),
+      sessionFingerprintHash: hashText(`${userAgent}:${authContext.sessionId ?? 'anon'}`),
+    };
+  }
+
+  async function handleEvvClockAction(action: 'clock-in' | 'clock-out', allowWithoutLocation = false) {
+    if (!visitId || !canSubmitMobileEvv) {
+      return;
+    }
+
+    setEvvClockPending(true);
+    setEvvClockError(null);
+    setEvvClockSuccess(null);
+    setSyncState('syncing');
+    setSyncMessage(action === 'clock-in' ? 'Submitting EVV clock-in proof.' : 'Submitting EVV clock-out proof.');
+
+    try {
+      let capture = evvLocationCapture;
+      if (!allowWithoutLocation) {
+        setEvvLocationCapture({ status: 'requesting' });
+        capture = await requestGeolocation();
+        setEvvLocationCapture(capture);
+        if (capture.status === 'unavailable') {
+          setSyncState('queued');
+          setSyncMessage(capture.reason);
+          setEvvClockPending(false);
+          return;
+        }
+      }
+
+      const response =
+        action === 'clock-in'
+          ? await recordMobileEvvClockIn(buildEvvClockRequest(action, capture))
+          : await recordMobileEvvClockOut(buildEvvClockRequest(action, capture));
+
+      setEvvClockEvents((current) => [response, ...current.filter((item) => item.eventType !== response.eventType)]);
+      setEvvClockSuccess(
+        action === 'clock-in'
+          ? 'Clock-in recorded and EVV status refreshed.'
+          : 'Clock-out recorded and EVV status refreshed.',
+      );
+      setSyncState('synced');
+      setSyncMessage('EVV proof synced successfully.');
+      await refreshEvvSummary();
+      await loadMobileData('manual');
+    } catch (clockError) {
+      const message =
+        clockError instanceof ApiError
+          ? clockError.message
+          : 'Unable to submit EVV proof right now.';
+      setEvvClockError(message);
+      setSyncState('failed');
+      setSyncMessage(message);
+    } finally {
+      setEvvClockPending(false);
+    }
+  }
+
+  async function handleEvvSignatureStatusSave(artifactId?: string) {
+    if (!evvSummary?.verificationSessionId || !canSubmitMobileEvv) {
+      setSignatureError('Clock in first so the EVV verification session is available.');
+      return;
+    }
+
+    setSignatureSaving(true);
+    setSignatureError(null);
+    setSignatureSuccess(null);
+
+    try {
+      const response = await recordMobileEvvSignature({
+        ...authContext,
+        verificationSessionId: evvSummary.verificationSessionId,
+        artifactId,
+        signerRole: signatureRole,
+        verificationStatus: signatureStatus,
+        recordedAt: new Date().toISOString(),
+      });
+      setRecordedSignatures((current) => [response, ...current]);
+      setSignatureSuccess(`${humanizeEnum(signatureRole)} signature status saved.`);
+      setSyncState('synced');
+      setSyncMessage('Signature verification synced successfully.');
+      await refreshEvvSummary();
+    } catch (signatureSaveError) {
+      const message =
+        signatureSaveError instanceof ApiError
+          ? signatureSaveError.message
+          : 'Unable to save EVV signature status right now.';
+      setSignatureError(message);
+      setSyncState('failed');
+      setSyncMessage(message);
+    } finally {
+      setSignatureSaving(false);
+    }
+  }
+
+  async function handleMissedVisitSave() {
+    if (!visitId || !canSubmitMobileEvv) {
+      return;
+    }
+    if (!missedVisitDraft.reasonCode.trim() || !missedVisitDraft.narrative.trim()) {
+      setMissedVisitError('Enter a missed-visit reason and narrative before submitting.');
+      return;
+    }
+
+    setMissedVisitSaving(true);
+    setMissedVisitError(null);
+    setMissedVisitSuccess(null);
+
+    try {
+      const response = await reportMobileMissedVisit({
+        ...authContext,
+        visitId,
+        reasonCode: missedVisitDraft.reasonCode.trim(),
+        narrative: missedVisitDraft.narrative.trim(),
+        reportedAt: new Date().toISOString(),
+      });
+      setMissedVisitRecord(response);
+      setMissedVisitSuccess('Missed visit reported and reflected in EVV status.');
+      setSyncState('synced');
+      setSyncMessage('Missed visit synced successfully.');
+      await refreshEvvSummary();
+    } catch (missedVisitSaveError) {
+      const message =
+        missedVisitSaveError instanceof ApiError
+          ? missedVisitSaveError.message
+          : 'Unable to report the missed visit right now.';
+      setMissedVisitError(message);
+      setSyncState('failed');
+      setSyncMessage(message);
+    } finally {
+      setMissedVisitSaving(false);
+    }
+  }
+
+  async function handleEvvExceptionSave() {
+    if (!evvSummary?.verificationSessionId || !canSubmitMobileEvv) {
+      setEvvExceptionError('Clock in first so EVV exception capture can attach to a verification session.');
+      return;
+    }
+    if (!evvExceptionDraft.reasonCode.trim() || !evvExceptionDraft.narrative.trim()) {
+      setEvvExceptionError('Enter an exception reason code and narrative before submitting.');
+      return;
+    }
+
+    setEvvExceptionSaving(true);
+    setEvvExceptionError(null);
+    setEvvExceptionSuccess(null);
+
+    try {
+      const response = await createMobileVisitException({
+        ...authContext,
+        verificationSessionId: evvSummary.verificationSessionId,
+        exceptionType: evvExceptionDraft.exceptionType,
+        severity: evvExceptionDraft.severity,
+        reasonCode: evvExceptionDraft.reasonCode.trim(),
+        narrative: evvExceptionDraft.narrative.trim(),
+      });
+      setEvvExceptions((current) => [response, ...current]);
+      setSelectedExceptionId(response.id);
+      setEvvExceptionSuccess('EVV exception recorded and ready for follow-up.');
+      setSyncState('synced');
+      setSyncMessage('EVV exception synced successfully.');
+      await refreshEvvSummary();
+    } catch (exceptionSaveError) {
+      const message =
+        exceptionSaveError instanceof ApiError
+          ? exceptionSaveError.message
+          : 'Unable to save the EVV exception right now.';
+      setEvvExceptionError(message);
+      setSyncState('failed');
+      setSyncMessage(message);
+    } finally {
+      setEvvExceptionSaving(false);
+    }
+  }
+
+  async function handleExceptionStatusUpdate(status: VisitExceptionStatus) {
+    if (!selectedException || !canManageEvvExceptions) {
+      return;
+    }
+
+    setExceptionStatusSaving(true);
+    setEvvExceptionError(null);
+    setEvvExceptionSuccess(null);
+
+    try {
+      const updated = await updateMobileVisitExceptionStatus({
+        ...authContext,
+        exceptionId: selectedException.id,
+        status,
+        actedAt: new Date().toISOString(),
+      });
+      setEvvExceptions((current) =>
+        current.map((record) => (record.id === updated.id ? updated : record)),
+      );
+      setEvvExceptionSuccess(`Exception marked ${humanizeEnum(status)}.`);
+      setSyncState('synced');
+      setSyncMessage('EVV exception status synced successfully.');
+      await refreshEvvSummary();
+    } catch (statusError) {
+      const message =
+        statusError instanceof ApiError
+          ? statusError.message
+          : 'Unable to update EVV exception status right now.';
+      setEvvExceptionError(message);
+      setSyncState('failed');
+      setSyncMessage(message);
+    } finally {
+      setExceptionStatusSaving(false);
+    }
+  }
+
+  async function handleEvvNotificationSave(target: 'missed' | 'exception') {
+    if (!canReceiveEvvNotifications) {
+      return;
+    }
+    if (!notifyDraft.recipientMembershipId.trim() || !notifyDraft.rationale.trim()) {
+      setNotifyError('Enter the supervisor membership ID and rationale before sending.');
+      return;
+    }
+    if (target === 'missed' && !missedVisitRecord) {
+      setNotifyError('Submit the missed visit first.');
+      return;
+    }
+    if (target === 'exception' && !selectedException) {
+      setNotifyError('Create or select an exception first.');
+      return;
+    }
+
+    setNotifySaving(true);
+    setNotifyError(null);
+
+    try {
+      const response =
+        target === 'missed'
+          ? await notifySupervisorForMobileMissedVisit(missedVisitRecord!.id, {
+              ...authContext,
+              recipientMembershipId: notifyDraft.recipientMembershipId.trim(),
+              channel: notifyDraft.channel,
+              rationale: notifyDraft.rationale.trim(),
+              createdAt: new Date().toISOString(),
+            })
+          : await notifySupervisorForMobileException(selectedException!.id, {
+              ...authContext,
+              recipientMembershipId: notifyDraft.recipientMembershipId.trim(),
+              channel: notifyDraft.channel,
+              rationale: notifyDraft.rationale.trim(),
+              createdAt: new Date().toISOString(),
+            });
+      setLastNotification(response);
+      setSyncState('synced');
+      setSyncMessage('Supervisor notification synced successfully.');
+    } catch (notifySaveError) {
+      const message =
+        notifySaveError instanceof ApiError
+          ? notifySaveError.message
+          : 'Unable to notify the supervisor right now.';
+      setNotifyError(message);
+      setSyncState('failed');
+      setSyncMessage(message);
+    } finally {
+      setNotifySaving(false);
+    }
+  }
+
+  async function handleEvvEscalationSave(target: 'missed' | 'exception') {
+    if (!canManageEvvExceptions && !canResolveMissedVisits) {
+      return;
+    }
+    if (!escalationDraft.targetRoleKey.trim() || !escalationDraft.rationale.trim()) {
+      setEscalationError('Enter an escalation target role and rationale before submitting.');
+      return;
+    }
+    if (target === 'missed' && !missedVisitRecord) {
+      setEscalationError('Submit the missed visit first.');
+      return;
+    }
+    if (target === 'exception' && !selectedException) {
+      setEscalationError('Create or select an exception first.');
+      return;
+    }
+
+    setEscalationSaving(true);
+    setEscalationError(null);
+
+    try {
+      const response =
+        target === 'missed'
+          ? await createMobileMissedVisitEscalation(missedVisitRecord!.id, {
+              ...authContext,
+              targetRoleKey: escalationDraft.targetRoleKey.trim(),
+              severity: escalationDraft.severity,
+              rationale: escalationDraft.rationale.trim(),
+              slaDueAt: escalationDraft.slaDueAt || undefined,
+            })
+          : await createMobileExceptionEscalation(selectedException!.id, {
+              ...authContext,
+              targetRoleKey: escalationDraft.targetRoleKey.trim(),
+              severity: escalationDraft.severity,
+              rationale: escalationDraft.rationale.trim(),
+              slaDueAt: escalationDraft.slaDueAt || undefined,
+            });
+      setLastEscalation(response);
+      setSyncState('synced');
+      setSyncMessage('EVV escalation synced successfully.');
+    } catch (escalationSaveError) {
+      const message =
+        escalationSaveError instanceof ApiError
+          ? escalationSaveError.message
+          : 'Unable to create the escalation right now.';
+      setEscalationError(message);
+      setSyncState('failed');
+      setSyncMessage(message);
+    } finally {
+      setEscalationSaving(false);
+    }
+  }
+
   async function handleChecklistSave() {
     if (!visitId || !executionSessionId) {
       setChecklistError('Start the visit before saving checklist work.');
@@ -942,15 +1544,15 @@ export function MobileWorkspacePage() {
   async function handleArtifactUpload(file: File, artifactType: 'PHOTO' | 'SIGNATURE') {
     if (!executionSessionId) {
       setArtifactError('Start the visit before uploading artifacts.');
-      return;
+      return null;
     }
     if (!MOBILE_ALLOWED_IMAGE_TYPES.includes(file.type)) {
       setArtifactError('Only JPEG, PNG, and WEBP uploads are allowed in the mobile field workflow.');
-      return;
+      return null;
     }
     if (file.size > MOBILE_MAX_UPLOAD_BYTES) {
       setArtifactError('Mobile artifact uploads must be 10 MB or smaller.');
-      return;
+      return null;
     }
 
     setArtifactSaving(true);
@@ -976,8 +1578,10 @@ export function MobileWorkspacePage() {
       );
       setSyncState('synced');
       setSyncMessage('Artifact synced successfully.');
+      return saved;
     } catch (uploadError) {
       setArtifactError(uploadError instanceof ApiError ? uploadError.message : 'Unable to upload artifact right now.');
+      return null;
     } finally {
       setArtifactSaving(false);
     }
@@ -995,6 +1599,19 @@ export function MobileWorkspacePage() {
     } catch (downloadError) {
       setArtifactError(downloadError instanceof ApiError ? downloadError.message : 'Unable to download artifact right now.');
     }
+  }
+
+  async function handleEvvSignatureCapture(file: File) {
+    if (signatureStatus !== 'PRESENT') {
+      setSignatureError('Use signature capture only when the verification status is Present.');
+      return;
+    }
+    const artifact = await handleArtifactUpload(file, 'SIGNATURE');
+    if (!artifact) {
+      setSignatureError('The signature artifact could not be saved, so EVV verification was not updated.');
+      return;
+    }
+    await handleEvvSignatureStatusSave(artifact.id);
   }
 
   async function handleIncidentSave() {
@@ -1455,66 +2072,599 @@ export function MobileWorkspacePage() {
 
             {inEvvRoute ? (
               <MobileEvvActionFramework
-                helper="Epic 7 Phase A standardizes EVV-ready states, proof summaries, and retry messaging before the dedicated clock, geofence, and signature workflows land."
+                helper="Clock events, proof status, and signature follow-up now run through the live Epic 7 EVV APIs while keeping connectivity and geofence feedback readable on a caregiver device."
                 mode={canSubmitMobileEvv ? 'editable' : 'read-only'}
                 syncMessage={syncMessage}
                 syncState={syncState}
-                title="EVV action framework"
+                title="EVV verification"
               >
                 {evvSummary ? (
                   <div className="mobile-inline-note">
-                    <strong>Current proof status</strong>
-                    <p>
-                      {evvSummary.complianceOutcome === 'READY'
-                        ? 'This visit is currently ready from an EVV perspective.'
-                        : evvSummary.complianceOutcome === 'READY_WITH_WARNING'
-                          ? 'This visit has EVV warnings that still need caregiver attention.'
-                          : evvSummary.complianceOutcome === 'MISSED_VISIT'
-                            ? 'This visit has already moved into a missed-visit state.'
-                            : 'This visit still has blocking EVV requirements.'}
-                    </p>
+                    <strong>{humanizeEnum(evvSummary.verificationStatus)}</strong>
+                    <p>{describeVerificationStatus(evvSummary.verificationStatus)}</p>
                   </div>
                 ) : null}
-                <MobileEvvDeferredState
-                  ctaLabel="Return to visit execution"
-                  ctaTo={`/mobile/visits/${visitId}`}
-                  description="Clock-in, clock-out, geofence submission, and signature-aware EVV completion actions will plug into this shared framework in the next Epic 7 phase."
-                  title="EVV mutation pattern is ready"
-                />
+                <MobilePanel
+                  description="The proof summary stays readable for caregivers without exposing raw device internals."
+                  title="Visit proof status"
+                >
+                  {evvSummary ? (
+                    <>
+                      <div className={`mobile-module-state mobile-module-state-${evvResultTone(evvSummary.complianceOutcome)}`}>
+                        <strong>{humanizeEnum(evvSummary.complianceOutcome)}</strong>
+                        <p>{describeCompliance(evvSummary.complianceOutcome)}</p>
+                      </div>
+                      <dl className="mobile-summary-list">
+                        <div>
+                          <dt>Clock-in proof</dt>
+                          <dd>{evvSummary.startEventPresent ? 'Captured' : 'Pending'}</dd>
+                        </div>
+                        <div>
+                          <dt>Clock-out proof</dt>
+                          <dd>{evvSummary.endEventPresent ? 'Captured' : 'Pending'}</dd>
+                        </div>
+                        <div>
+                          <dt>Location check</dt>
+                          <dd>{describeGeofenceOutcome(evvSummary.geofenceOutcome)}</dd>
+                        </div>
+                        <div>
+                          <dt>Signature completion</dt>
+                          <dd>{evvSummary.signatureComplete ? 'Complete' : 'Pending follow-up'}</dd>
+                        </div>
+                        <div>
+                          <dt>Open exceptions</dt>
+                          <dd>{evvSummary.openExceptionCount}</dd>
+                        </div>
+                        <div>
+                          <dt>Missed visit state</dt>
+                          <dd>{evvSummary.missedVisitReported ? 'Reported' : 'No'}</dd>
+                        </div>
+                      </dl>
+                    </>
+                  ) : (
+                    <MobileModuleState
+                      description="The backend EVV summary is required before proof actions can be interpreted cleanly."
+                      title="EVV summary not loaded"
+                      variant="info"
+                    />
+                  )}
+                </MobilePanel>
+
+                <MobilePanel
+                  description="Clock-in and clock-out capture time and location proof. Geofence warnings and blocked outcomes are returned directly from the backend."
+                  title="Clock verification"
+                >
+                  {evvLocationCapture.status === 'requesting' ? (
+                    <div className="mobile-inline-note">
+                      <strong>Capturing location</strong>
+                      <p>Requesting device coordinates for the EVV proof action.</p>
+                    </div>
+                  ) : null}
+                  {evvLocationCapture.status === 'unavailable' ? (
+                    <div className="mobile-inline-note">
+                      <strong>Location unavailable</strong>
+                      <p>{evvLocationCapture.reason}</p>
+                    </div>
+                  ) : null}
+                  {evvLocationCapture.status === 'captured' ? (
+                    <div className="mobile-inline-note">
+                      <strong>Location captured</strong>
+                      <p>
+                        Latitude {evvLocationCapture.latitude.toFixed(4)}, longitude{' '}
+                        {evvLocationCapture.longitude.toFixed(4)}.
+                      </p>
+                    </div>
+                  ) : null}
+                  {evvClockError ? (
+                    <MobileModuleState description={evvClockError} title="EVV clock action failed" variant="error" />
+                  ) : null}
+                  {evvClockSuccess ? (
+                    <div className="mobile-inline-note">
+                      <strong>Saved</strong>
+                      <p>{evvClockSuccess}</p>
+                    </div>
+                  ) : null}
+                  {evvClockEvents.length ? (
+                    <div className="mobile-message-list">
+                      {evvClockEvents.map((event) => (
+                        <div className="mobile-message-item" key={event.eventId}>
+                          <strong>{humanizeEnum(event.eventType)}</strong>
+                          <p>
+                            {humanizeEnum(event.overallOutcome)} ·{' '}
+                            {event.geofenceOutcome ? describeGeofenceOutcome(event.geofenceOutcome) : 'No geofence result'}
+                          </p>
+                          <span>{formatDateTime(event.capturedAt)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <MobileActionFooter
+                    primaryDisabled={
+                      !canSubmitMobileEvv ||
+                      evvClockPending ||
+                      Boolean(evvSummary?.endEventPresent) ||
+                      evvSummary?.missedVisitReported
+                    }
+                    primaryLabel={
+                      evvClockPending
+                        ? 'Saving EVV proof...'
+                        : evvSummary?.endEventPresent
+                          ? 'Clock proof complete'
+                          : evvSummary?.startEventPresent
+                            ? 'Clock out'
+                            : 'Clock in'
+                    }
+                    secondaryDisabled={evvClockPending}
+                    secondaryLabel={
+                      evvLocationCapture.status === 'unavailable' &&
+                      canSubmitMobileEvv &&
+                      !evvSummary?.endEventPresent &&
+                      !evvSummary?.missedVisitReported
+                        ? 'Continue without location'
+                        : evvSummary?.blockers.length || evvSummary?.warnings.length
+                          ? 'Open exception follow-up'
+                          : undefined
+                    }
+                    onPrimaryClick={() =>
+                      void handleEvvClockAction(evvSummary?.startEventPresent ? 'clock-out' : 'clock-in')
+                    }
+                    onSecondaryClick={() =>
+                      evvLocationCapture.status === 'unavailable' &&
+                      canSubmitMobileEvv &&
+                      !evvSummary?.endEventPresent &&
+                      !evvSummary?.missedVisitReported
+                        ? void handleEvvClockAction(
+                            evvSummary?.startEventPresent ? 'clock-out' : 'clock-in',
+                            true,
+                          )
+                        : navigate(`/mobile/visits/${visitId}/evv/exception`)
+                    }
+                  />
+                </MobilePanel>
+
+                <MobilePanel
+                  description="Signature proof reuses the mobile artifact capture path, then records the normalized EVV status against the verification session."
+                  title="Signature verification"
+                >
+                  <label className="field">
+                    <span>Signer role</span>
+                    <select
+                      className="input"
+                      onChange={(event) => setSignatureRole(event.target.value as SignatureSignerRole)}
+                      value={signatureRole}
+                    >
+                      <option value="PATIENT">Patient</option>
+                      <option value="CAREGIVER">Caregiver</option>
+                      <option value="REPRESENTATIVE">Representative</option>
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Signature status</span>
+                    <select
+                      className="input"
+                      onChange={(event) =>
+                        setSignatureStatus(event.target.value as SignatureVerificationStatus)
+                      }
+                      value={signatureStatus}
+                    >
+                      <option value="PRESENT">Present</option>
+                      <option value="MISSING">Missing</option>
+                      <option value="REFUSED">Refused</option>
+                      <option value="NOT_APPLICABLE">Not applicable</option>
+                    </select>
+                  </label>
+                  {signatureStatus === 'PRESENT' ? (
+                    <SignaturePad
+                      disabled={
+                        !canSubmitMobileEvv ||
+                        !executionSessionId ||
+                        !evvSummary?.verificationSessionId ||
+                        signatureSaving
+                      }
+                      onSave={(file) => handleEvvSignatureCapture(file)}
+                      saving={signatureSaving}
+                    />
+                  ) : (
+                    <MobileActionFooter
+                      primaryDisabled={!canSubmitMobileEvv || !evvSummary?.verificationSessionId || signatureSaving}
+                      primaryLabel={signatureSaving ? 'Saving signature state...' : 'Save signature status'}
+                      onPrimaryClick={() => void handleEvvSignatureStatusSave()}
+                    />
+                  )}
+                  {signatureError ? (
+                    <MobileModuleState description={signatureError} title="Signature update failed" variant="error" />
+                  ) : null}
+                  {signatureSuccess ? (
+                    <div className="mobile-inline-note">
+                      <strong>Saved</strong>
+                      <p>{signatureSuccess}</p>
+                    </div>
+                  ) : null}
+                  {recordedSignatures.length ? (
+                    <div className="mobile-message-list">
+                      {recordedSignatures.map((entry) => (
+                        <div className="mobile-message-item" key={entry.id}>
+                          <strong>{humanizeEnum(entry.signerRole)}</strong>
+                          <p>{humanizeEnum(entry.verificationStatus)}</p>
+                          <span>{formatDateTime(entry.recordedAt)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </MobilePanel>
               </MobileEvvActionFramework>
             ) : null}
 
             {inMissedVisitRoute ? (
               <MobileEvvActionFramework
-                helper="Missed-visit submission will reuse the same sensitive-mutation framing, retry language, and controlled outcomes as the rest of the EVV workflow."
+                helper="Missed-visit reporting moves the visit into a controlled operational state instead of leaving the schedule or EVV summary ambiguous."
                 mode={canSubmitMobileEvv ? 'editable' : 'read-only'}
                 syncMessage={syncMessage}
                 syncState={syncState}
-                title="Missed-visit reporting foundation"
+                title="Missed-visit reporting"
               >
-                <MobileEvvDeferredState
-                  ctaLabel="Open EVV overview"
-                  ctaTo={`/mobile/visits/${visitId}/evv`}
-                  description="The dedicated missed-visit form is intentionally deferred to the next Epic 7 phase, but this route and mobile-safe result language are now in place."
-                  title="Missed-visit route is reserved"
+                <label className="field">
+                  <span>Reason code</span>
+                  <select
+                    className="input"
+                    onChange={(event) =>
+                      setMissedVisitDraft((current) => ({ ...current, reasonCode: event.target.value }))
+                    }
+                    value={missedVisitDraft.reasonCode}
+                  >
+                    <option value="PATIENT_UNAVAILABLE">Patient unavailable</option>
+                    <option value="PATIENT_REFUSED">Patient refused</option>
+                    <option value="CAREGIVER_DELAY">Caregiver delay</option>
+                    <option value="WEATHER_EVENT">Weather event</option>
+                  </select>
+                </label>
+                <label className="field">
+                  <span>What happened?</span>
+                  <textarea
+                    className="input"
+                    onChange={(event) =>
+                      setMissedVisitDraft((current) => ({ ...current, narrative: event.target.value }))
+                    }
+                    placeholder="Explain why the scheduled visit did not happen."
+                    rows={4}
+                    value={missedVisitDraft.narrative}
+                  />
+                </label>
+                <MobileActionFooter
+                  primaryDisabled={!canSubmitMobileEvv || missedVisitSaving || Boolean(missedVisitRecord)}
+                  primaryLabel={missedVisitSaving ? 'Submitting missed visit...' : missedVisitRecord ? 'Missed visit submitted' : 'Submit missed visit'}
+                  secondaryLabel="Back to EVV overview"
+                  onPrimaryClick={() => void handleMissedVisitSave()}
+                  onSecondaryClick={() => navigate(`/mobile/visits/${visitId}/evv`)}
                 />
+                {missedVisitError ? (
+                  <MobileModuleState description={missedVisitError} title="Missed-visit submit failed" variant="error" />
+                ) : null}
+                {missedVisitSuccess ? (
+                  <div className="mobile-inline-note">
+                    <strong>Submitted</strong>
+                    <p>{missedVisitSuccess}</p>
+                  </div>
+                ) : null}
+                {missedVisitRecord ? (
+                  <div className="mobile-inline-note">
+                    <strong>{humanizeEnum(missedVisitRecord.status)}</strong>
+                    <p>
+                      {humanizeEnum(missedVisitRecord.reasonCode)} · {formatDateTime(missedVisitRecord.reportedAt)}
+                    </p>
+                  </div>
+                ) : evvSummary?.missedVisitReported ? (
+                  <div className="mobile-inline-note">
+                    <strong>Missed visit already reported</strong>
+                    <p>The EVV summary already shows a missed-visit state for this visit.</p>
+                  </div>
+                ) : null}
+                {canReceiveEvvNotifications && missedVisitRecord ? (
+                  <>
+                    <label className="field">
+                      <span>Supervisor membership ID</span>
+                      <input
+                        className="input"
+                        onChange={(event) =>
+                          setNotifyDraft((current) => ({ ...current, recipientMembershipId: event.target.value }))
+                        }
+                        placeholder="membership UUID"
+                        value={notifyDraft.recipientMembershipId}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Notification channel</span>
+                      <select
+                        className="input"
+                        onChange={(event) =>
+                          setNotifyDraft((current) => ({ ...current, channel: event.target.value }))
+                        }
+                        value={notifyDraft.channel}
+                      >
+                        <option value="SMS">SMS</option>
+                        <option value="EMAIL">Email</option>
+                        <option value="IN_APP">In app</option>
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span>Notification rationale</span>
+                      <textarea
+                        className="input"
+                        onChange={(event) =>
+                          setNotifyDraft((current) => ({ ...current, rationale: event.target.value }))
+                        }
+                        rows={3}
+                        value={notifyDraft.rationale}
+                      />
+                    </label>
+                    <MobileActionFooter
+                      primaryDisabled={notifySaving}
+                      primaryLabel={notifySaving ? 'Notifying supervisor...' : 'Notify supervisor'}
+                      onPrimaryClick={() => void handleEvvNotificationSave('missed')}
+                    />
+                  </>
+                ) : null}
+                {lastNotification?.missedVisitRecordId ? (
+                  <div className="mobile-inline-note">
+                    <strong>Supervisor notification {humanizeEnum(lastNotification.status)}</strong>
+                    <p>{humanizeEnum(lastNotification.channel)} channel confirmed.</p>
+                  </div>
+                ) : null}
+                {(canManageEvvExceptions || canResolveMissedVisits) && missedVisitRecord ? (
+                  <>
+                    <label className="field">
+                      <span>Escalation target role</span>
+                      <input
+                        className="input"
+                        onChange={(event) =>
+                          setEscalationDraft((current) => ({ ...current, targetRoleKey: event.target.value }))
+                        }
+                        value={escalationDraft.targetRoleKey}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Escalation rationale</span>
+                      <textarea
+                        className="input"
+                        onChange={(event) =>
+                          setEscalationDraft((current) => ({ ...current, rationale: event.target.value }))
+                        }
+                        rows={3}
+                        value={escalationDraft.rationale}
+                      />
+                    </label>
+                    <MobileActionFooter
+                      primaryDisabled={escalationSaving}
+                      primaryLabel={escalationSaving ? 'Creating escalation...' : 'Create escalation'}
+                      onPrimaryClick={() => void handleEvvEscalationSave('missed')}
+                    />
+                  </>
+                ) : null}
+                {notifyError ? (
+                  <MobileModuleState description={notifyError} title="Supervisor notification failed" variant="error" />
+                ) : null}
+                {escalationError ? (
+                  <MobileModuleState description={escalationError} title="Escalation failed" variant="error" />
+                ) : null}
+                {lastEscalation?.missedVisitRecordId ? (
+                  <div className="mobile-inline-note">
+                    <strong>Escalation {humanizeEnum(lastEscalation.status)}</strong>
+                    <p>{humanizeEnum(lastEscalation.targetRoleKey)} follow-up was created.</p>
+                  </div>
+                ) : null}
               </MobileEvvActionFramework>
             ) : null}
 
             {inExceptionRoute ? (
               <MobileEvvActionFramework
-                helper="Exception capture and follow-up routes need to feel like part of the same verification system, not a separate ad hoc incident screen."
+                helper="Exceptions stay tied to the EVV verification session so warning, blocking, acknowledged, escalated, and resolved states remain operationally clear."
                 mode={canSubmitMobileEvv ? 'editable' : 'read-only'}
                 syncMessage={syncMessage}
                 syncState={syncState}
-                title="Exception follow-up foundation"
+                title="EVV exception follow-up"
               >
-                <MobileEvvDeferredState
-                  ctaLabel="Back to EVV summary"
-                  ctaTo={`/mobile/visits/${visitId}/evv`}
-                  description="Exception creation and escalation flows will land in the next Epic 7 phase. This route now gives the mobile shell a stable information architecture and controlled placeholder state."
-                  title="Exception route is reserved"
+                <label className="field">
+                  <span>Exception type</span>
+                  <select
+                    className="input"
+                    onChange={(event) =>
+                      setEvvExceptionDraft((current) => ({
+                        ...current,
+                        exceptionType: event.target.value as VisitExceptionType,
+                      }))
+                    }
+                    value={evvExceptionDraft.exceptionType}
+                  >
+                    <option value="LATE_START">Late start</option>
+                    <option value="GEOFENCE_OUT_OF_RANGE">Geofence out of range</option>
+                    <option value="MISSING_SIGNATURE">Missing signature</option>
+                    <option value="NO_SHOW">No show</option>
+                    <option value="PATIENT_REFUSED">Patient refused</option>
+                    <option value="CAREGIVER_UNAVAILABLE">Caregiver unavailable</option>
+                    <option value="DOCUMENTATION_GAP">Documentation gap</option>
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Severity</span>
+                  <select
+                    className="input"
+                    onChange={(event) =>
+                      setEvvExceptionDraft((current) => ({
+                        ...current,
+                        severity: event.target.value as VisitExceptionSeverity,
+                      }))
+                    }
+                    value={evvExceptionDraft.severity}
+                  >
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                    <option value="CRITICAL">Critical</option>
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Reason code</span>
+                  <input
+                    className="input"
+                    onChange={(event) =>
+                      setEvvExceptionDraft((current) => ({ ...current, reasonCode: event.target.value }))
+                    }
+                    value={evvExceptionDraft.reasonCode}
+                  />
+                </label>
+                <label className="field">
+                  <span>Narrative</span>
+                  <textarea
+                    className="input"
+                    onChange={(event) =>
+                      setEvvExceptionDraft((current) => ({ ...current, narrative: event.target.value }))
+                    }
+                    rows={4}
+                    value={evvExceptionDraft.narrative}
+                  />
+                </label>
+                <MobileActionFooter
+                  primaryDisabled={!canSubmitMobileEvv || evvExceptionSaving}
+                  primaryLabel={evvExceptionSaving ? 'Submitting exception...' : 'Create exception'}
+                  secondaryLabel="Refresh exceptions"
+                  onPrimaryClick={() => void handleEvvExceptionSave()}
+                  onSecondaryClick={() => void loadEvvExceptions()}
                 />
+                {evvExceptionError ? (
+                  <MobileModuleState description={evvExceptionError} title="Exception save failed" variant="error" />
+                ) : null}
+                {evvExceptionSuccess ? (
+                  <div className="mobile-inline-note">
+                    <strong>Saved</strong>
+                    <p>{evvExceptionSuccess}</p>
+                  </div>
+                ) : null}
+                {evvExceptionsLoading ? (
+                  <MobileModuleState description="Loading EVV exceptions for this visit." title="Loading exceptions" variant="info" />
+                ) : evvExceptions.length ? (
+                  <div className="mobile-thread-list">
+                    {evvExceptions.map((record) => (
+                      <button
+                        className={`mobile-thread-card${
+                          selectedException?.id === record.id ? ' mobile-thread-card-active' : ''
+                        }`}
+                        key={record.id}
+                        onClick={() => setSelectedExceptionId(record.id)}
+                        type="button"
+                      >
+                        <strong>{humanizeEnum(record.exceptionType)}</strong>
+                        <p>{humanizeEnum(record.status)} · {humanizeEnum(record.severity)}</p>
+                        <span>{record.reasonCode}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <MobileModuleState
+                    description="No EVV exceptions are currently recorded for this visit."
+                    title="No exceptions yet"
+                    variant="empty"
+                  />
+                )}
+                {selectedException ? (
+                  <>
+                    <div className="mobile-inline-note">
+                      <strong>{humanizeEnum(selectedException.status)}</strong>
+                      <p>{selectedException.narrative}</p>
+                    </div>
+                    {canManageEvvExceptions ? (
+                      <MobileActionFooter
+                        primaryDisabled={exceptionStatusSaving || selectedException.status === 'ACKNOWLEDGED'}
+                        primaryLabel={exceptionStatusSaving ? 'Updating...' : 'Acknowledge'}
+                        secondaryDisabled={exceptionStatusSaving || selectedException.status === 'RESOLVED'}
+                        secondaryLabel="Resolve"
+                        onPrimaryClick={() => void handleExceptionStatusUpdate('ACKNOWLEDGED')}
+                        onSecondaryClick={() => void handleExceptionStatusUpdate('RESOLVED')}
+                      />
+                    ) : null}
+                    {canReceiveEvvNotifications ? (
+                      <>
+                        <label className="field">
+                          <span>Supervisor membership ID</span>
+                          <input
+                            className="input"
+                            onChange={(event) =>
+                              setNotifyDraft((current) => ({
+                                ...current,
+                                recipientMembershipId: event.target.value,
+                              }))
+                            }
+                            placeholder="membership UUID"
+                            value={notifyDraft.recipientMembershipId}
+                          />
+                        </label>
+                        <label className="field">
+                          <span>Notification rationale</span>
+                          <textarea
+                            className="input"
+                            onChange={(event) =>
+                              setNotifyDraft((current) => ({ ...current, rationale: event.target.value }))
+                            }
+                            rows={3}
+                            value={notifyDraft.rationale}
+                          />
+                        </label>
+                        <MobileActionFooter
+                          primaryDisabled={notifySaving}
+                          primaryLabel={notifySaving ? 'Notifying supervisor...' : 'Notify supervisor'}
+                          onPrimaryClick={() => void handleEvvNotificationSave('exception')}
+                        />
+                      </>
+                    ) : null}
+                    {(canManageEvvExceptions || canResolveMissedVisits) ? (
+                      <>
+                        <label className="field">
+                          <span>Escalation target role</span>
+                          <input
+                            className="input"
+                            onChange={(event) =>
+                              setEscalationDraft((current) => ({ ...current, targetRoleKey: event.target.value }))
+                            }
+                            value={escalationDraft.targetRoleKey}
+                          />
+                        </label>
+                        <label className="field">
+                          <span>Escalation rationale</span>
+                          <textarea
+                            className="input"
+                            onChange={(event) =>
+                              setEscalationDraft((current) => ({ ...current, rationale: event.target.value }))
+                            }
+                            rows={3}
+                            value={escalationDraft.rationale}
+                          />
+                        </label>
+                        <MobileActionFooter
+                          primaryDisabled={escalationSaving}
+                          primaryLabel={escalationSaving ? 'Creating escalation...' : 'Create escalation'}
+                          onPrimaryClick={() => void handleEvvEscalationSave('exception')}
+                        />
+                      </>
+                    ) : null}
+                  </>
+                ) : null}
+                {lastNotification?.visitExceptionRecordId ? (
+                  <div className="mobile-inline-note">
+                    <strong>Supervisor notification {humanizeEnum(lastNotification.status)}</strong>
+                    <p>{humanizeEnum(lastNotification.channel)} delivery was requested.</p>
+                  </div>
+                ) : null}
+                {lastEscalation?.visitExceptionRecordId ? (
+                  <div className="mobile-inline-note">
+                    <strong>Escalation {humanizeEnum(lastEscalation.status)}</strong>
+                    <p>{humanizeEnum(lastEscalation.targetRoleKey)} follow-up was created.</p>
+                  </div>
+                ) : null}
+                {notifyError ? (
+                  <MobileModuleState description={notifyError} title="Supervisor notification failed" variant="error" />
+                ) : null}
+                {escalationError ? (
+                  <MobileModuleState description={escalationError} title="Escalation failed" variant="error" />
+                ) : null}
               </MobileEvvActionFramework>
             ) : null}
 

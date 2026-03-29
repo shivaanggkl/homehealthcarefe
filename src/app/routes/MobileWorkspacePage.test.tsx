@@ -18,21 +18,32 @@ vi.mock('../auth/session-api', async () => {
   const actual = await vi.importActual('../auth/session-api');
   return {
     ...actual,
+    createMobileExceptionEscalation: vi.fn(),
     createMobileIncident: vi.fn(),
     createMobileMessageThread: vi.fn(),
+    createMobileMissedVisitEscalation: vi.fn(),
+    createMobileVisitException: vi.fn(),
     downloadMobileFieldArtifact: vi.fn(),
     endMobileVisitExecution: vi.fn(),
+    fetchMobileVisitExceptions: vi.fn(),
     fetchOwnMobileEvvSummary: vi.fn(),
     fetchMobileHome: vi.fn(),
     fetchMobileMessageThread: vi.fn(),
     fetchMobileMessageThreads: vi.fn(),
     fetchMobileRoute: vi.fn(),
     fetchMobileVisitDetail: vi.fn(),
+    notifySupervisorForMobileException: vi.fn(),
+    notifySupervisorForMobileMissedVisit: vi.fn(),
+    recordMobileEvvClockIn: vi.fn(),
+    recordMobileEvvClockOut: vi.fn(),
+    recordMobileEvvSignature: vi.fn(),
+    reportMobileMissedVisit: vi.fn(),
     saveMobileQuickNote: vi.fn(),
     saveMobileTaskChecklist: vi.fn(),
     sendMobileMessage: vi.fn(),
     startMobileVisitExecution: vi.fn(),
     uploadMobileFieldArtifact: vi.fn(),
+    updateMobileVisitExceptionStatus: vi.fn(),
   };
 });
 
@@ -172,6 +183,124 @@ describe('MobileWorkspacePage', () => {
       missedVisitReported: false,
       warnings: ['Geofence could not be evaluated'],
       blockers: ['Missing clock-in', 'Missing clock-out', 'Missing required signature'],
+    });
+    vi.mocked(sessionApi.recordMobileEvvClockIn).mockResolvedValue({
+      eventId: 'clock-1',
+      verificationSessionId: 'evv-session-1',
+      eventType: 'CLOCK_IN',
+      capturedAt: '2026-04-21T09:00:00-05:00',
+      verificationStatus: 'VERIFIED_WITH_WARNING',
+      geofenceOutcome: 'OUTSIDE_TOLERANCE_WARNING',
+      geofenceReasonCode: 'outside_warning',
+      distanceFromExpectedMeters: 120,
+      toleranceMetersUsed: 100,
+      overallOutcome: 'READY_WITH_WARNING',
+      warnings: ['Geofence warning'],
+      blockers: [],
+    });
+    vi.mocked(sessionApi.recordMobileEvvClockOut).mockResolvedValue({
+      eventId: 'clock-2',
+      verificationSessionId: 'evv-session-1',
+      eventType: 'CLOCK_OUT',
+      capturedAt: '2026-04-21T10:00:00-05:00',
+      verificationStatus: 'VERIFIED',
+      geofenceOutcome: 'WITHIN_TOLERANCE',
+      geofenceReasonCode: null,
+      distanceFromExpectedMeters: 20,
+      toleranceMetersUsed: 100,
+      overallOutcome: 'READY',
+      warnings: [],
+      blockers: [],
+    });
+    vi.mocked(sessionApi.recordMobileEvvSignature).mockResolvedValue({
+      id: 'sig-1',
+      verificationSessionId: 'evv-session-1',
+      artifactId: 'artifact-signature-1',
+      signerRole: 'PATIENT',
+      verificationStatus: 'PRESENT',
+      recordedAt: '2026-04-21T09:10:00-05:00',
+    });
+    vi.mocked(sessionApi.reportMobileMissedVisit).mockResolvedValue({
+      id: 'missed-1',
+      visitId: 'visit-1',
+      caregiverProfileId: 'caregiver-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      reasonCode: 'PATIENT_UNAVAILABLE',
+      narrative: 'No one answered the door.',
+      reportedAt: '2026-04-21T09:05:00-05:00',
+      status: 'REPORTED',
+    });
+    vi.mocked(sessionApi.fetchMobileVisitExceptions).mockResolvedValue([]);
+    vi.mocked(sessionApi.createMobileVisitException).mockResolvedValue({
+      id: 'exception-1',
+      verificationSessionId: 'evv-session-1',
+      visitId: 'visit-1',
+      caregiverProfileId: 'caregiver-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      exceptionType: 'GEOFENCE_OUT_OF_RANGE',
+      severity: 'HIGH',
+      reasonCode: 'gps_out_of_range',
+      narrative: 'Patient met caregiver in lobby, outside visit geofence.',
+      status: 'OPEN',
+      acknowledgedAt: null,
+      resolvedAt: null,
+    });
+    vi.mocked(sessionApi.updateMobileVisitExceptionStatus).mockResolvedValue({
+      id: 'exception-1',
+      verificationSessionId: 'evv-session-1',
+      visitId: 'visit-1',
+      caregiverProfileId: 'caregiver-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      exceptionType: 'GEOFENCE_OUT_OF_RANGE',
+      severity: 'HIGH',
+      reasonCode: 'gps_out_of_range',
+      narrative: 'Patient met caregiver in lobby, outside visit geofence.',
+      status: 'ACKNOWLEDGED',
+      acknowledgedAt: '2026-04-21T09:12:00-05:00',
+      resolvedAt: null,
+    });
+    vi.mocked(sessionApi.notifySupervisorForMobileException).mockResolvedValue({
+      id: 'notify-1',
+      missedVisitRecordId: null,
+      visitExceptionRecordId: 'exception-1',
+      recipientMembershipId: 'membership-2',
+      channel: 'SMS',
+      rationale: 'Branch follow-up needed',
+      createdAt: '2026-04-21T09:13:00-05:00',
+      status: 'SENT',
+    });
+    vi.mocked(sessionApi.notifySupervisorForMobileMissedVisit).mockResolvedValue({
+      id: 'notify-2',
+      missedVisitRecordId: 'missed-1',
+      visitExceptionRecordId: null,
+      recipientMembershipId: 'membership-2',
+      channel: 'SMS',
+      rationale: 'Missed visit needs triage',
+      createdAt: '2026-04-21T09:13:00-05:00',
+      status: 'SENT',
+    });
+    vi.mocked(sessionApi.createMobileExceptionEscalation).mockResolvedValue({
+      id: 'escalation-1',
+      missedVisitRecordId: null,
+      visitExceptionRecordId: 'exception-1',
+      targetRoleKey: 'BRANCH_ADMIN',
+      severity: 'HIGH',
+      rationale: 'Immediate operational review',
+      slaDueAt: null,
+      status: 'OPEN',
+    });
+    vi.mocked(sessionApi.createMobileMissedVisitEscalation).mockResolvedValue({
+      id: 'escalation-2',
+      missedVisitRecordId: 'missed-1',
+      visitExceptionRecordId: null,
+      targetRoleKey: 'BRANCH_ADMIN',
+      severity: 'HIGH',
+      rationale: 'Immediate operational review',
+      slaDueAt: null,
+      status: 'OPEN',
     });
     vi.mocked(sessionApi.startMobileVisitExecution).mockResolvedValue({
       id: 'execution-1',
@@ -339,7 +468,147 @@ describe('MobileWorkspacePage', () => {
     expect(screen.getByRole('link', { name: 'EVV' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Missed Visit' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Exception' })).toBeInTheDocument();
-    expect(screen.getByText('EVV action framework')).toBeInTheDocument();
+    expect(screen.getByText('EVV verification')).toBeInTheDocument();
+  });
+
+  it('submits EVV clock-in from the dedicated EVV route and refreshes proof state', async () => {
+    vi.mocked(sessionApi.fetchOwnMobileEvvSummary)
+      .mockResolvedValueOnce({
+        visitId: 'visit-1',
+        verificationSessionId: 'evv-session-1',
+        patientId: 'patient-1',
+        branchId: 'branch-1',
+        caregiverProfileId: 'caregiver-1',
+        verificationStatus: 'PENDING_VERIFICATION',
+        complianceOutcome: 'BLOCKED',
+        startEventPresent: false,
+        endEventPresent: false,
+        geofenceOutcome: 'NOT_EVALUABLE',
+        signatureComplete: false,
+        openExceptionCount: 0,
+        missedVisitReported: false,
+        warnings: [],
+        blockers: ['Missing clock-in'],
+      })
+      .mockResolvedValueOnce({
+        visitId: 'visit-1',
+        verificationSessionId: 'evv-session-1',
+        patientId: 'patient-1',
+        branchId: 'branch-1',
+        caregiverProfileId: 'caregiver-1',
+        verificationStatus: 'VERIFIED_WITH_WARNING',
+        complianceOutcome: 'READY_WITH_WARNING',
+        startEventPresent: true,
+        endEventPresent: false,
+        geofenceOutcome: 'OUTSIDE_TOLERANCE_WARNING',
+        signatureComplete: false,
+        openExceptionCount: 0,
+        missedVisitReported: false,
+        warnings: ['Geofence warning'],
+        blockers: ['Missing clock-out', 'Missing required signature'],
+      });
+
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1/evv']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId/evv" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Clock in' }));
+
+    await waitFor(() => {
+      expect(sessionApi.recordMobileEvvClockIn).toHaveBeenCalled();
+    });
+
+    expect(await screen.findByText('Clock-in recorded and EVV status refreshed.')).toBeInTheDocument();
+    expect(screen.getByText('Clock In')).toBeInTheDocument();
+  });
+
+  it('submits a missed visit from the dedicated missed-visit route', async () => {
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1/evv/missed-visit']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId/evv/missed-visit" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(await screen.findByLabelText('What happened?'), {
+      target: { value: 'No one answered the door.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit missed visit' }));
+
+    await waitFor(() => {
+      expect(sessionApi.reportMobileMissedVisit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          visitId: 'visit-1',
+          reasonCode: 'PATIENT_UNAVAILABLE',
+          narrative: 'No one answered the door.',
+        }),
+      );
+    });
+
+    expect(await screen.findByText('Missed visit reported and reflected in EVV status.')).toBeInTheDocument();
+  });
+
+  it('creates an EVV exception and supports supervisor notification follow-up for authorized users', async () => {
+    vi.mocked(useAccess).mockReturnValue({
+      profile: {
+        role: 'BRANCH_ADMIN',
+        roleLabel: 'Branch Admin',
+        branchScope: 'branch-assigned',
+        branchScopeLabel: 'Assigned branches only',
+        assignedBranchIds: ['branch-1'],
+        permissions: [
+          'view_mobile_evv',
+          'submit_mobile_evv',
+          'manage_mobile_evv_exceptions',
+          'receive_mobile_evv_notifications',
+          'view_mobile_app',
+        ],
+        defaultRoute: '/mobile',
+        source: 'backend',
+      },
+    } as never);
+
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1/evv/exception']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId/evv/exception" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(await screen.findByLabelText('Narrative'), {
+      target: { value: 'Patient met caregiver in lobby, outside visit geofence.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create exception' }));
+
+    await waitFor(() => {
+      expect(sessionApi.createMobileVisitException).toHaveBeenCalled();
+    });
+
+    fireEvent.change(await screen.findByLabelText('Supervisor membership ID'), {
+      target: { value: 'membership-2' },
+    });
+    fireEvent.change(screen.getByLabelText('Notification rationale'), {
+      target: { value: 'Branch follow-up needed' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Notify supervisor' }));
+
+    await waitFor(() => {
+      expect(sessionApi.notifySupervisorForMobileException).toHaveBeenCalledWith(
+        'exception-1',
+        expect.objectContaining({
+          recipientMembershipId: 'membership-2',
+          rationale: 'Branch follow-up needed',
+        }),
+      );
+    });
+
+    expect(await screen.findByText('Supervisor notification Sent')).toBeInTheDocument();
   });
 
   it('saves checklist items after the visit has started', async () => {
