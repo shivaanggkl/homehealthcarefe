@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { SchedulingWorkspacePage } from './SchedulingWorkspacePage';
 
@@ -467,6 +467,10 @@ describe('SchedulingWorkspacePage', () => {
     });
 
     expect(screen.getByText('Jamie Caregiver')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open matching audit activity' })).toHaveAttribute(
+      'href',
+      '/app/admin/audit?actionType=SCHEDULE_CAREGIVER_ASSIGNED',
+    );
     await waitFor(() => {
       expect(sessionApi.fetchScheduleMatches).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -498,5 +502,134 @@ describe('SchedulingWorkspacePage', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Create recurring rule' })).toBeInTheDocument();
+  });
+
+  it('renders read-only scheduling workflow states when assignment permission is missing', async () => {
+    vi.mocked(useAccess).mockReturnValue({
+      profile: {
+        role: 'SCHEDULER_COORDINATOR',
+        roleLabel: 'Scheduler',
+        branchScope: 'agency-wide',
+        branchScopeLabel: 'Agency-wide branch access',
+        assignedBranchIds: [],
+        permissions: ['view_scheduling_workspace', 'view_schedule_conflicts'],
+        defaultRoute: '/app/scheduling',
+        source: 'backend',
+      },
+      loading: false,
+      setRoleOverride: vi.fn(),
+      setAssignedBranches: vi.fn(),
+      clearOverride: vi.fn(),
+    } as never);
+
+    vi.mocked(sessionApi.fetchScheduleBoard)
+      .mockResolvedValueOnce({
+        view: 'WEEK',
+        windowStart: '2026-04-07',
+        windowEnd: '2026-04-14',
+        items: [],
+      })
+      .mockResolvedValueOnce({
+        view: 'DAY',
+        windowStart: '2026-03-29',
+        windowEnd: '2026-03-29',
+        items: [],
+      });
+    vi.mocked(sessionApi.fetchScheduleVisit).mockResolvedValue({
+      id: 'visit-1',
+      agencyId: 'agency-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      serviceLineId: 'service-line-1',
+      visitTypeId: 'visit-type-1',
+      recurringVisitRuleId: null,
+      plannedStartAt: '2026-04-10T09:00:00-05:00',
+      plannedEndAt: '2026-04-10T10:00:00-05:00',
+      timezone: 'America/Chicago',
+      status: 'PLANNED',
+      priority: 'STANDARD',
+      creationMode: 'MANUAL',
+      notes: null,
+      activeAssignmentId: null,
+      activeCaregiverProfileId: null,
+      openShiftId: null,
+    });
+
+    render(
+      <MemoryRouter
+        initialEntries={['/app/scheduling/visits/visit-1?view=WEEK&date=2026-04-10&workflow=assign']}
+      >
+        <Routes>
+          <Route element={<SchedulingWorkspacePage />} path="/app/scheduling/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Read-only scheduling action')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: 'Commit assignment' })).toBeDisabled();
+  });
+
+  it('shows a backend failure message during reschedule save', async () => {
+    vi.mocked(sessionApi.fetchScheduleBoard)
+      .mockResolvedValueOnce({
+        view: 'WEEK',
+        windowStart: '2026-04-07',
+        windowEnd: '2026-04-14',
+        items: [],
+      })
+      .mockResolvedValueOnce({
+        view: 'DAY',
+        windowStart: '2026-03-29',
+        windowEnd: '2026-03-29',
+        items: [],
+      });
+    vi.mocked(sessionApi.fetchScheduleVisit).mockResolvedValue({
+      id: 'visit-1',
+      agencyId: 'agency-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      serviceLineId: 'service-line-1',
+      visitTypeId: 'visit-type-1',
+      recurringVisitRuleId: null,
+      plannedStartAt: '2026-04-10T09:00:00-05:00',
+      plannedEndAt: '2026-04-10T10:00:00-05:00',
+      timezone: 'America/Chicago',
+      status: 'ASSIGNED',
+      priority: 'STANDARD',
+      creationMode: 'MANUAL',
+      notes: null,
+      activeAssignmentId: 'assignment-1',
+      activeCaregiverProfileId: 'caregiver-1',
+      openShiftId: null,
+    });
+    vi.mocked(sessionApi.rescheduleScheduleVisit).mockRejectedValue(
+      new sessionApi.ApiError(409, 'Caregiver overlap prevents this reschedule.'),
+    );
+
+    render(
+      <MemoryRouter
+        initialEntries={['/app/scheduling/visits/visit-1?view=WEEK&date=2026-04-10&workflow=reschedule']}
+      >
+        <Routes>
+          <Route element={<SchedulingWorkspacePage />} path="/app/scheduling/visits/:visitId" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Reschedule workflow')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Reason'), {
+      target: { value: 'Patient requested a later arrival window.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Commit reschedule' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Caregiver overlap prevents this reschedule.')).toBeInTheDocument();
+    });
   });
 });

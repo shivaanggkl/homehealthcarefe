@@ -1,5 +1,5 @@
 import { DragEvent, FormEvent, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { canAccessPermission } from '../access/access-control';
 import { useAccess } from '../access/access-context';
 import { useAuth } from '../auth/auth-context';
@@ -169,6 +169,10 @@ const DEFAULT_CANCEL_FORM_STATE: CancelFormState = {
   reason: '',
   confirmed: false,
 };
+
+function schedulingAuditHref(actionType: string) {
+  return `/app/admin/audit?actionType=${encodeURIComponent(actionType)}`;
+}
 
 export function SchedulingWorkspacePage() {
   const navigate = useNavigate();
@@ -900,8 +904,8 @@ export function SchedulingWorkspacePage() {
       updateBoardVisit(saved);
       setFormSuccess(
         workflow === 'edit-visit'
-          ? 'Visit changes saved. The board refreshes against the backend schedule APIs, so conflicts and rescheduled state remain consistent.'
-          : 'Visit created successfully. Use the board or open-shift panel to continue into staffing workflows.',
+          ? 'Visit changes saved. The board refreshes against the backend schedule APIs, so conflicts and rescheduled state remain consistent. This scheduling change is logged.'
+          : 'Visit created successfully. Use the board or open-shift panel to continue into staffing workflows. This scheduling change is logged.',
       );
       const next = new URLSearchParams(searchParams);
       next.delete('workflow');
@@ -979,7 +983,7 @@ export function SchedulingWorkspacePage() {
       }
 
       setAssignmentSuccess(
-        'Assignment saved. The board and detail drawer were updated immediately without waiting for a full manual refresh.',
+        'Assignment saved. The board and detail drawer were updated immediately without waiting for a full manual refresh. This scheduling change is logged.',
       );
       openWorkflow('idle');
       navigate(`/app/scheduling/visits/${selectedVisit.id}?${baseSearchParams(searchParams)}`, {
@@ -1029,7 +1033,7 @@ export function SchedulingWorkspacePage() {
           openShift: true,
         }),
       );
-      setAssignmentSuccess('Open shift created. It is now visible in the board lane and open-shift pool.');
+      setAssignmentSuccess('Open shift created. It is now visible in the board lane and open-shift pool. This scheduling change is logged.');
     } catch (cause) {
       setAssignmentError(
         cause instanceof ApiError ? cause.message : 'Unable to create the open shift right now.',
@@ -1079,8 +1083,8 @@ export function SchedulingWorkspacePage() {
       setRecurringRules((current) => upsertRecurringRule(current, saved));
       setRecurringSuccess(
         recurringForm.recurringRuleId
-          ? 'Recurring visit rule updated. Future occurrences will follow the revised cadence and timing.'
-          : 'Recurring visit rule created. Use the preview action below to inspect generated future occurrences.',
+          ? 'Recurring visit rule updated. Future occurrences will follow the revised cadence and timing. This scheduling change is logged.'
+          : 'Recurring visit rule created. Use the preview action below to inspect generated future occurrences. This scheduling change is logged.',
       );
     } catch (cause) {
       setRecurringError(
@@ -1133,7 +1137,7 @@ export function SchedulingWorkspacePage() {
       if (recurringForm.recurringRuleId === ruleId) {
         setRecurringForm(buildRecurringFormState(saved));
       }
-      setRecurringSuccess('Recurring visit rule deactivated. Existing future updates should now stop at the backend rule level.');
+      setRecurringSuccess('Recurring visit rule deactivated. Existing future updates should now stop at the backend rule level. This scheduling change is logged.');
     } catch (cause) {
       setRecurringError(
         cause instanceof ApiError
@@ -1191,7 +1195,7 @@ export function SchedulingWorkspacePage() {
       setSelectedVisit(updatedVisit);
       updateBoardVisit(updatedVisit);
       setRescheduleSuccess(
-        'Visit rescheduled. The board and detail drawer now show the new timing while preserving the before-vs-after context below.',
+        'Visit rescheduled. The board and detail drawer now show the new timing while preserving the before-vs-after context below. This scheduling change is logged.',
       );
       openWorkflow('idle');
     } catch (cause) {
@@ -1237,7 +1241,7 @@ export function SchedulingWorkspacePage() {
       setSelectedVisit(updatedVisit);
       updateBoardVisit(updatedVisit);
       setCancelSuccess(
-        'Visit cancelled. The cancelled state is now visible on the board and the detail drawer.',
+        'Visit cancelled. The cancelled state is now visible on the board and the detail drawer. This scheduling change is logged.',
       );
       openWorkflow('idle');
     } catch (cause) {
@@ -1312,6 +1316,18 @@ export function SchedulingWorkspacePage() {
             <p>{item.message}</p>
           </article>
         ))}
+      </div>
+    );
+  }
+
+  function renderSchedulingAuditCallout(actionType: string, title: string, description: string) {
+    return (
+      <div className="scheduling-audit-callout">
+        <strong>{title}</strong>
+        <p>{description}</p>
+        <Link className="scheduling-audit-link" to={schedulingAuditHref(actionType)}>
+          Open matching audit activity
+        </Link>
       </div>
     );
   }
@@ -1681,6 +1697,11 @@ export function SchedulingWorkspacePage() {
             tone={formError ? 'conflict' : formSuccess ? 'success' : undefined}
             toneMessage={formError ?? formSuccess ?? undefined}
           >
+            {renderSchedulingAuditCallout(
+              workflow === 'edit-visit' ? 'SCHEDULE_VISIT_UPDATED' : 'SCHEDULE_VISIT_CREATED',
+              'Schedule mutations are logged',
+              'Creating or updating schedule visits is an audit-sensitive scheduling action. Use the filtered audit view when you need to confirm who changed visit timing or board context.',
+            )}
             <form className="stack-form-light scheduling-visit-form" onSubmit={handleVisitSave}>
               <div className="patient-form-grid">
                 <label className="field field-light">
@@ -1840,6 +1861,11 @@ export function SchedulingWorkspacePage() {
             tone={assignmentError ? 'conflict' : assignmentSuccess ? 'success' : undefined}
             toneMessage={assignmentError ?? assignmentSuccess ?? undefined}
           >
+            {renderSchedulingAuditCallout(
+              'SCHEDULE_CAREGIVER_ASSIGNED',
+              'Assignment decisions are logged',
+              'Assignment commits and staffing-gap recovery are controlled scheduling mutations. Use the filtered audit view when you need to confirm who staffed a visit or resolved an open shift.',
+            )}
             {!selectedVisit ? (
               <SchedulingModuleState
                 title="Choose a visit before reviewing matches."
@@ -1987,6 +2013,13 @@ export function SchedulingWorkspacePage() {
               'Updating a recurring rule affects future occurrences generated from that rule. Existing historical visits remain visible through the schedule board.'
             }
           >
+            {renderSchedulingAuditCallout(
+              recurringForm.recurringRuleId
+                ? 'SCHEDULE_RECURRING_RULE_UPDATED'
+                : 'SCHEDULE_RECURRING_RULE_CREATED',
+              'Recurring rule changes are logged',
+              'Recurring rule creates and updates are audit-visible scheduling mutations because they affect future generated visits without exposing internal expansion metadata.',
+            )}
             <div className="scheduling-recurring-layout">
               <div className="scheduling-recurring-list">
                 <strong>Existing recurring rules</strong>
@@ -2247,6 +2280,11 @@ export function SchedulingWorkspacePage() {
             tone={rescheduleError ? 'conflict' : rescheduleSuccess ? 'success' : undefined}
             toneMessage={rescheduleError ?? rescheduleSuccess ?? undefined}
           >
+            {renderSchedulingAuditCallout(
+              'SCHEDULE_VISIT_RESCHEDULED',
+              'Reschedule actions are logged',
+              'Rescheduling changes the visit timeline and can affect staffing history. Use the filtered audit view when you need to confirm who changed the schedule and when.',
+            )}
             {!selectedVisit ? (
               <SchedulingModuleState
                 title="Choose a visit before rescheduling."
@@ -2371,6 +2409,11 @@ export function SchedulingWorkspacePage() {
               'Cancelled visits remain visible on the board with a distinct lifecycle state so schedulers do not lose context.'
             }
           >
+            {renderSchedulingAuditCallout(
+              'SCHEDULE_VISIT_CANCELLED',
+              'Cancellation actions are logged',
+              'Visit cancellations are audit-sensitive scheduling mutations. Use the filtered audit view when you need to confirm who cancelled the visit or why staffing stopped.',
+            )}
             {!selectedVisit ? (
               <SchedulingModuleState
                 title="Choose a visit before cancelling."
