@@ -20,6 +20,7 @@ export type FrontendPermission =
   | 'create_mobile_incidents'
   | 'view_mobile_messages'
   | 'send_mobile_messages'
+  | 'view_evv_issue_workspace'
   | 'view_scheduling_workspace'
   | 'manage_schedule_visits'
   | 'assign_caregivers'
@@ -127,6 +128,7 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'create_mobile_incidents',
       'view_mobile_messages',
       'send_mobile_messages',
+      'view_evv_issue_workspace',
       'view_scheduling_workspace',
       'manage_schedule_visits',
       'assign_caregivers',
@@ -184,6 +186,7 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'view_mobile_missed_visits',
       'resolve_mobile_missed_visits',
       'receive_mobile_evv_notifications',
+      'view_evv_issue_workspace',
       'view_scheduling_workspace',
       'manage_schedule_visits',
       'assign_caregivers',
@@ -239,6 +242,7 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'view_mobile_missed_visits',
       'resolve_mobile_missed_visits',
       'receive_mobile_evv_notifications',
+      'view_evv_issue_workspace',
       'view_scheduling_workspace',
       'manage_schedule_visits',
       'assign_caregivers',
@@ -285,6 +289,7 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'view_mobile_missed_visits',
       'resolve_mobile_missed_visits',
       'receive_mobile_evv_notifications',
+      'view_evv_issue_workspace',
       'view_patient_workspace',
       'manage_patient_eligibility',
       'manage_patient_diagnoses',
@@ -341,6 +346,15 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     description: 'Epic 7 EVV verification status and proof-of-visit workflow entry point.',
     navBehavior: 'disabled',
     section: 'mobile',
+  },
+  {
+    path: '/app/admin/evv-issues',
+    navLabel: 'EVV Issues',
+    permission: 'view_evv_issue_workspace',
+    description: 'Epic 7 coordinator-facing EVV issue list for missed visits and verification exceptions.',
+    navBehavior: 'visible',
+    section: 'security',
+    audience: 'admin',
   },
   {
     path: '/app/scheduling',
@@ -565,10 +579,10 @@ const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
   VIEW_OWN_MOBILE_VISITS: ['view_mobile_app'],
   VIEW_OWN_EVV: ['view_mobile_app', 'view_mobile_evv'],
   SUBMIT_OWN_EVV: ['view_mobile_app', 'view_mobile_evv', 'submit_mobile_evv'],
-  MANAGE_EVV_EXCEPTIONS: ['manage_mobile_evv_exceptions'],
-  VIEW_MISSED_VISITS: ['view_mobile_missed_visits'],
-  RESOLVE_MISSED_VISITS: ['view_mobile_missed_visits', 'resolve_mobile_missed_visits'],
-  RECEIVE_EVV_NOTIFICATIONS: ['receive_mobile_evv_notifications'],
+  MANAGE_EVV_EXCEPTIONS: ['manage_mobile_evv_exceptions', 'view_evv_issue_workspace'],
+  VIEW_MISSED_VISITS: ['view_mobile_missed_visits', 'view_evv_issue_workspace'],
+  RESOLVE_MISSED_VISITS: ['view_mobile_missed_visits', 'resolve_mobile_missed_visits', 'view_evv_issue_workspace'],
+  RECEIVE_EVV_NOTIFICATIONS: ['receive_mobile_evv_notifications', 'view_evv_issue_workspace'],
   EXECUTE_OWN_VISITS: ['view_mobile_app', 'execute_mobile_visits'],
   SUBMIT_MOBILE_VISIT_DOCUMENTATION: [
     'view_mobile_app',

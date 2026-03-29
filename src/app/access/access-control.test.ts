@@ -90,5 +90,6 @@ describe('mapBackendPermissionsToFrontend', () => {
     expect(resolved).toContain('manage_mobile_evv_exceptions');
     expect(resolved).toContain('view_mobile_missed_visits');
     expect(resolved).toContain('receive_mobile_evv_notifications');
+    expect(resolved).toContain('view_evv_issue_workspace');
   });
 });

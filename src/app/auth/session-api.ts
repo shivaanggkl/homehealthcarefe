@@ -486,6 +486,13 @@ export type MobileEvvSummaryResponse = {
   blockers: string[];
 };
 
+export type FetchEvvReadinessQuery = AuthenticatedRequestContext & {
+  day: string;
+  branchId?: string;
+  verificationStatus?: EvvVerificationStatus;
+  complianceOutcome?: EvvComplianceOutcome;
+};
+
 export type EvvClockEventType = 'CLOCK_IN' | 'CLOCK_OUT';
 
 export type SignatureVerificationStatus =
@@ -2263,6 +2270,41 @@ export async function fetchOwnMobileEvvSummary(
   }
 
   return payload as MobileEvvSummaryResponse;
+}
+
+export async function fetchEvvReadiness(
+  request: FetchEvvReadinessQuery,
+): Promise<MobileEvvSummaryResponse[]> {
+  const url = new URL(apiUrl('/api/evv/readiness'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    day: request.day,
+    branchId: request.branchId,
+    verificationStatus: request.verificationStatus,
+    complianceOutcome: request.complianceOutcome,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvSummaryResponse[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      !Array.isArray(payload) &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `EVV readiness failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvSummaryResponse[];
 }
 
 export async function recordMobileEvvClockIn(

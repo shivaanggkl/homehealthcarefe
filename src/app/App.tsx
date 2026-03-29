@@ -17,6 +17,7 @@ import { CaregiverRecordWorkspacePage } from './routes/CaregiverRecordWorkspaceP
 import { CaregiverWorkspacePage } from './routes/CaregiverWorkspacePage';
 import { ChangePasswordPage } from './routes/ChangePasswordPage';
 import { DocumentationTemplateSetupPage } from './routes/DocumentationTemplateSetupPage';
+import { EvvIssueListPage } from './routes/EvvIssueListPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { HomePage } from './routes/HomePage';
 import { InviteUserPage } from './routes/InviteUserPage';
@@ -710,6 +711,20 @@ function AppRoutes() {
           >
             <AppShell>
               <InviteUserPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/admin/evv-issues"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized coordinators, reviewers, or supervisors can review open EVV issues."
+            deniedTitle="EVV issue visibility is not available for this role."
+            requiredPermission="view_evv_issue_workspace"
+          >
+            <AppShell>
+              <EvvIssueListPage />
             </AppShell>
           </ProtectedRoute>
         }

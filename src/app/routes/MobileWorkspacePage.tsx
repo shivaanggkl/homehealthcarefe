@@ -2292,6 +2292,10 @@ export function MobileWorkspacePage() {
                     </div>
                   ) : null}
                 </MobilePanel>
+                <MobileAuditCallout
+                  actionTypes={['EVV_CLOCK_RECORDED', 'EVV_SIGNATURE_RECORDED']}
+                  body="Clock proof and signature verification are controlled EVV mutations. Key outcomes are logged for later review without exposing raw device details in the caregiver workflow."
+                />
               </MobileEvvActionFramework>
             ) : null}
 
@@ -2452,6 +2456,10 @@ export function MobileWorkspacePage() {
                     <p>{humanizeEnum(lastEscalation.targetRoleKey)} follow-up was created.</p>
                   </div>
                 ) : null}
+                <MobileAuditCallout
+                  actionTypes={['EVV_MISSED_VISIT_REPORTED', 'EVV_SUPERVISOR_NOTIFIED', 'EVV_ESCALATION_CREATED']}
+                  body="Missed-visit reporting, supervisor notification, and escalations are audit-sensitive EVV operations. The caregiver flow confirms routing without exposing broader back-office detail."
+                />
               </MobileEvvActionFramework>
             ) : null}
 
@@ -2665,6 +2673,10 @@ export function MobileWorkspacePage() {
                 {escalationError ? (
                   <MobileModuleState description={escalationError} title="Escalation failed" variant="error" />
                 ) : null}
+                <MobileAuditCallout
+                  actionTypes={['EVV_EXCEPTION_RECORDED', 'EVV_SUPERVISOR_NOTIFIED', 'EVV_ESCALATION_CREATED']}
+                  body="Exception capture and operational follow-up are controlled EVV workflows. Matching audit activity remains available for admin review without cluttering the caregiver screen."
+                />
               </MobileEvvActionFramework>
             ) : null}
 
