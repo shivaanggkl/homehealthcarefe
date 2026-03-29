@@ -19,6 +19,8 @@ vi.mock('../auth/session-api', async () => {
   return {
     ...actual,
     fetchCaregiver: vi.fn(),
+    fetchBranches: vi.fn(),
+    fetchCaregiverGeographyPreferences: vi.fn(),
   };
 });
 
@@ -33,6 +35,19 @@ function renderWorkforceRoute(path = '/app/workforce/caregiver-1') {
         <Route
           element={<CaregiverRecordWorkspacePage section="overview" />}
           path="/app/workforce/:caregiverId"
+        />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+function renderGeographyRoute(path = '/app/workforce/caregiver-1/geography') {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route
+          element={<CaregiverRecordWorkspacePage section="geography" />}
+          path="/app/workforce/:caregiverId/geography"
         />
       </Routes>
     </MemoryRouter>,
@@ -100,12 +115,56 @@ describe('CaregiverRecordWorkspacePage', () => {
     renderWorkforceRoute();
 
     await waitFor(() => {
-      expect(screen.getByText('Jordan Miles')).toBeInTheDocument();
+      expect(screen.getAllByText('Jordan Miles').length).toBeGreaterThan(0);
     });
 
     expect(screen.getByText('Caregiver code: CG-1001')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /Credentials/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /Performance/i }).length).toBeGreaterThan(0);
     expect(screen.getByText('Workforce changes are sensitive operations.')).toBeInTheDocument();
+  });
+
+  it('renders the live geography section for schedulability inputs', async () => {
+    vi.mocked(sessionApi.fetchCaregiver).mockResolvedValue({
+      id: 'caregiver-1',
+      agencyId: 'agency-1',
+      agencyMembershipId: 'membership-1',
+      userId: 'user-1',
+      userFirstName: 'Jordan',
+      userLastName: 'Miles',
+      userEmail: 'jordan@example.com',
+      userPhone: '312-555-0102',
+      membershipRole: 'SCHEDULER_COORDINATOR',
+      status: 'ACTIVE',
+      caregiverCode: 'CG-1001',
+      displayName: 'Jordan Miles',
+      primaryBranchId: 'branch-1',
+      primaryBranchName: 'North Branch',
+      employmentType: 'FULL_TIME',
+      startDate: '2026-01-15',
+      endDate: null,
+      notes: null,
+    });
+    vi.mocked(sessionApi.fetchBranches).mockResolvedValue([
+      {
+        id: 'branch-1',
+        agencyId: 'agency-1',
+        name: 'North Branch',
+        code: 'NORTH',
+        address: '123 Main',
+        timezone: 'America/Chicago',
+        status: 'ACTIVE',
+      },
+    ]);
+    vi.mocked(sessionApi.fetchCaregiverGeographyPreferences).mockResolvedValue([]);
+
+    renderGeographyRoute();
+
+    await waitFor(() => {
+      expect(screen.getByText('Preferred geography')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: 'Add preference' })).toBeInTheDocument();
+    expect(screen.getByText('No geography preferences on file')).toBeInTheDocument();
   });
 });

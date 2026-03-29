@@ -1709,6 +1709,21 @@ code {
   color: var(--ink-soft);
 }
 
+.workforce-field-span {
+  grid-column: 1 / -1;
+}
+
+.workforce-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.74);
+}
+
 .workforce-inline-state {
   margin-bottom: 1rem;
   padding: 0.9rem 1rem;
@@ -1769,6 +1784,39 @@ code {
 .workforce-summary-card strong {
   display: block;
   font-size: 1.05rem;
+}
+
+.workforce-module-list {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.workforce-module-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.workforce-module-row p {
+  margin: 0.2rem 0 0;
+  color: var(--ink-soft);
+}
+
+.workforce-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.success-message {
+  color: #11583d;
 }
 
 .workforce-pagination {
@@ -1841,7 +1889,8 @@ code {
   .patient-directory-head,
   .patient-directory-row,
   .workforce-directory-head,
-  .workforce-directory-row {
+  .workforce-directory-row,
+  .workforce-module-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1901,7 +1950,8 @@ code {
   .patient-directory-head,
   .patient-directory-row,
   .workforce-directory-head,
-  .workforce-directory-row {
+  .workforce-directory-row,
+  .workforce-module-row {
     grid-template-columns: 1fr;
   }
 
@@ -1920,7 +1970,8 @@ code {
   .patient-directory-actions,
   .patient-toolbar-actions,
   .workforce-directory-actions,
-  .workforce-toolbar-actions {
+  .workforce-toolbar-actions,
+  .workforce-row-actions {
     flex-direction: column;
     align-items: flex-start;
   }

@@ -235,6 +235,246 @@ export type CaregiverProfile = {
   notes: string | null;
 };
 
+export type CaregiverCredentialStatus = 'ACTIVE' | 'EXPIRED' | 'SUSPENDED' | 'ARCHIVED';
+
+export type CaregiverCredentialVerificationStatus = 'UNVERIFIED' | 'VERIFIED' | 'REJECTED';
+
+export type CaregiverCredential = {
+  id: string;
+  caregiverProfileId: string;
+  certificationId: string | null;
+  credentialType: string;
+  licenseNumber: string | null;
+  issuingAuthority: string | null;
+  issuedOn: string | null;
+  expiresOn: string | null;
+  status: CaregiverCredentialStatus;
+  verificationStatus: CaregiverCredentialVerificationStatus | null;
+  notes: string | null;
+};
+
+export type ManageCaregiverProfileRecordRequest = AuthenticatedRequestContext & {
+  caregiverId?: string;
+  agencyMembershipId: string;
+  primaryBranchId?: string;
+  caregiverCode: string;
+  displayName: string;
+  employmentType: string;
+  startDate: string;
+  endDate: string;
+  notes: string;
+};
+
+export type ManageCaregiverCredentialRecordRequest = AuthenticatedRequestContext & {
+  caregiverId: string;
+  credentialId?: string;
+  certificationId?: string;
+  credentialType: string;
+  licenseNumber: string;
+  issuingAuthority: string;
+  issuedOn: string;
+  expiresOn: string;
+  status: CaregiverCredentialStatus;
+  verificationStatus: CaregiverCredentialVerificationStatus | '';
+  notes: string;
+};
+
+export type CaregiverLanguage = {
+  id: string;
+  caregiverProfileId: string;
+  languageCode: string;
+  proficiencyLevel: string | null;
+  primaryLanguage: boolean;
+  status: WorkforceLifecycleStatus;
+};
+
+export type ManageCaregiverLanguageProfileRequest = AuthenticatedRequestContext & {
+  caregiverId: string;
+  languageId?: string;
+  languageCode: string;
+  proficiencyLevel: string;
+  primaryLanguage: boolean;
+};
+
+export type CaregiverSkillProfileEntry = {
+  id: string;
+  caregiverProfileId: string;
+  skillId: string;
+  skillName: string;
+  skillCode: string;
+  proficiencyLevel: string | null;
+  verified: boolean;
+  status: WorkforceLifecycleStatus;
+  notes: string | null;
+};
+
+export type ManageCaregiverSkillProfileRequest = AuthenticatedRequestContext & {
+  caregiverId: string;
+  skillProfileId?: string;
+  skillId: string;
+  proficiencyLevel: string;
+  verified: boolean;
+  notes: string;
+};
+
+export type CaregiverGeographyPreferenceType =
+  | 'BRANCH'
+  | 'POSTAL_CODE'
+  | 'CITY_STATE'
+  | 'RADIUS';
+
+export type CaregiverGeographyPreference = {
+  id: string;
+  caregiverProfileId: string;
+  branchId: string | null;
+  preferenceType: CaregiverGeographyPreferenceType;
+  postalCode: string | null;
+  city: string | null;
+  state: string | null;
+  anchorLatitude: number | null;
+  anchorLongitude: number | null;
+  radiusMiles: number | null;
+  priorityRank: number | null;
+  status: WorkforceLifecycleStatus;
+  notes: string | null;
+};
+
+export type ManageCaregiverGeographyPreferenceRequest = AuthenticatedRequestContext & {
+  caregiverId: string;
+  preferenceId?: string;
+  branchId?: string;
+  preferenceType: CaregiverGeographyPreferenceType;
+  postalCode: string;
+  city: string;
+  state: string;
+  anchorLatitude: string;
+  anchorLongitude: string;
+  radiusMiles: string;
+  priorityRank: string;
+  notes: string;
+};
+
+export type ShiftPreferenceStrength = 'PREFERRED' | 'AVAILABLE_ONLY' | 'AVOID';
+
+export type CaregiverShiftPreference = {
+  id: string;
+  caregiverProfileId: string;
+  dayOfWeek: string | null;
+  preferredStartTime: string | null;
+  preferredEndTime: string | null;
+  preferredShiftLengthMinutes: number | null;
+  preferredVisitTypes: string | null;
+  preferenceStrength: ShiftPreferenceStrength | null;
+  status: WorkforceLifecycleStatus;
+  notes: string | null;
+};
+
+export type ManageCaregiverShiftPreferenceRequest = AuthenticatedRequestContext & {
+  caregiverId: string;
+  shiftPreferenceId?: string;
+  dayOfWeek: string;
+  preferredStartTime: string;
+  preferredEndTime: string;
+  preferredShiftLengthMinutes: string;
+  preferredVisitTypes: string;
+  preferenceStrength: ShiftPreferenceStrength;
+  notes: string;
+};
+
+export type CaregiverAvailabilityType = 'RECURRING' | 'DATE_SPECIFIC';
+
+export type CaregiverAvailability = {
+  id: string;
+  caregiverProfileId: string;
+  branchId: string | null;
+  availabilityType: CaregiverAvailabilityType;
+  startsAt: string | null;
+  endsAt: string | null;
+  dayOfWeek: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  effectiveFrom: string | null;
+  effectiveTo: string | null;
+  status: WorkforceLifecycleStatus;
+  notes: string | null;
+};
+
+export type ManageCaregiverAvailabilityRequest = AuthenticatedRequestContext & {
+  caregiverId: string;
+  availabilityId?: string;
+  branchId?: string;
+  availabilityType: CaregiverAvailabilityType;
+  startsAt: string;
+  endsAt: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  effectiveFrom: string;
+  effectiveTo: string;
+  notes: string;
+};
+
+export type CaregiverUnavailabilityApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type CaregiverUnavailabilityReasonType =
+  | 'PTO'
+  | 'SICK'
+  | 'TRAINING'
+  | 'BLOCKED'
+  | 'OTHER';
+
+export type CaregiverUnavailability = {
+  id: string;
+  caregiverProfileId: string;
+  reasonType: CaregiverUnavailabilityReasonType;
+  startsAt: string;
+  endsAt: string;
+  allDay: boolean;
+  approvalStatus: CaregiverUnavailabilityApprovalStatus | null;
+  status: WorkforceLifecycleStatus;
+  notes: string | null;
+};
+
+export type ManageCaregiverUnavailabilityRequest = AuthenticatedRequestContext & {
+  caregiverId: string;
+  unavailabilityId?: string;
+  reasonType: CaregiverUnavailabilityReasonType;
+  startsAt: string;
+  endsAt: string;
+  allDay: boolean;
+  approvalStatus: CaregiverUnavailabilityApprovalStatus;
+  notes: string;
+};
+
+export type WorkforcePerformanceIndicatorType =
+  | 'COMPLETED_VISITS_COUNT'
+  | 'MISSED_VISITS_COUNT'
+  | 'ON_TIME_PERCENTAGE'
+  | 'DOCUMENTATION_COMPLETION_PERCENTAGE'
+  | 'EXCEPTION_COUNT';
+
+export type CaregiverPerformanceSummary = {
+  caregiverId: string;
+  windowStart: string;
+  windowEnd: string;
+  profileStatus: WorkforceLifecycleStatus;
+  currentlySchedulable: boolean;
+  activeCredentialCount: number;
+  expiringCredentialCount: number;
+  activeLanguageCount: number;
+  activeSkillCount: number;
+  recurringAvailabilityCount: number;
+  dateSpecificAvailabilityCount: number;
+  activeUnavailabilityCount: number;
+  unsupportedMetrics: WorkforcePerformanceIndicatorType[];
+};
+
+export type CaregiverPerformanceQuery = AuthenticatedRequestContext & {
+  caregiverId: string;
+  windowStart?: string;
+  windowEnd?: string;
+};
+
 export type PatientLifecycleStatus = 'ACTIVE' | 'INACTIVE';
 
 export type PatientSummary = {
@@ -1805,6 +2045,780 @@ export async function fetchCaregiver(
   }
 
   return payload as CaregiverProfile;
+}
+
+export async function createCaregiverProfile(
+  request: ManageCaregiverProfileRecordRequest,
+): Promise<CaregiverProfile> {
+  const response = await fetch(apiUrl('/api/caregivers'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      agencyMembershipId: request.agencyMembershipId,
+      primaryBranchId: request.primaryBranchId || null,
+      caregiverCode: request.caregiverCode || null,
+      displayName: request.displayName || null,
+      employmentType: request.employmentType || null,
+      startDate: request.startDate || null,
+      endDate: request.endDate || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverProfile
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver create request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverProfile;
+}
+
+export async function updateCaregiverProfile(
+  request: ManageCaregiverProfileRecordRequest,
+): Promise<CaregiverProfile> {
+  const response = await fetch(apiUrl(`/api/caregivers/${request.caregiverId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      agencyMembershipId: request.agencyMembershipId,
+      primaryBranchId: request.primaryBranchId || null,
+      caregiverCode: request.caregiverCode || null,
+      displayName: request.displayName || null,
+      employmentType: request.employmentType || null,
+      startDate: request.startDate || null,
+      endDate: request.endDate || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverProfile
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver update request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverProfile;
+}
+
+export async function deactivateCaregiverProfile(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverProfile> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverProfile
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver deactivate request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverProfile;
+}
+
+export async function fetchCaregiverCredentials(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverCredential[]> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/credentials`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverCredential[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver credentials request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverCredential[];
+}
+
+export async function saveCaregiverCredential(
+  request: ManageCaregiverCredentialRecordRequest,
+): Promise<CaregiverCredential> {
+  const path = request.credentialId
+    ? `/api/caregivers/${request.caregiverId}/credentials/${request.credentialId}`
+    : `/api/caregivers/${request.caregiverId}/credentials`;
+  const response = await fetch(apiUrl(path), {
+    method: request.credentialId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      certificationId: request.certificationId || null,
+      credentialType: request.credentialType,
+      licenseNumber: request.licenseNumber || null,
+      issuingAuthority: request.issuingAuthority || null,
+      issuedOn: request.issuedOn || null,
+      expiresOn: request.expiresOn || null,
+      status: request.status,
+      verificationStatus: request.verificationStatus || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverCredential
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver credential save request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverCredential;
+}
+
+export async function deactivateCaregiverCredential(
+  caregiverId: string,
+  credentialId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverCredential> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/credentials/${credentialId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverCredential
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver credential deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverCredential;
+}
+
+export async function fetchCaregiverLanguages(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverLanguage[]> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/languages`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverLanguage[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver languages request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverLanguage[];
+}
+
+export async function saveCaregiverLanguage(
+  request: ManageCaregiverLanguageProfileRequest,
+): Promise<CaregiverLanguage> {
+  const path = request.languageId
+    ? `/api/caregivers/${request.caregiverId}/languages/${request.languageId}`
+    : `/api/caregivers/${request.caregiverId}/languages`;
+  const response = await fetch(apiUrl(path), {
+    method: request.languageId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      languageCode: request.languageCode,
+      proficiencyLevel: request.proficiencyLevel || null,
+      primaryLanguage: request.primaryLanguage,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverLanguage
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver language save request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverLanguage;
+}
+
+export async function deactivateCaregiverLanguage(
+  caregiverId: string,
+  languageId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverLanguage> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/languages/${languageId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverLanguage
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver language deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverLanguage;
+}
+
+export async function fetchCaregiverSkillProfiles(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverSkillProfileEntry[]> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/skills`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverSkillProfileEntry[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver skill profiles request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverSkillProfileEntry[];
+}
+
+export async function saveCaregiverSkillProfile(
+  request: ManageCaregiverSkillProfileRequest,
+): Promise<CaregiverSkillProfileEntry> {
+  const path = request.skillProfileId
+    ? `/api/caregivers/${request.caregiverId}/skills/${request.skillProfileId}`
+    : `/api/caregivers/${request.caregiverId}/skills`;
+  const response = await fetch(apiUrl(path), {
+    method: request.skillProfileId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      skillId: request.skillId,
+      proficiencyLevel: request.proficiencyLevel || null,
+      verified: request.verified,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverSkillProfileEntry
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver skill profile save request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverSkillProfileEntry;
+}
+
+export async function deactivateCaregiverSkillProfile(
+  caregiverId: string,
+  skillProfileId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverSkillProfileEntry> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/skills/${skillProfileId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverSkillProfileEntry
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver skill profile deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverSkillProfileEntry;
+}
+
+export async function fetchCaregiverGeographyPreferences(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverGeographyPreference[]> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/geography-preferences`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverGeographyPreference[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver geography preferences request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverGeographyPreference[];
+}
+
+export async function saveCaregiverGeographyPreference(
+  request: ManageCaregiverGeographyPreferenceRequest,
+): Promise<CaregiverGeographyPreference> {
+  const path = request.preferenceId
+    ? `/api/caregivers/${request.caregiverId}/geography-preferences/${request.preferenceId}`
+    : `/api/caregivers/${request.caregiverId}/geography-preferences`;
+  const response = await fetch(apiUrl(path), {
+    method: request.preferenceId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId || null,
+      preferenceType: request.preferenceType,
+      postalCode: request.postalCode || null,
+      city: request.city || null,
+      state: request.state || null,
+      anchorLatitude: request.anchorLatitude ? Number(request.anchorLatitude) : null,
+      anchorLongitude: request.anchorLongitude ? Number(request.anchorLongitude) : null,
+      radiusMiles: request.radiusMiles ? Number(request.radiusMiles) : null,
+      priorityRank: request.priorityRank ? Number(request.priorityRank) : null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverGeographyPreference
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver geography preference save request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverGeographyPreference;
+}
+
+export async function deactivateCaregiverGeographyPreference(
+  caregiverId: string,
+  preferenceId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverGeographyPreference> {
+  const response = await fetch(
+    apiUrl(`/api/caregivers/${caregiverId}/geography-preferences/${preferenceId}`),
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverGeographyPreference
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver geography preference deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverGeographyPreference;
+}
+
+export async function fetchCaregiverShiftPreferences(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverShiftPreference[]> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/shift-preferences`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverShiftPreference[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver shift preferences request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverShiftPreference[];
+}
+
+export async function saveCaregiverShiftPreference(
+  request: ManageCaregiverShiftPreferenceRequest,
+): Promise<CaregiverShiftPreference> {
+  const path = request.shiftPreferenceId
+    ? `/api/caregivers/${request.caregiverId}/shift-preferences/${request.shiftPreferenceId}`
+    : `/api/caregivers/${request.caregiverId}/shift-preferences`;
+  const response = await fetch(apiUrl(path), {
+    method: request.shiftPreferenceId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      dayOfWeek: request.dayOfWeek || null,
+      preferredStartTime: request.preferredStartTime || null,
+      preferredEndTime: request.preferredEndTime || null,
+      preferredShiftLengthMinutes: request.preferredShiftLengthMinutes
+        ? Number(request.preferredShiftLengthMinutes)
+        : null,
+      preferredVisitTypes: request.preferredVisitTypes || null,
+      preferenceStrength: request.preferenceStrength || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverShiftPreference
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver shift preference save request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverShiftPreference;
+}
+
+export async function deactivateCaregiverShiftPreference(
+  caregiverId: string,
+  shiftPreferenceId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverShiftPreference> {
+  const response = await fetch(
+    apiUrl(`/api/caregivers/${caregiverId}/shift-preferences/${shiftPreferenceId}`),
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverShiftPreference
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver shift preference deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverShiftPreference;
+}
+
+export async function fetchCaregiverAvailabilities(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverAvailability[]> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/availabilities`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverAvailability[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver availabilities request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverAvailability[];
+}
+
+export async function saveCaregiverAvailability(
+  request: ManageCaregiverAvailabilityRequest,
+): Promise<CaregiverAvailability> {
+  const path = request.availabilityId
+    ? `/api/caregivers/${request.caregiverId}/availabilities/${request.availabilityId}`
+    : `/api/caregivers/${request.caregiverId}/availabilities`;
+  const response = await fetch(apiUrl(path), {
+    method: request.availabilityId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId || null,
+      availabilityType: request.availabilityType,
+      startsAt: request.startsAt || null,
+      endsAt: request.endsAt || null,
+      dayOfWeek: request.dayOfWeek || null,
+      startTime: request.startTime || null,
+      endTime: request.endTime || null,
+      effectiveFrom: request.effectiveFrom || null,
+      effectiveTo: request.effectiveTo || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverAvailability
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver availability save request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverAvailability;
+}
+
+export async function deactivateCaregiverAvailability(
+  caregiverId: string,
+  availabilityId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverAvailability> {
+  const response = await fetch(
+    apiUrl(`/api/caregivers/${caregiverId}/availabilities/${availabilityId}`),
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverAvailability
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver availability deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverAvailability;
+}
+
+export async function fetchCaregiverUnavailabilities(
+  caregiverId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverUnavailability[]> {
+  const response = await fetch(apiUrl(`/api/caregivers/${caregiverId}/unavailabilities`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverUnavailability[]
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver unavailabilities request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverUnavailability[];
+}
+
+export async function saveCaregiverUnavailability(
+  request: ManageCaregiverUnavailabilityRequest,
+): Promise<CaregiverUnavailability> {
+  const path = request.unavailabilityId
+    ? `/api/caregivers/${request.caregiverId}/unavailabilities/${request.unavailabilityId}`
+    : `/api/caregivers/${request.caregiverId}/unavailabilities`;
+  const response = await fetch(apiUrl(path), {
+    method: request.unavailabilityId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      reasonType: request.reasonType,
+      startsAt: request.startsAt,
+      endsAt: request.endsAt,
+      allDay: request.allDay,
+      approvalStatus: request.approvalStatus || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverUnavailability
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver unavailability save request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverUnavailability;
+}
+
+export async function deactivateCaregiverUnavailability(
+  caregiverId: string,
+  unavailabilityId: string,
+  request: AuthenticatedRequestContext,
+): Promise<CaregiverUnavailability> {
+  const response = await fetch(
+    apiUrl(`/api/caregivers/${caregiverId}/unavailabilities/${unavailabilityId}`),
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverUnavailability
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver unavailability deactivation failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverUnavailability;
+}
+
+export async function fetchCaregiverPerformanceSummary(
+  request: CaregiverPerformanceQuery,
+): Promise<CaregiverPerformanceSummary> {
+  const summaryUrl = new URL(
+    apiUrl(`/api/caregivers/${request.caregiverId}/performance-summary`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(summaryUrl, {
+    windowStart: request.windowStart,
+    windowEnd: request.windowEnd,
+  });
+
+  const response = await fetch(summaryUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | CaregiverPerformanceSummary
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Caregiver performance summary request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as CaregiverPerformanceSummary;
 }
 
 export async function fetchPatients(

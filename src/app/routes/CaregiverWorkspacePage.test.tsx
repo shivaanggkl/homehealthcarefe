@@ -25,6 +25,7 @@ vi.mock('../auth/session-api', async () => {
   return {
     ...actual,
     fetchCaregivers: vi.fn(),
+    fetchBranches: vi.fn(),
   };
 });
 
@@ -74,6 +75,17 @@ describe('CaregiverWorkspacePage', () => {
         totalElements: 5,
         totalPages: 5,
       });
+    vi.mocked(sessionApi.fetchBranches).mockResolvedValue([
+      {
+        id: 'branch-1',
+        agencyId: 'agency-1',
+        name: 'North Branch',
+        code: 'NORTH',
+        address: '123 Main',
+        timezone: 'America/Chicago',
+        status: 'ACTIVE',
+      },
+    ]);
 
     render(
       <MemoryRouter>
@@ -86,7 +98,7 @@ describe('CaregiverWorkspacePage', () => {
     });
 
     expect(screen.getByText('CG-1001')).toBeInTheDocument();
-    expect(screen.getByText('North Branch')).toBeInTheDocument();
+    expect(screen.getAllByText('North Branch').length).toBeGreaterThan(0);
     expect(screen.getByText('5')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'New caregiver' }));

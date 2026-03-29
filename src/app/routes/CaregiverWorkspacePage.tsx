@@ -4,8 +4,10 @@ import { useAuth } from '../auth/auth-context';
 import { loadDevSessionCredentials } from '../auth/session-storage';
 import {
   ApiError,
+  BranchSummary,
   CaregiverDirectoryPage,
   fetchCaregivers,
+  fetchBranches,
   WorkforceLifecycleStatus,
 } from '../auth/session-api';
 import {
@@ -23,10 +25,12 @@ export function CaregiverWorkspacePage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<WorkforceLifecycleStatus | 'ALL'>('ALL');
+  const [branchFilter, setBranchFilter] = useState('ALL');
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeCount, setActiveCount] = useState<number | null>(null);
+  const [branches, setBranches] = useState<BranchSummary[]>([]);
 
   const authContext = useMemo(() => {
     const devSession = loadDevSessionCredentials();
@@ -51,6 +55,7 @@ export function CaregiverWorkspacePage() {
       ...authContext,
       search,
       status: statusFilter,
+      branchId: branchFilter === 'ALL' ? undefined : branchFilter,
       page,
       size: PAGE_SIZE,
     })
@@ -91,10 +96,22 @@ export function CaregiverWorkspacePage() {
         }
       });
 
+    void fetchBranches(authContext)
+      .then((response) => {
+        if (!cancelled) {
+          setBranches(response.filter((branch) => branch.status === 'ACTIVE'));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBranches([]);
+        }
+      });
+
     return () => {
       cancelled = true;
     };
-  }, [authContext, page, search, state.status, statusFilter]);
+  }, [authContext, branchFilter, page, search, state.status, statusFilter]);
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -126,13 +143,13 @@ export function CaregiverWorkspacePage() {
             </article>
             <article className="workforce-summary-card">
               <span className="eyebrow">Quick entry</span>
-              <strong>Create caregiver profile</strong>
-              <p>Start the shared profile form shell and then continue into credentials, availability, and performance modules.</p>
+              <strong>Create and complete</strong>
+              <p>Start the shared profile form shell, then continue into geography, shifts, availability, PTO, credentials, and performance modules.</p>
             </article>
             <article className="workforce-summary-card">
-              <span className="eyebrow">Performance signals</span>
-              <strong>Profile-level only</strong>
-              <p>Unsupported analytics stay out of the UI; later modules use the concise performance summary route instead.</p>
+              <span className="eyebrow">Schedulability inputs</span>
+              <strong>Phase C live</strong>
+              <p>Preferred geography, shift patterns, availability, and blocked time are now maintained from each caregiver record.</p>
             </article>
           </div>
           <div className="button-row">
@@ -183,6 +200,24 @@ export function CaregiverWorkspacePage() {
                 <option value="SUSPENDED">Suspended</option>
                 <option value="UNSCHEDULABLE">Unschedulable</option>
                 <option value="ARCHIVED">Archived</option>
+              </select>
+            </label>
+            <label className="field field-light">
+              <span>Branch</span>
+              <select
+                className="input input-light"
+                onChange={(event) => {
+                  setBranchFilter(event.target.value);
+                  setPage(0);
+                }}
+                value={branchFilter}
+              >
+                <option value="ALL">All branches</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
               </select>
             </label>
             <div className="workforce-toolbar-actions">
