@@ -23,6 +23,8 @@ import { MileagePaySetupPage } from './routes/MileagePaySetupPage';
 import { MfaChallengePage } from './routes/MfaChallengePage';
 import { MfaSettingsPage } from './routes/MfaSettingsPage';
 import { NotFoundPage } from './routes/NotFoundPage';
+import { PatientRecordWorkspacePage } from './routes/PatientRecordWorkspacePage';
+import { PatientWorkspacePage } from './routes/PatientWorkspacePage';
 import { ResetPasswordPage } from './routes/ResetPasswordPage';
 import { SecuritySettingsPage } from './routes/SecuritySettingsPage';
 import { SelfProfilePage } from './routes/SelfProfilePage';
@@ -87,6 +89,146 @@ function AppRoutes() {
           <ProtectedRoute requiredPermission="view_session_home">
             <AppShell>
               <HomePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with backend patient directory access can open the Epic 3 patient workspace."
+            deniedTitle="Patient workspace is not available for this role."
+            requiredPermission="view_patient_workspace"
+          >
+            <AppShell>
+              <PatientWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with backend patient directory access can open patient records."
+            deniedTitle="Patient record workspace is not available for this role."
+            requiredPermission="view_patient_workspace"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="overview" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/demographics"
+        element={
+          <ProtectedRoute
+            deniedMessage="Demographic edits follow backend patient-management permissions."
+            deniedTitle="Patient demographics are not available for this role."
+            requiredPermission="manage_patient_demographics"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="demographics" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/contacts"
+        element={
+          <ProtectedRoute
+            deniedMessage="Patient contact routes follow backend patient-management permissions."
+            deniedTitle="Patient contacts are not available for this role."
+            requiredPermission="manage_patient_contacts"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="contacts" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/address"
+        element={
+          <ProtectedRoute
+            deniedMessage="Patient address routes follow backend patient-management permissions."
+            deniedTitle="Patient address is not available for this role."
+            requiredPermission="manage_patient_address"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="address" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/eligibility"
+        element={
+          <ProtectedRoute
+            deniedMessage="Eligibility routes follow backend patient-management permissions."
+            deniedTitle="Patient eligibility is not available for this role."
+            requiredPermission="manage_patient_eligibility"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="eligibility" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/diagnoses"
+        element={
+          <ProtectedRoute
+            deniedMessage="Diagnosis routes follow backend patient-management permissions."
+            deniedTitle="Patient diagnoses are not available for this role."
+            requiredPermission="manage_patient_diagnoses"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="diagnoses" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/payer"
+        element={
+          <ProtectedRoute
+            deniedMessage="Payer linkage routes follow backend patient-management permissions."
+            deniedTitle="Patient payer linkage is not available for this role."
+            requiredPermission="manage_patient_payer_links"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="payer" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/authorizations"
+        element={
+          <ProtectedRoute
+            deniedMessage="Authorization routes follow backend patient-management permissions."
+            deniedTitle="Patient authorizations are not available for this role."
+            requiredPermission="manage_patient_authorizations"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="authorizations" />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/attachments"
+        element={
+          <ProtectedRoute
+            deniedMessage="Patient attachments follow backend attachment-view permissions and controlled download access."
+            deniedTitle="Patient attachments are not available for this role."
+            requiredPermission="view_patient_attachments"
+          >
+            <AppShell>
+              <PatientRecordWorkspacePage section="attachments" />
             </AppShell>
           </ProtectedRoute>
         }

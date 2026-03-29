@@ -1160,6 +1160,212 @@ code {
   margin-top: 1rem;
 }
 
+.patient-shell {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.patient-shell-hero {
+  border-radius: 30px;
+}
+
+.patient-shell-hero h2 {
+  margin: 0.35rem 0 0.65rem;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+}
+
+.patient-shell-content,
+.patient-workspace-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.patient-panel {
+  border-radius: 24px;
+  padding: 1.4rem;
+}
+
+.patient-panel-header h3,
+.patient-record-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.patient-panel-header p,
+.patient-record-subtitle,
+.patient-record-id,
+.patient-form-mode p,
+.patient-module-card p,
+.patient-module-state p {
+  color: var(--ink-soft);
+}
+
+.patient-summary-metrics,
+.patient-record-meta,
+.patient-form-grid,
+.patient-module-cards {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.patient-summary-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-bottom: 1rem;
+}
+
+.patient-summary-metrics article,
+.patient-directory-preview-row,
+.patient-module-state,
+.patient-section-link,
+.patient-module-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.patient-summary-metrics article {
+  padding: 1rem;
+}
+
+.patient-summary-metrics strong {
+  display: block;
+  font-size: 1.8rem;
+}
+
+.patient-directory-preview {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.patient-directory-preview-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) auto;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  align-items: center;
+}
+
+.patient-record-header {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.4rem;
+}
+
+.patient-record-meta {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 0;
+}
+
+.patient-record-meta div {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  background: rgba(15, 76, 129, 0.06);
+}
+
+.patient-record-meta dt {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  margin-bottom: 0.25rem;
+}
+
+.patient-record-meta dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.patient-record-id {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.patient-section-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.patient-section-link,
+.patient-module-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+}
+
+.patient-section-link-active,
+.patient-module-card-available:hover,
+.patient-module-card-read-only:hover {
+  border-color: rgba(15, 76, 129, 0.28);
+  transform: translateY(-1px);
+}
+
+.patient-section-link span,
+.patient-module-card strong,
+.patient-module-state strong {
+  font-weight: 700;
+}
+
+.patient-section-link small,
+.patient-module-card span {
+  color: var(--ink-soft);
+}
+
+.patient-section-link-read-only,
+.patient-module-card-read-only,
+.patient-module-state-readonly {
+  background: rgba(15, 76, 129, 0.08);
+}
+
+.patient-section-link-restricted,
+.patient-module-card-restricted {
+  background: rgba(159, 48, 52, 0.06);
+  color: var(--ink-soft);
+}
+
+.patient-module-state {
+  padding: 1rem 1.1rem;
+}
+
+.patient-module-state-info {
+  background: rgba(15, 76, 129, 0.06);
+}
+
+.patient-form-framework {
+  padding: 1.4rem;
+}
+
+.patient-form-mode {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.patient-mode-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.patient-mode-badge-editable {
+  color: #11583d;
+  background: rgba(21, 143, 99, 0.12);
+}
+
+.patient-mode-badge-read-only {
+  color: var(--brand-deep);
+  background: rgba(15, 76, 129, 0.1);
+}
+
+.patient-form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
 @media (max-width: 1200px) {
   .directory-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1181,7 +1387,8 @@ code {
   }
 
   .config-workspace,
-  .config-hero {
+  .config-hero,
+  .patient-shell-content {
     grid-template-columns: 1fr;
   }
 
@@ -1191,6 +1398,10 @@ code {
   }
 
   .config-table-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-directory-preview-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1234,6 +1445,14 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .patient-section-nav,
+  .patient-form-grid,
+  .patient-summary-metrics,
+  .patient-record-meta,
+  .patient-directory-preview-row {
+    grid-template-columns: 1fr;
+  }
+
   .directory-summary,
   .pagination-row {
     flex-direction: column;
@@ -1242,7 +1461,8 @@ code {
 
   .config-row-actions,
   .config-panel-header,
-  .config-module-card-header {
+  .config-module-card-header,
+  .patient-panel-header {
     flex-direction: column;
     align-items: flex-start;
   }

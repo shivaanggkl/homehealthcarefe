@@ -7,6 +7,16 @@ export type FrontendPermission =
   | 'manage_self_password'
   | 'manage_self_mfa'
   | 'manage_self_sessions'
+  | 'view_patient_workspace'
+  | 'manage_patient_demographics'
+  | 'manage_patient_contacts'
+  | 'manage_patient_address'
+  | 'manage_patient_eligibility'
+  | 'manage_patient_diagnoses'
+  | 'manage_patient_payer_links'
+  | 'manage_patient_authorizations'
+  | 'view_patient_attachments'
+  | 'manage_patient_attachments'
   | 'view_setup_console'
   | 'manage_agency_profile_setup'
   | 'manage_service_line_setup'
@@ -49,6 +59,7 @@ export type AppRouteDefinition = {
   navBehavior: 'visible' | 'disabled';
   section:
     | 'workspace'
+    | 'patients'
     | 'configuration'
     | 'people'
     | 'security'
@@ -74,6 +85,16 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Agency-wide branch access',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_patient_workspace',
+      'manage_patient_demographics',
+      'manage_patient_contacts',
+      'manage_patient_address',
+      'manage_patient_eligibility',
+      'manage_patient_diagnoses',
+      'manage_patient_payer_links',
+      'manage_patient_authorizations',
+      'view_patient_attachments',
+      'manage_patient_attachments',
       'view_setup_console',
       'manage_agency_profile_setup',
       'manage_service_line_setup',
@@ -104,6 +125,16 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_patient_workspace',
+      'manage_patient_demographics',
+      'manage_patient_contacts',
+      'manage_patient_address',
+      'manage_patient_eligibility',
+      'manage_patient_diagnoses',
+      'manage_patient_payer_links',
+      'manage_patient_authorizations',
+      'view_patient_attachments',
+      'manage_patient_attachments',
       'view_setup_console',
       'manage_agency_profile_setup',
       'manage_service_line_setup',
@@ -146,7 +177,13 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     roleLabel: 'QA Clinical Reviewer',
     branchScope: 'branch-assigned',
     branchScopeLabel: 'Assigned branches only',
-    permissions: [...COMMON_SELF_SERVICE_PERMISSIONS],
+    permissions: [
+      ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_patient_workspace',
+      'manage_patient_eligibility',
+      'manage_patient_diagnoses',
+      'view_patient_attachments',
+    ],
     defaultRoute: '/app/home',
   },
   BILLING_BACK_OFFICE: {
@@ -154,7 +191,14 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     roleLabel: 'Billing Back Office',
     branchScope: 'branch-assigned',
     branchScopeLabel: 'Assigned branches only',
-    permissions: [...COMMON_SELF_SERVICE_PERMISSIONS, 'view_audit_log'],
+    permissions: [
+      ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_patient_workspace',
+      'manage_patient_payer_links',
+      'manage_patient_authorizations',
+      'view_patient_attachments',
+      'view_audit_log',
+    ],
     defaultRoute: '/app/home',
   },
   READ_ONLY_AUDITOR: {
@@ -175,6 +219,14 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     description: 'Authenticated session dashboard and backend session snapshot.',
     navBehavior: 'visible',
     section: 'workspace',
+  },
+  {
+    path: '/app/patients',
+    navLabel: 'Patient Workspace',
+    permission: 'view_patient_workspace',
+    description: 'Epic 3 patient management landing area and record workspace entry point.',
+    navBehavior: 'visible',
+    section: 'patients',
   },
   {
     path: '/app/setup',
@@ -363,6 +415,20 @@ export const APP_ROUTES: AppRouteDefinition[] = [
 ];
 
 const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
+  VIEW_PATIENT_DIRECTORY: ['view_patient_workspace'],
+  MANAGE_PATIENT_DEMOGRAPHICS: ['view_patient_workspace', 'manage_patient_demographics'],
+  MANAGE_PATIENT_CONTACTS: ['view_patient_workspace', 'manage_patient_contacts'],
+  MANAGE_PATIENT_ADDRESS: ['view_patient_workspace', 'manage_patient_address'],
+  MANAGE_PATIENT_ELIGIBILITY: ['view_patient_workspace', 'manage_patient_eligibility'],
+  MANAGE_PATIENT_DIAGNOSES: ['view_patient_workspace', 'manage_patient_diagnoses'],
+  MANAGE_PATIENT_PAYER_LINKAGE: ['view_patient_workspace', 'manage_patient_payer_links'],
+  MANAGE_PATIENT_AUTHORIZATIONS: ['view_patient_workspace', 'manage_patient_authorizations'],
+  VIEW_PATIENT_ATTACHMENTS: ['view_patient_workspace', 'view_patient_attachments'],
+  MANAGE_PATIENT_ATTACHMENTS: [
+    'view_patient_workspace',
+    'view_patient_attachments',
+    'manage_patient_attachments',
+  ],
   VIEW_USER_DIRECTORY: ['view_user_directory'],
   INVITE_USER: ['invite_users'],
   EDIT_USER_PROFILE: ['edit_user_accounts'],
@@ -480,6 +546,7 @@ export const NAV_SECTIONS: Array<{
   label: string;
 }> = [
   { key: 'workspace', label: 'Workspace' },
+  { key: 'patients', label: 'Patients' },
   { key: 'configuration', label: 'Agency Setup' },
   { key: 'people', label: 'People & Audit' },
   { key: 'security', label: 'Security' },

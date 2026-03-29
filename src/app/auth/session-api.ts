@@ -177,6 +177,41 @@ export type CurrentAccessResponse = {
   permissions: string[];
 };
 
+export type PatientLifecycleStatus = 'ACTIVE' | 'INACTIVE';
+
+export type PatientSummary = {
+  id: string;
+  agencyId: string;
+  status: PatientLifecycleStatus;
+  externalReference: string | null;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  preferredName: string | null;
+  dateOfBirth: string;
+  sexMarker: string | null;
+  primaryPhone: string | null;
+  secondaryPhone: string | null;
+  email: string | null;
+  language: string | null;
+  notesSummary: string | null;
+};
+
+export type PatientDirectoryQuery = AuthenticatedRequestContext & {
+  search?: string;
+  status?: PatientLifecycleStatus | 'ALL';
+  page?: number;
+  size?: number;
+};
+
+export type PatientDirectoryPage = {
+  content: PatientSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+};
+
 export type BranchSummary = {
   id: string;
   agencyId: string;
@@ -1431,6 +1466,65 @@ export async function fetchCurrentAccess(
   }
 
   return payload as CurrentAccessResponse;
+}
+
+export async function fetchPatients(
+  request: PatientDirectoryQuery,
+): Promise<PatientDirectoryPage> {
+  const patientsUrl = new URL(apiUrl('/api/patients'), window.location.origin);
+  appendOptionalSearchParams(patientsUrl, {
+    search: request.search,
+    status: request.status === 'ALL' ? undefined : request.status,
+    page: request.page,
+    size: request.size,
+  });
+
+  const response = await fetch(patientsUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientDirectoryPage
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient directory request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as PatientDirectoryPage;
+}
+
+export async function fetchPatient(
+  patientId: string,
+  request: AuthenticatedRequestContext,
+): Promise<PatientSummary> {
+  const response = await fetch(apiUrl(`/api/patients/${patientId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | PatientSummary
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Patient record request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as PatientSummary;
 }
 
 export async function fetchBranches(
