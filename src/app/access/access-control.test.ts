@@ -92,4 +92,25 @@ describe('mapBackendPermissionsToFrontend', () => {
     expect(resolved).toContain('receive_mobile_evv_notifications');
     expect(resolved).toContain('view_evv_issue_workspace');
   });
+
+  it('maps Epic 8 backend permissions to the shared documentation workspace capabilities', () => {
+    const resolved = mapBackendPermissionsToFrontend(
+      [
+        'VIEW_DOCUMENTATION_WORKSPACE',
+        'MANAGE_DOCUMENTATION_TEMPLATES',
+        'MANAGE_DOCUMENTATION_TASK_LIBRARY',
+        'VIEW_VISIT_DOCUMENTATION',
+        'SUBMIT_VISIT_DOCUMENTATION',
+        'GENERATE_PRINTABLE_DOCUMENTATION_SUMMARY',
+      ],
+      ['view_documentation_workspace'],
+    );
+
+    expect(resolved).toContain('view_documentation_workspace');
+    expect(resolved).toContain('manage_documentation_templates');
+    expect(resolved).toContain('manage_documentation_task_library');
+    expect(resolved).toContain('view_visit_documentation');
+    expect(resolved).toContain('submit_visit_documentation');
+    expect(resolved).toContain('generate_printable_documentation_summary');
+  });
 });

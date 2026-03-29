@@ -16,7 +16,10 @@ import { BranchPolicySetupPage } from './routes/BranchPolicySetupPage';
 import { CaregiverRecordWorkspacePage } from './routes/CaregiverRecordWorkspacePage';
 import { CaregiverWorkspacePage } from './routes/CaregiverWorkspacePage';
 import { ChangePasswordPage } from './routes/ChangePasswordPage';
-import { DocumentationTemplateSetupPage } from './routes/DocumentationTemplateSetupPage';
+import { DocumentationRecordWorkspacePage } from './routes/DocumentationRecordWorkspacePage';
+import { DocumentationTaskLibraryPage } from './routes/DocumentationTaskLibraryPage';
+import { DocumentationTemplateWorkspacePage } from './routes/DocumentationTemplateWorkspacePage';
+import { DocumentationWorkspacePage } from './routes/DocumentationWorkspacePage';
 import { EvvIssueListPage } from './routes/EvvIssueListPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { HomePage } from './routes/HomePage';
@@ -30,6 +33,7 @@ import { MfaSettingsPage } from './routes/MfaSettingsPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { PatientRecordWorkspacePage } from './routes/PatientRecordWorkspacePage';
 import { PatientWorkspacePage } from './routes/PatientWorkspacePage';
+import { PrintableDocumentationPage } from './routes/PrintableDocumentationPage';
 import { ResetPasswordPage } from './routes/ResetPasswordPage';
 import { SecuritySettingsPage } from './routes/SecuritySettingsPage';
 import { SelfProfilePage } from './routes/SelfProfilePage';
@@ -41,6 +45,7 @@ import { UserDirectoryPage } from './routes/UserDirectoryPage';
 import { VisitTypeSetupPage } from './routes/VisitTypeSetupPage';
 import { WorkforceCatalogSetupPage } from './routes/WorkforceCatalogSetupPage';
 import { MobileProtectedRoute } from './components/MobileProtectedRoute';
+import { MobileDocumentationPage } from './routes/MobileDocumentationPage';
 
 function BootstrapScreen() {
   return (
@@ -160,6 +165,18 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/mobile/visits/:visitId/documentation"
+        element={
+          <MobileProtectedRoute
+            deniedMessage="Only caregivers with documentation access can open mobile visit documentation routes."
+            deniedTitle="Mobile visit documentation is not available for this role."
+            requiredPermission="view_visit_documentation"
+          >
+            <MobileDocumentationPage />
+          </MobileProtectedRoute>
+        }
+      />
+      <Route
         path="/mobile/messages"
         element={
           <MobileProtectedRoute
@@ -225,6 +242,76 @@ function AppRoutes() {
           >
             <AppShell>
               <SchedulingWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/documentation"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 8 documentation workspace access can open the documentation workspace."
+            deniedTitle="Documentation workspace is not available for this role."
+            requiredPermission="view_documentation_workspace"
+          >
+            <AppShell>
+              <DocumentationWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/documentation/templates"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only permitted admins can manage Epic 8 documentation templates."
+            deniedTitle="Documentation template management is not available for this role."
+            requiredPermission="manage_documentation_templates"
+          >
+            <AppShell>
+              <DocumentationTemplateWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/documentation/task-library"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only permitted admins can manage Epic 8 documentation task-library items."
+            deniedTitle="Documentation task-library management is not available for this role."
+            requiredPermission="manage_documentation_task_library"
+          >
+            <AppShell>
+              <DocumentationTaskLibraryPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/documentation/visits/:visitId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with visit-documentation access can open Epic 8 visit documentation routes."
+            deniedTitle="Visit documentation is not available for this role."
+            requiredPermission="view_visit_documentation"
+          >
+            <AppShell>
+              <DocumentationRecordWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/documentation/records/:documentationRecordId/printable"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with printable documentation access can open Epic 8 printable summary routes."
+            deniedTitle="Printable documentation summary is not available for this role."
+            requiredPermission="generate_printable_documentation_summary"
+          >
+            <AppShell>
+              <PrintableDocumentationPage />
             </AppShell>
           </ProtectedRoute>
         }
@@ -627,10 +714,10 @@ function AppRoutes() {
           <ProtectedRoute
             deniedMessage="Documentation template setup follows backend configuration permissions."
             deniedTitle="Documentation templates are not available for this role."
-            requiredPermission="manage_documentation_template_setup"
+            requiredPermission="manage_documentation_templates"
           >
             <AppShell>
-              <DocumentationTemplateSetupPage />
+              <DocumentationTemplateWorkspacePage />
             </AppShell>
           </ProtectedRoute>
         }

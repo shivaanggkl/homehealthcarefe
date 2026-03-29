@@ -44,6 +44,14 @@ export type FrontendPermission =
   | 'manage_patient_authorizations'
   | 'view_patient_attachments'
   | 'manage_patient_attachments'
+  | 'view_documentation_workspace'
+  | 'manage_documentation_templates'
+  | 'manage_documentation_task_library'
+  | 'view_visit_documentation'
+  | 'draft_visit_documentation'
+  | 'submit_visit_documentation'
+  | 'amend_visit_documentation'
+  | 'generate_printable_documentation_summary'
   | 'view_setup_console'
   | 'manage_agency_profile_setup'
   | 'manage_service_line_setup'
@@ -90,6 +98,7 @@ export type AppRouteDefinition = {
     | 'scheduling'
     | 'workforce'
     | 'patients'
+    | 'documentation'
     | 'configuration'
     | 'people'
     | 'security'
@@ -152,6 +161,14 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'manage_patient_authorizations',
       'view_patient_attachments',
       'manage_patient_attachments',
+      'view_documentation_workspace',
+      'manage_documentation_templates',
+      'manage_documentation_task_library',
+      'view_visit_documentation',
+      'draft_visit_documentation',
+      'submit_visit_documentation',
+      'amend_visit_documentation',
+      'generate_printable_documentation_summary',
       'view_setup_console',
       'manage_agency_profile_setup',
       'manage_service_line_setup',
@@ -210,6 +227,14 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'manage_patient_authorizations',
       'view_patient_attachments',
       'manage_patient_attachments',
+      'view_documentation_workspace',
+      'manage_documentation_templates',
+      'manage_documentation_task_library',
+      'view_visit_documentation',
+      'draft_visit_documentation',
+      'submit_visit_documentation',
+      'amend_visit_documentation',
+      'generate_printable_documentation_summary',
       'view_setup_console',
       'manage_agency_profile_setup',
       'manage_service_line_setup',
@@ -256,6 +281,11 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'manage_caregiver_availability',
       'manage_caregiver_unavailability',
       'view_caregiver_performance',
+      'view_documentation_workspace',
+      'view_visit_documentation',
+      'draft_visit_documentation',
+      'submit_visit_documentation',
+      'generate_printable_documentation_summary',
     ],
     defaultRoute: '/app/home',
   },
@@ -271,6 +301,10 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'submit_mobile_evv',
       'execute_mobile_visits',
       'submit_mobile_visit_documentation',
+      'view_documentation_workspace',
+      'view_visit_documentation',
+      'draft_visit_documentation',
+      'submit_visit_documentation',
       'upload_mobile_visit_artifacts',
       'create_mobile_incidents',
       'view_mobile_messages',
@@ -294,6 +328,10 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'manage_patient_eligibility',
       'manage_patient_diagnoses',
       'view_patient_attachments',
+      'view_documentation_workspace',
+      'view_visit_documentation',
+      'amend_visit_documentation',
+      'generate_printable_documentation_summary',
     ],
     defaultRoute: '/app/home',
   },
@@ -308,6 +346,9 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'manage_patient_payer_links',
       'manage_patient_authorizations',
       'view_patient_attachments',
+      'view_documentation_workspace',
+      'view_visit_documentation',
+      'generate_printable_documentation_summary',
       'view_audit_log',
     ],
     defaultRoute: '/app/home',
@@ -388,6 +429,48 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     description: 'Epic 3 patient management landing area and record workspace entry point.',
     navBehavior: 'visible',
     section: 'patients',
+  },
+  {
+    path: '/app/documentation',
+    navLabel: 'Documentation Workspace',
+    permission: 'view_documentation_workspace',
+    description: 'Epic 8 documentation landing area for visit records, templates, task libraries, and printable summaries.',
+    navBehavior: 'visible',
+    section: 'documentation',
+  },
+  {
+    path: '/app/documentation/templates',
+    navLabel: 'Documentation Templates',
+    permission: 'manage_documentation_templates',
+    description: 'Manage Epic 8 visit note and form templates with the shared template-builder framework.',
+    navBehavior: 'visible',
+    section: 'documentation',
+    audience: 'admin',
+  },
+  {
+    path: '/app/documentation/task-library',
+    navLabel: 'Task Library',
+    permission: 'manage_documentation_task_library',
+    description: 'Manage reusable Epic 8 documentation tasks and defaults.',
+    navBehavior: 'visible',
+    section: 'documentation',
+    audience: 'admin',
+  },
+  {
+    path: '/app/documentation/visits/:visitId',
+    navLabel: 'Visit Documentation',
+    permission: 'view_visit_documentation',
+    description: 'Open the documentation workspace for a scheduled visit.',
+    navBehavior: 'disabled',
+    section: 'documentation',
+  },
+  {
+    path: '/app/documentation/records/:documentationRecordId/printable',
+    navLabel: 'Printable Summary',
+    permission: 'generate_printable_documentation_summary',
+    description: 'Read-only printable documentation summary backed by the Epic 8 summary contract.',
+    navBehavior: 'disabled',
+    section: 'documentation',
   },
   {
     path: '/app/setup',
@@ -622,6 +705,39 @@ const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
     'view_patient_attachments',
     'manage_patient_attachments',
   ],
+  VIEW_DOCUMENTATION_WORKSPACE: ['view_documentation_workspace'],
+  MANAGE_DOCUMENTATION_TEMPLATES: [
+    'view_documentation_workspace',
+    'manage_documentation_templates',
+  ],
+  MANAGE_DOCUMENTATION_TASK_LIBRARY: [
+    'view_documentation_workspace',
+    'manage_documentation_task_library',
+  ],
+  VIEW_VISIT_DOCUMENTATION: [
+    'view_documentation_workspace',
+    'view_visit_documentation',
+  ],
+  DRAFT_VISIT_DOCUMENTATION: [
+    'view_documentation_workspace',
+    'view_visit_documentation',
+    'draft_visit_documentation',
+  ],
+  SUBMIT_VISIT_DOCUMENTATION: [
+    'view_documentation_workspace',
+    'view_visit_documentation',
+    'submit_visit_documentation',
+  ],
+  AMEND_VISIT_DOCUMENTATION: [
+    'view_documentation_workspace',
+    'view_visit_documentation',
+    'amend_visit_documentation',
+  ],
+  GENERATE_PRINTABLE_DOCUMENTATION_SUMMARY: [
+    'view_documentation_workspace',
+    'view_visit_documentation',
+    'generate_printable_documentation_summary',
+  ],
   VIEW_USER_DIRECTORY: ['view_user_directory'],
   INVITE_USER: ['invite_users'],
   EDIT_USER_PROFILE: ['edit_user_accounts'],
@@ -743,6 +859,7 @@ export const NAV_SECTIONS: Array<{
   { key: 'scheduling', label: 'Scheduling' },
   { key: 'workforce', label: 'Workforce' },
   { key: 'patients', label: 'Patients' },
+  { key: 'documentation', label: 'Documentation' },
   { key: 'configuration', label: 'Agency Setup' },
   { key: 'people', label: 'People & Audit' },
   { key: 'security', label: 'Security' },

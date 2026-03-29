@@ -1787,6 +1787,12 @@ export type DocumentationTemplateSummary = {
   version: number;
   status: ConfigurationStatus;
   displayOrder: number;
+  serviceLineId?: string | null;
+  visitTypeId?: string | null;
+  branchId?: string | null;
+  helpText?: string | null;
+  allowedActorRoles?: AgencyRole[];
+  requiresSignatureVerification?: boolean;
 };
 
 export type DocumentationTemplateQuery = AuthenticatedRequestContext & {
@@ -1804,6 +1810,284 @@ export type ManageDocumentationTemplateRequest = AuthenticatedRequestContext & {
   templateType?: DocumentationTemplateType;
   structuredDefinitionJson: string;
   displayOrder: number;
+  serviceLineId?: string | null;
+  visitTypeId?: string | null;
+  branchId?: string | null;
+  helpText?: string | null;
+  allowedActorRoles?: AgencyRole[];
+  requiresSignatureVerification?: boolean;
+  sections?: DocumentationSectionRequest[];
+  fields?: DocumentationFieldDefinitionRequest[];
+  tasks?: DocumentationTemplateTaskRequest[];
+};
+
+export type DocumentationRecordStatus =
+  | 'DRAFT'
+  | 'IN_PROGRESS'
+  | 'SUBMITTED'
+  | 'AMENDED'
+  | 'LOCKED';
+
+export type DocumentationResponseState = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED';
+
+export type DocumentationFieldType =
+  | 'TEXT'
+  | 'LONG_TEXT'
+  | 'BOOLEAN'
+  | 'NUMBER'
+  | 'DATE_TIME'
+  | 'SELECT_CODED_VALUE'
+  | 'FREE_TEXT_BLOCK';
+
+export type DocumentationSectionRequest = {
+  sectionKey: string;
+  title: string;
+  helpText?: string | null;
+  sortOrder: number;
+};
+
+export type DocumentationFieldDefinitionRequest = {
+  sectionKey?: string | null;
+  fieldKey: string;
+  label: string;
+  fieldType: DocumentationFieldType;
+  requiredField: boolean;
+  sortOrder: number;
+  optionsJson?: string | null;
+  helpText?: string | null;
+  visibleActorRoles?: AgencyRole[];
+  editableActorRoles?: AgencyRole[];
+};
+
+export type DocumentationTemplateTaskRequest = {
+  sectionKey?: string | null;
+  taskTemplateId?: string | null;
+  titleOverride?: string | null;
+  descriptionOverride?: string | null;
+  requiredOverride?: boolean | null;
+  sortOrder: number;
+};
+
+export type DocumentationSection = {
+  id: string;
+  sectionKey: string;
+  title: string;
+  helpText: string | null;
+  sortOrder: number;
+};
+
+export type DocumentationFieldDefinition = {
+  id: string;
+  documentationTemplateId: string;
+  sectionId: string | null;
+  fieldKey: string;
+  label: string;
+  fieldType: DocumentationFieldType;
+  requiredField: boolean;
+  sortOrder: number;
+  optionsJson: string | null;
+  helpText: string | null;
+  visibleActorRoles: AgencyRole[];
+  editableActorRoles: AgencyRole[];
+};
+
+export type DocumentationTemplateTaskDefinition = {
+  id: string;
+  documentationTemplateId: string;
+  sectionId: string | null;
+  taskTemplateId: string | null;
+  effectiveTitle: string;
+  effectiveDescription: string | null;
+  effectiveRequired: boolean;
+  sortOrder: number;
+};
+
+export type DocumentationTemplateAggregate = {
+  template: DocumentationTemplateSummary;
+  sections: DocumentationSection[];
+  fields: DocumentationFieldDefinition[];
+  tasks: DocumentationTemplateTaskDefinition[];
+};
+
+export type DocumentationTaskLibraryItem = {
+  id: string;
+  agencyId: string;
+  serviceLineId: string | null;
+  visitTypeId: string | null;
+  name: string;
+  code: string;
+  description: string | null;
+  category: TaskTemplateCategory | null;
+  status: ConfigurationStatus;
+  displayOrder: number;
+  defaultSortOrder: number;
+  defaultCompletionExpectation: string | null;
+  requiredByDefault: boolean;
+};
+
+export type DocumentationTaskLibraryQuery = AuthenticatedRequestContext & {
+  search?: string;
+  status?: ConfigurationStatus | 'ALL';
+  category?: TaskTemplateCategory | 'ALL';
+  serviceLineId?: string | 'ALL';
+  visitTypeId?: string | 'ALL';
+  page?: number;
+  size?: number;
+};
+
+export type ManageDocumentationTaskLibraryItemRequest = AuthenticatedRequestContext & {
+  taskTemplateId?: string;
+  serviceLineId?: string | null;
+  visitTypeId?: string | null;
+  name: string;
+  code: string;
+  description?: string | null;
+  category: TaskTemplateCategory;
+  displayOrder: number;
+  defaultSortOrder: number;
+  defaultCompletionExpectation?: string | null;
+  requiredByDefault: boolean;
+};
+
+export type VisitDocumentationSummary = {
+  id: string;
+  visitOccurrenceId: string;
+  patientId: string;
+  patientFirstName: string;
+  patientLastName: string;
+  branchId: string;
+  branchName: string;
+  templateId: string;
+  templateName: string;
+  status: DocumentationRecordStatus;
+  lastSavedAt: string;
+  submittedAt: string | null;
+  authorMembershipId: string;
+  authorEmail: string;
+};
+
+export type VisitDocumentationQuery = AuthenticatedRequestContext & {
+  from?: string;
+  to?: string;
+  branchId?: string | 'ALL';
+  caregiverMembershipId?: string | 'ALL';
+  patientId?: string | 'ALL';
+  status?: DocumentationRecordStatus | 'ALL';
+  templateId?: string | 'ALL';
+  visitTypeId?: string | 'ALL';
+  page?: number;
+  size?: number;
+};
+
+export type VisitDocumentationRecord = {
+  id: string;
+  visitOccurrenceId: string;
+  patientId: string;
+  branchId: string;
+  selectedTemplateId: string;
+  authorMembershipId: string;
+  lastEditorMembershipId: string;
+  status: DocumentationRecordStatus;
+  startedAt: string | null;
+  submittedAt: string | null;
+  lastSavedAt: string;
+  printableSummaryVersion: number;
+};
+
+export type VisitDocumentationFieldResponse = {
+  id: string;
+  templateFieldId: string;
+  fieldKey: string;
+  normalizedValue: string | null;
+  displayValue: string | null;
+  responseNotes: string | null;
+  completionState: DocumentationResponseState;
+  completedAt: string | null;
+};
+
+export type VisitDocumentationTaskResponse = {
+  id: string;
+  templateTaskId: string;
+  taskTitle: string;
+  taskDescription: string | null;
+  completionRequired: boolean;
+  completionState: DocumentationResponseState;
+  completionNotes: string | null;
+  completedAt: string | null;
+  sortOrder: number;
+};
+
+export type VisitDocumentationAttachmentLink = {
+  id: string;
+  documentationRecordId: string;
+  patientAttachmentId: string | null;
+  mobileArtifactId: string | null;
+  caption: string | null;
+  description: string | null;
+  linkedAt: string;
+};
+
+export type VisitDocumentationAggregate = {
+  record: VisitDocumentationRecord;
+  fieldResponses: VisitDocumentationFieldResponse[];
+  taskResponses: VisitDocumentationTaskResponse[];
+  attachmentLinks: VisitDocumentationAttachmentLink[];
+};
+
+export type SaveVisitDocumentationDraftRequest = AuthenticatedRequestContext & {
+  documentationRecordId: string;
+  fieldResponses: Array<{
+    templateFieldId: string;
+    normalizedValue?: string | null;
+    displayValue?: string | null;
+    responseNotes?: string | null;
+    completionState?: DocumentationResponseState | null;
+    completedAt?: string | null;
+  }>;
+  taskResponses: Array<{
+    templateTaskId: string;
+    completionState?: DocumentationResponseState | null;
+    completionNotes?: string | null;
+    completedAt?: string | null;
+  }>;
+  savedAt?: string | null;
+};
+
+export type PrintableDocumentationHeader = {
+  patientDisplayName: string;
+  visitStartAt: string | null;
+  visitEndAt: string | null;
+  branchName: string | null;
+  authorDisplayName: string | null;
+  submittedAt: string | null;
+};
+
+export type PrintableDocumentationField = {
+  fieldKey: string;
+  label: string;
+  displayValue: string;
+};
+
+export type PrintableDocumentationTask = {
+  taskTitle: string;
+  completionState: DocumentationResponseState;
+  completionNotes: string | null;
+};
+
+export type PrintableDocumentationAttachment = {
+  attachmentLabel: string;
+  caption: string | null;
+  description: string | null;
+};
+
+export type PrintableDocumentationSummary = {
+  documentationRecordId: string;
+  templateTitle: string;
+  status: DocumentationRecordStatus;
+  header: PrintableDocumentationHeader;
+  fields: PrintableDocumentationField[];
+  tasks: PrintableDocumentationTask[];
+  attachments: PrintableDocumentationAttachment[];
 };
 
 export type BranchPolicySummary = {
@@ -7177,6 +7461,502 @@ export async function publishDocumentationTemplate(
   }
 
   return payload as DocumentationTemplateSummary;
+}
+
+export async function fetchEpic8DocumentationTemplates(
+  request: DocumentationTemplateQuery,
+): Promise<ConfigurationPage<DocumentationTemplateSummary>> {
+  const url = new URL(apiUrl('/api/documentation/templates'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    search: request.search?.trim(),
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    templateType:
+      request.templateType && request.templateType !== 'ALL' ? request.templateType : undefined,
+    branchId: (request as DocumentationTemplateQuery & { branchId?: string | 'ALL' }).branchId,
+    visitTypeId:
+      (request as DocumentationTemplateQuery & { visitTypeId?: string | 'ALL' }).visitTypeId,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<DocumentationTemplateSummary>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Documentation template request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<DocumentationTemplateSummary>;
+}
+
+export async function fetchEpic8DocumentationTemplate(
+  request: AuthenticatedRequestContext & { templateId: string },
+): Promise<DocumentationTemplateAggregate> {
+  const response = await fetch(apiUrl(`/api/documentation/templates/${request.templateId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | DocumentationTemplateAggregate
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Documentation template detail failed with status ${response.status}`,
+    );
+  }
+
+  return payload as DocumentationTemplateAggregate;
+}
+
+export async function saveEpic8DocumentationTemplate(
+  request: ManageDocumentationTemplateRequest,
+): Promise<DocumentationTemplateAggregate> {
+  const method = request.templateId ? 'PUT' : 'POST';
+  const path = request.templateId
+    ? `/api/documentation/templates/${request.templateId}`
+    : '/api/documentation/templates';
+
+  const response = await fetch(apiUrl(path), {
+    method,
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      name: request.name,
+      code: request.code,
+      templateType: request.templateType,
+      structuredDefinitionJson: request.structuredDefinitionJson,
+      displayOrder: request.displayOrder,
+      serviceLineId: request.serviceLineId ?? null,
+      visitTypeId: request.visitTypeId ?? null,
+      branchId: request.branchId ?? null,
+      helpText: request.helpText ?? null,
+      allowedActorRoles: request.allowedActorRoles ?? [],
+      requiresSignatureVerification: request.requiresSignatureVerification ?? false,
+      sections: request.sections ?? [],
+      fields: request.fields ?? [],
+      tasks: request.tasks ?? [],
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | DocumentationTemplateAggregate
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Documentation template save failed with status ${response.status}`,
+    );
+  }
+
+  return payload as DocumentationTemplateAggregate;
+}
+
+export async function deactivateEpic8DocumentationTemplate(
+  request: AuthenticatedRequestContext & { templateId: string },
+): Promise<DocumentationTemplateSummary> {
+  const response = await fetch(apiUrl(`/api/documentation/templates/${request.templateId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | DocumentationTemplateSummary
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Documentation template deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as DocumentationTemplateSummary;
+}
+
+export async function fetchDocumentationTaskLibrary(
+  request: DocumentationTaskLibraryQuery,
+): Promise<ConfigurationPage<DocumentationTaskLibraryItem>> {
+  const url = new URL(apiUrl('/api/documentation/task-library'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    search: request.search?.trim(),
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    category: request.category && request.category !== 'ALL' ? request.category : undefined,
+    serviceLineId:
+      request.serviceLineId && request.serviceLineId !== 'ALL' ? request.serviceLineId : undefined,
+    visitTypeId: request.visitTypeId && request.visitTypeId !== 'ALL' ? request.visitTypeId : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<DocumentationTaskLibraryItem>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Documentation task library request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<DocumentationTaskLibraryItem>;
+}
+
+export async function saveDocumentationTaskLibraryItem(
+  request: ManageDocumentationTaskLibraryItemRequest,
+): Promise<DocumentationTaskLibraryItem> {
+  const method = request.taskTemplateId ? 'PUT' : 'POST';
+  const path = request.taskTemplateId
+    ? `/api/documentation/task-library/${request.taskTemplateId}`
+    : '/api/documentation/task-library';
+
+  const response = await fetch(apiUrl(path), {
+    method,
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      serviceLineId: request.serviceLineId ?? null,
+      visitTypeId: request.visitTypeId ?? null,
+      name: request.name,
+      code: request.code,
+      description: request.description ?? null,
+      category: request.category,
+      displayOrder: request.displayOrder,
+      defaultSortOrder: request.defaultSortOrder,
+      defaultCompletionExpectation: request.defaultCompletionExpectation ?? null,
+      requiredByDefault: request.requiredByDefault,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | DocumentationTaskLibraryItem
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Documentation task library save failed with status ${response.status}`,
+    );
+  }
+
+  return payload as DocumentationTaskLibraryItem;
+}
+
+export async function deactivateDocumentationTaskLibraryItem(
+  request: AuthenticatedRequestContext & { taskTemplateId: string },
+): Promise<DocumentationTaskLibraryItem> {
+  const response = await fetch(apiUrl(`/api/documentation/task-library/${request.taskTemplateId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | DocumentationTaskLibraryItem
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Documentation task library deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as DocumentationTaskLibraryItem;
+}
+
+export async function fetchVisitDocumentationRecords(
+  request: VisitDocumentationQuery,
+): Promise<ConfigurationPage<VisitDocumentationSummary>> {
+  const url = new URL(apiUrl('/api/visit-documentation'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    from: request.from,
+    to: request.to,
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    caregiverMembershipId:
+      request.caregiverMembershipId && request.caregiverMembershipId !== 'ALL'
+        ? request.caregiverMembershipId
+        : undefined,
+    patientId: request.patientId && request.patientId !== 'ALL' ? request.patientId : undefined,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    templateId: request.templateId && request.templateId !== 'ALL' ? request.templateId : undefined,
+    visitTypeId: request.visitTypeId && request.visitTypeId !== 'ALL' ? request.visitTypeId : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<VisitDocumentationSummary>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Visit documentation request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<VisitDocumentationSummary>;
+}
+
+export async function loadVisitDocumentationForVisit(
+  request: AuthenticatedRequestContext & { visitOccurrenceId: string; selectedTemplateId?: string | null },
+): Promise<VisitDocumentationAggregate> {
+  const url = new URL(apiUrl('/api/visit-documentation/by-visit'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    visitOccurrenceId: request.visitOccurrenceId,
+    selectedTemplateId: request.selectedTemplateId ?? undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | VisitDocumentationAggregate
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Visit documentation lookup failed with status ${response.status}`,
+    );
+  }
+
+  return payload as VisitDocumentationAggregate;
+}
+
+export async function fetchVisitDocumentationAggregate(
+  request: AuthenticatedRequestContext & { documentationRecordId: string },
+): Promise<VisitDocumentationAggregate> {
+  const response = await fetch(apiUrl(`/api/visit-documentation/${request.documentationRecordId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | VisitDocumentationAggregate
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Visit documentation detail failed with status ${response.status}`,
+    );
+  }
+
+  return payload as VisitDocumentationAggregate;
+}
+
+export async function createVisitDocumentationRecord(
+  request: AuthenticatedRequestContext & {
+    visitOccurrenceId: string;
+    selectedTemplateId: string;
+    startedAt?: string | null;
+  },
+): Promise<VisitDocumentationAggregate> {
+  const response = await fetch(apiUrl('/api/visit-documentation'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      visitOccurrenceId: request.visitOccurrenceId,
+      selectedTemplateId: request.selectedTemplateId,
+      startedAt: request.startedAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | VisitDocumentationAggregate
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Visit documentation creation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as VisitDocumentationAggregate;
+}
+
+export async function saveVisitDocumentationDraft(
+  request: SaveVisitDocumentationDraftRequest,
+): Promise<VisitDocumentationAggregate> {
+  const response = await fetch(apiUrl(`/api/visit-documentation/${request.documentationRecordId}/draft`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      fieldResponses: request.fieldResponses,
+      taskResponses: request.taskResponses,
+      savedAt: request.savedAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | VisitDocumentationAggregate
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Visit documentation draft save failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as VisitDocumentationAggregate;
+}
+
+export async function submitVisitDocumentation(
+  request: AuthenticatedRequestContext & { documentationRecordId: string; submittedAt?: string | null },
+): Promise<VisitDocumentationAggregate> {
+  const response = await fetch(apiUrl(`/api/visit-documentation/${request.documentationRecordId}/submit`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      submittedAt: request.submittedAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | VisitDocumentationAggregate
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Visit documentation submission failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as VisitDocumentationAggregate;
+}
+
+export async function fetchPrintableDocumentationSummary(
+  request: AuthenticatedRequestContext & { documentationRecordId: string },
+): Promise<PrintableDocumentationSummary> {
+  const response = await fetch(
+    apiUrl(`/api/visit-documentation/${request.documentationRecordId}/printable-summary`),
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PrintableDocumentationSummary
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Printable documentation summary failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PrintableDocumentationSummary;
 }
 
 export async function fetchBranchPolicies(
