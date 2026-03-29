@@ -30,6 +30,7 @@ import { PatientWorkspacePage } from './routes/PatientWorkspacePage';
 import { ResetPasswordPage } from './routes/ResetPasswordPage';
 import { SecuritySettingsPage } from './routes/SecuritySettingsPage';
 import { SelfProfilePage } from './routes/SelfProfilePage';
+import { SchedulingWorkspacePage } from './routes/SchedulingWorkspacePage';
 import { ServiceLineSetupPage } from './routes/ServiceLineSetupPage';
 import { SetupOverviewPage } from './routes/SetupOverviewPage';
 import { TaskTemplateSetupPage } from './routes/TaskTemplateSetupPage';
@@ -91,6 +92,34 @@ function AppRoutes() {
           <ProtectedRoute requiredPermission="view_session_home">
             <AppShell>
               <HomePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/scheduling"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with backend scheduling access can open the Epic 5 scheduling workspace."
+            deniedTitle="Scheduling workspace is not available for this role."
+            requiredPermission="view_scheduling_workspace"
+          >
+            <AppShell>
+              <SchedulingWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/scheduling/visits/:visitId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with backend scheduling access can open schedule detail drawers."
+            deniedTitle="Scheduling detail is not available for this role."
+            requiredPermission="view_scheduling_workspace"
+          >
+            <AppShell>
+              <SchedulingWorkspacePage />
             </AppShell>
           </ProtectedRoute>
         }

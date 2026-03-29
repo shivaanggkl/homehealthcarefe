@@ -38,4 +38,21 @@ describe('mapBackendPermissionsToFrontend', () => {
     expect(resolved).toContain('manage_caregiver_availability');
     expect(resolved).toContain('view_caregiver_performance');
   });
+
+  it('maps scheduling backend permissions to the shared scheduling workspace and rule capabilities', () => {
+    const resolved = mapBackendPermissionsToFrontend(
+      [
+        'VIEW_SCHEDULING_WORKSPACE',
+        'MANAGE_SCHEDULE_VISITS',
+        'ASSIGN_CAREGIVERS',
+        'VIEW_SCHEDULE_CONFLICTS',
+      ],
+      ['view_scheduling_workspace'],
+    );
+
+    expect(resolved).toContain('view_scheduling_workspace');
+    expect(resolved).toContain('manage_schedule_visits');
+    expect(resolved).toContain('assign_caregivers');
+    expect(resolved).toContain('view_schedule_conflicts');
+  });
 });

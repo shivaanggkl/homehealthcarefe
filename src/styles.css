@@ -1096,6 +1096,27 @@ code {
   background: rgba(107, 114, 128, 0.16);
 }
 
+.status-planned {
+  color: #0f4c81;
+  background: rgba(15, 76, 129, 0.14);
+}
+
+.status-assigned {
+  color: #11583d;
+  background: rgba(21, 143, 99, 0.14);
+}
+
+.status-open-shift,
+.status-rescheduled {
+  color: #8b4f05;
+  background: rgba(221, 147, 39, 0.18);
+}
+
+.status-cancelled {
+  color: #7f2931;
+  background: rgba(159, 48, 52, 0.14);
+}
+
 .button-small {
   padding: 0.65rem 1rem;
 }
@@ -1598,6 +1619,273 @@ code {
   overflow-wrap: anywhere;
 }
 
+.scheduling-shell-content {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.9fr);
+}
+
+.scheduling-workspace-grid {
+  display: contents;
+}
+
+.scheduling-panel-header,
+.scheduling-detail-header,
+.scheduling-window-controls,
+.scheduling-drawer-actions {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.9rem;
+  justify-content: space-between;
+}
+
+.scheduling-summary-cards,
+.scheduling-board-grid,
+.scheduling-detail-meta {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.scheduling-summary-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.scheduling-summary-card,
+.scheduling-visit-card,
+.scheduling-module-state {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  padding: 1rem;
+}
+
+.scheduling-board-toolbar {
+  display: grid;
+  gap: 1rem;
+}
+
+.scheduling-view-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.scheduling-window-controls {
+  align-items: center;
+}
+
+.scheduling-window-summary {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.scheduling-checkbox {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.scheduling-board-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.scheduling-visit-card {
+  color: inherit;
+  display: grid;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.scheduling-visit-card-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.scheduling-visit-card-time,
+.scheduling-visit-card-cta {
+  margin: 0;
+}
+
+.scheduling-visit-card-meta,
+.scheduling-detail-meta {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.scheduling-visit-card-meta dt,
+.scheduling-detail-meta dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+}
+
+.scheduling-visit-card-meta dd,
+.scheduling-detail-meta dd {
+  margin: 0;
+}
+
+.scheduling-detail-drawer {
+  align-self: start;
+  display: grid;
+  gap: 1rem;
+  position: sticky;
+  top: 1.25rem;
+}
+
+.scheduling-module-state-error {
+  border-color: rgba(153, 27, 27, 0.2);
+}
+
+.scheduling-module-state-readonly {
+  border-style: dashed;
+}
+
+.scheduling-filter-grid,
+.scheduling-visit-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.scheduling-filter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 1rem;
+}
+
+.scheduling-filter-actions,
+.scheduling-open-shift-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.scheduling-filter-summary,
+.scheduling-inline-callout,
+.scheduling-detail-notes,
+.scheduling-form-mode,
+.scheduling-action-banner {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 1rem 1.1rem;
+}
+
+.scheduling-filter-summary,
+.scheduling-detail-notes,
+.scheduling-inline-callout,
+.scheduling-form-mode,
+.scheduling-action-banner {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.scheduling-filter-summary p,
+.scheduling-inline-callout p,
+.scheduling-detail-notes p,
+.scheduling-form-mode p,
+.scheduling-action-banner p {
+  margin: 0;
+}
+
+.scheduling-board-columns {
+  display: grid;
+  gap: 1rem;
+}
+
+.scheduling-board-column {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.52);
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.scheduling-board-column-header,
+.scheduling-open-shift-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.scheduling-board-empty-lane,
+.scheduling-open-shift-card,
+.scheduling-mutation-frame {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.scheduling-board-empty-lane {
+  padding: 1rem;
+  color: var(--ink-soft);
+}
+
+.scheduling-open-shift-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.scheduling-open-shift-card {
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.scheduling-open-shift-card p {
+  margin: 0;
+}
+
+.scheduling-mutation-frame {
+  padding: 1.2rem;
+}
+
+.scheduling-mode-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.scheduling-mode-badge-editable {
+  color: #11583d;
+  background: rgba(21, 143, 99, 0.12);
+}
+
+.scheduling-mode-badge-read-only {
+  color: var(--brand-deep);
+  background: rgba(15, 76, 129, 0.1);
+}
+
+.scheduling-action-banner-success {
+  border-color: rgba(21, 143, 99, 0.22);
+  background: rgba(21, 143, 99, 0.1);
+  color: #11583d;
+}
+
+.scheduling-action-banner-warning {
+  border-color: rgba(221, 147, 39, 0.24);
+  background: rgba(221, 147, 39, 0.12);
+  color: #8b4f05;
+}
+
+.scheduling-action-banner-conflict {
+  border-color: rgba(159, 48, 52, 0.22);
+  background: rgba(159, 48, 52, 0.08);
+  color: #7f2931;
+}
+
 .workforce-section-nav {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
@@ -1869,7 +2157,8 @@ code {
   .config-workspace,
   .config-hero,
   .patient-shell-content,
-  .workforce-shell-content {
+  .workforce-shell-content,
+  .scheduling-shell-content {
     grid-template-columns: 1fr;
   }
 
@@ -1943,6 +2232,9 @@ code {
   .workforce-section-nav,
   .patient-form-grid,
   .workforce-form-grid,
+  .scheduling-filter-grid,
+  .scheduling-summary-cards,
+  .scheduling-detail-meta,
   .patient-summary-metrics,
   .patient-record-meta,
   .workforce-record-meta,
@@ -1971,12 +2263,20 @@ code {
   .config-module-card-header,
   .patient-panel-header,
   .workforce-panel-header,
+  .scheduling-panel-header,
+  .scheduling-detail-header,
+  .scheduling-window-controls,
+  .scheduling-drawer-actions,
   .patient-contact-card-header,
   .patient-directory-actions,
   .patient-toolbar-actions,
   .workforce-directory-actions,
   .workforce-toolbar-actions,
-  .workforce-row-actions {
+  .workforce-row-actions,
+  .scheduling-filter-actions,
+  .scheduling-open-shift-actions,
+  .scheduling-board-column-header,
+  .scheduling-open-shift-header {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1997,7 +2297,14 @@ code {
   .patient-record-header,
   .patient-panel,
   .workforce-record-header,
-  .workforce-panel {
+  .workforce-panel,
+  .scheduling-panel,
+  .scheduling-detail-drawer {
     padding: 1rem;
+  }
+
+  .scheduling-board-grid,
+  .scheduling-visit-card-meta {
+    grid-template-columns: 1fr;
   }
 }

@@ -7,6 +7,13 @@ export type FrontendPermission =
   | 'manage_self_password'
   | 'manage_self_mfa'
   | 'manage_self_sessions'
+  | 'view_scheduling_workspace'
+  | 'manage_schedule_visits'
+  | 'assign_caregivers'
+  | 'manage_open_shifts'
+  | 'reschedule_visits'
+  | 'cancel_visits'
+  | 'view_schedule_conflicts'
   | 'view_workforce_workspace'
   | 'manage_caregiver_profiles'
   | 'manage_caregiver_credentials'
@@ -65,6 +72,7 @@ export type AppRouteDefinition = {
   navBehavior: 'visible' | 'disabled';
   section:
     | 'workspace'
+    | 'scheduling'
     | 'workforce'
     | 'patients'
     | 'configuration'
@@ -92,6 +100,13 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Agency-wide branch access',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_scheduling_workspace',
+      'manage_schedule_visits',
+      'assign_caregivers',
+      'manage_open_shifts',
+      'reschedule_visits',
+      'cancel_visits',
+      'view_schedule_conflicts',
       'view_workforce_workspace',
       'manage_caregiver_profiles',
       'manage_caregiver_credentials',
@@ -138,6 +153,13 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_scheduling_workspace',
+      'manage_schedule_visits',
+      'assign_caregivers',
+      'manage_open_shifts',
+      'reschedule_visits',
+      'cancel_visits',
+      'view_schedule_conflicts',
       'view_workforce_workspace',
       'manage_caregiver_profiles',
       'manage_caregiver_credentials',
@@ -182,6 +204,13 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_scheduling_workspace',
+      'manage_schedule_visits',
+      'assign_caregivers',
+      'manage_open_shifts',
+      'reschedule_visits',
+      'cancel_visits',
+      'view_schedule_conflicts',
       'view_workforce_workspace',
       'manage_caregiver_profiles',
       'manage_caregiver_credentials',
@@ -246,6 +275,14 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     description: 'Authenticated session dashboard and backend session snapshot.',
     navBehavior: 'visible',
     section: 'workspace',
+  },
+  {
+    path: '/app/scheduling',
+    navLabel: 'Scheduling Workspace',
+    permission: 'view_scheduling_workspace',
+    description: 'Epic 5 scheduling board landing area with shared board and drawer foundations.',
+    navBehavior: 'visible',
+    section: 'scheduling',
   },
   {
     path: '/app/workforce',
@@ -459,6 +496,13 @@ export const APP_ROUTES: AppRouteDefinition[] = [
 ];
 
 const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
+  VIEW_SCHEDULING_WORKSPACE: ['view_scheduling_workspace'],
+  MANAGE_SCHEDULE_VISITS: ['view_scheduling_workspace', 'manage_schedule_visits'],
+  ASSIGN_CAREGIVERS: ['view_scheduling_workspace', 'assign_caregivers'],
+  MANAGE_OPEN_SHIFTS: ['view_scheduling_workspace', 'manage_open_shifts'],
+  RESCHEDULE_VISITS: ['view_scheduling_workspace', 'reschedule_visits'],
+  CANCEL_VISITS: ['view_scheduling_workspace', 'cancel_visits'],
+  VIEW_SCHEDULE_CONFLICTS: ['view_scheduling_workspace', 'view_schedule_conflicts'],
   VIEW_WORKFORCE_DIRECTORY: ['view_workforce_workspace'],
   MANAGE_CAREGIVER_PROFILES: ['view_workforce_workspace', 'manage_caregiver_profiles'],
   MANAGE_CAREGIVER_CREDENTIALS: ['view_workforce_workspace', 'manage_caregiver_credentials'],
@@ -599,6 +643,7 @@ export const NAV_SECTIONS: Array<{
   label: string;
 }> = [
   { key: 'workspace', label: 'Workspace' },
+  { key: 'scheduling', label: 'Scheduling' },
   { key: 'workforce', label: 'Workforce' },
   { key: 'patients', label: 'Patients' },
   { key: 'configuration', label: 'Agency Setup' },

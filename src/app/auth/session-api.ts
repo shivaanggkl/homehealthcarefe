@@ -177,6 +177,102 @@ export type CurrentAccessResponse = {
   permissions: string[];
 };
 
+export type ScheduleBoardView = 'DAY' | 'WEEK' | 'MONTH';
+
+export type SchedulingVisitStatus =
+  | 'PLANNED'
+  | 'ASSIGNED'
+  | 'OPEN_SHIFT'
+  | 'RESCHEDULED'
+  | 'CANCELLED';
+
+export type SchedulingConflictOutcome = 'CLEAR' | 'WARNING' | 'BLOCKING';
+
+export type TravelAwarenessLevel =
+  | 'FEASIBLE'
+  | 'TIGHT_CONNECTION'
+  | 'INFEASIBLE'
+  | 'UNKNOWN';
+
+export type ScheduleBoardItem = {
+  visitId: string;
+  patientId: string;
+  patientDisplayName: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  visitTypeId: string | null;
+  plannedStartAt: string;
+  plannedEndAt: string;
+  timezone: string;
+  status: SchedulingVisitStatus;
+  priority: string | null;
+  activeAssignmentId: string | null;
+  activeCaregiverProfileId: string | null;
+  openShift: boolean;
+};
+
+export type ScheduleBoardResponse = {
+  view: ScheduleBoardView;
+  windowStart: string;
+  windowEnd: string;
+  items: ScheduleBoardItem[];
+};
+
+export type ScheduleBoardQuery = AuthenticatedRequestContext & {
+  view: ScheduleBoardView;
+  date: string;
+  branchId?: string;
+  caregiverId?: string;
+  patientId?: string;
+  status?: SchedulingVisitStatus;
+  openShiftsOnly?: boolean;
+};
+
+export type ScheduleVisitDetail = {
+  id: string;
+  agencyId: string;
+  patientId: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  visitTypeId: string | null;
+  recurringVisitRuleId: string | null;
+  plannedStartAt: string;
+  plannedEndAt: string;
+  timezone: string;
+  status: SchedulingVisitStatus;
+  priority: string | null;
+  creationMode: string | null;
+  notes: string | null;
+  activeAssignmentId: string | null;
+  activeCaregiverProfileId: string | null;
+  openShiftId: string | null;
+};
+
+export type ScheduleVisitPage = ConfigurationPage<ScheduleVisitDetail>;
+
+export type ScheduleVisitQuery = AuthenticatedRequestContext & {
+  status?: SchedulingVisitStatus | 'ALL';
+  branchId?: string;
+  caregiverId?: string;
+  patientId?: string;
+  page?: number;
+  size?: number;
+};
+
+export type ManageScheduleVisitRequest = AuthenticatedRequestContext & {
+  visitId?: string;
+  patientId: string;
+  branchId?: string;
+  serviceLineId?: string;
+  visitTypeId?: string;
+  plannedStartAt: string;
+  plannedEndAt: string;
+  timezone: string;
+  priority?: string;
+  creationMode?: string;
+  notes?: string;
+};
+
 export type WorkforceLifecycleStatus =
   | 'ACTIVE'
   | 'INACTIVE'
@@ -1985,6 +2081,141 @@ export async function fetchCurrentAccess(
   }
 
   return payload as CurrentAccessResponse;
+}
+
+export async function fetchScheduleBoard(
+  request: ScheduleBoardQuery,
+): Promise<ScheduleBoardResponse> {
+  const boardUrl = new URL(apiUrl('/api/schedule-board'), window.location.origin);
+  appendOptionalSearchParams(boardUrl, {
+    view: request.view,
+    date: request.date,
+    branchId: request.branchId,
+    caregiverId: request.caregiverId,
+    patientId: request.patientId,
+    status: request.status,
+    openShiftsOnly: request.openShiftsOnly ? 'true' : undefined,
+  });
+
+  const response = await fetch(boardUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleBoardResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Schedule board request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleBoardResponse;
+}
+
+export async function fetchScheduleVisit(
+  visitId: string,
+  request: AuthenticatedRequestContext,
+): Promise<ScheduleVisitDetail> {
+  const response = await fetch(apiUrl(`/api/schedule-visits/${visitId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleVisitDetail
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Scheduled visit request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleVisitDetail;
+}
+
+export async function fetchScheduleVisits(
+  request: ScheduleVisitQuery,
+): Promise<ScheduleVisitPage> {
+  const visitsUrl = new URL(apiUrl('/api/schedule-visits'), window.location.origin);
+  appendOptionalSearchParams(visitsUrl, {
+    status: request.status === 'ALL' ? undefined : request.status,
+    branchId: request.branchId,
+    caregiverId: request.caregiverId,
+    patientId: request.patientId,
+    page: request.page,
+    size: request.size,
+  });
+
+  const response = await fetch(visitsUrl.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleVisitPage
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Schedule visits request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleVisitPage;
+}
+
+export async function saveScheduleVisit(
+  request: ManageScheduleVisitRequest,
+): Promise<ScheduleVisitDetail> {
+  const path = request.visitId ? `/api/schedule-visits/${request.visitId}` : '/api/schedule-visits';
+  const response = await fetch(apiUrl(path), {
+    method: request.visitId ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      patientId: request.patientId,
+      branchId: request.branchId || null,
+      serviceLineId: request.serviceLineId || null,
+      visitTypeId: request.visitTypeId || null,
+      plannedStartAt: request.plannedStartAt,
+      plannedEndAt: request.plannedEndAt,
+      timezone: request.timezone,
+      priority: request.priority || null,
+      creationMode: request.creationMode || null,
+      notes: request.notes || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | ScheduleVisitDetail
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && 'message' in payload && payload.message
+        ? payload.message
+        : `Schedule visit save failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as ScheduleVisitDetail;
 }
 
 export async function fetchCaregivers(
