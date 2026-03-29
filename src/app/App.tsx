@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AccessProvider, useAccess } from './access/access-context';
 import { AuthProvider, useAuth } from './auth/auth-context';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -22,6 +22,8 @@ import { HomePage } from './routes/HomePage';
 import { InviteUserPage } from './routes/InviteUserPage';
 import { LoginPage } from './routes/LoginPage';
 import { MileagePaySetupPage } from './routes/MileagePaySetupPage';
+import { MobileLoginPage } from './routes/MobileLoginPage';
+import { MobileWorkspacePage } from './routes/MobileWorkspacePage';
 import { MfaChallengePage } from './routes/MfaChallengePage';
 import { MfaSettingsPage } from './routes/MfaSettingsPage';
 import { NotFoundPage } from './routes/NotFoundPage';
@@ -37,6 +39,7 @@ import { TaskTemplateSetupPage } from './routes/TaskTemplateSetupPage';
 import { UserDirectoryPage } from './routes/UserDirectoryPage';
 import { VisitTypeSetupPage } from './routes/VisitTypeSetupPage';
 import { WorkforceCatalogSetupPage } from './routes/WorkforceCatalogSetupPage';
+import { MobileProtectedRoute } from './components/MobileProtectedRoute';
 
 function BootstrapScreen() {
   return (
@@ -46,6 +49,21 @@ function BootstrapScreen() {
         <h1>Restoring secure session</h1>
         <p>Checking the backend session API before rendering protected routes.</p>
       </div>
+    </div>
+  );
+}
+
+function MobileBootstrapScreen() {
+  return (
+    <div className="mobile-auth-layout">
+      <section className="mobile-auth-card">
+        <span className="eyebrow">Epic 6 Mobile</span>
+        <h1>Restoring field session</h1>
+        <p>
+          Checking the backend session before rendering caregiver mobile routes so visit work never
+          opens with stale auth state.
+        </p>
+      </section>
     </div>
   );
 }
@@ -62,9 +80,10 @@ function DefaultLandingRoute() {
 
 function AppRoutes() {
   const { state } = useAuth();
+  const location = useLocation();
 
   if (state.status === 'bootstrapping') {
-    return <BootstrapScreen />;
+    return location.pathname.startsWith('/mobile') ? <MobileBootstrapScreen /> : <BootstrapScreen />;
   }
 
   return (
@@ -74,10 +93,59 @@ function AppRoutes() {
         element={<Navigate replace to={state.status === 'authenticated' ? '/app' : '/login'} />}
       />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/mobile/login" element={<MobileLoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       <Route path="/login/mfa" element={<MfaChallengePage />} />
+      <Route
+        path="/mobile"
+        element={
+          <MobileProtectedRoute
+            deniedMessage="Only caregiver-facing mobile permissions can open the Epic 6 field app."
+            deniedTitle="Mobile field workspace is not available for this role."
+            requiredPermission="view_mobile_app"
+          >
+            <MobileWorkspacePage />
+          </MobileProtectedRoute>
+        }
+      />
+      <Route
+        path="/mobile/visits/:visitId"
+        element={
+          <MobileProtectedRoute
+            deniedMessage="Only caregiver-facing mobile permissions can open assigned visit detail."
+            deniedTitle="Mobile visit detail is not available for this role."
+            requiredPermission="view_mobile_app"
+          >
+            <MobileWorkspacePage />
+          </MobileProtectedRoute>
+        }
+      />
+      <Route
+        path="/mobile/messages"
+        element={
+          <MobileProtectedRoute
+            deniedMessage="Only caregiver-facing mobile permissions can open the mobile shell."
+            deniedTitle="Mobile message center is not available for this role."
+            requiredPermission="view_mobile_app"
+          >
+            <MobileWorkspacePage />
+          </MobileProtectedRoute>
+        }
+      />
+      <Route
+        path="/mobile/account"
+        element={
+          <MobileProtectedRoute
+            deniedMessage="Only caregiver-facing mobile permissions can open the mobile shell."
+            deniedTitle="Mobile account screen is not available for this role."
+            requiredPermission="view_mobile_app"
+          >
+            <MobileWorkspacePage />
+          </MobileProtectedRoute>
+        }
+      />
       <Route
         path="/app"
         element={

@@ -177,6 +177,87 @@ export type CurrentAccessResponse = {
   permissions: string[];
 };
 
+export type MobileExecutionSessionStatus = 'IN_PROGRESS' | 'COMPLETED';
+
+export type MobileSyncDisposition = 'PENDING' | 'ACCEPTED' | 'FAILED';
+
+export type MobileHomeTodayWorkItem = {
+  visitId: string;
+  patientDisplaySummary: string;
+  branchName: string | null;
+  plannedStartAt: string;
+  plannedEndAt: string;
+  timezone: string;
+  scheduleStatus: string;
+  routeOrder: number | null;
+  executionStatus: MobileExecutionSessionStatus | null;
+};
+
+export type MobileHomeResponse = {
+  day: string;
+  timezone: string;
+  visits: MobileHomeTodayWorkItem[];
+};
+
+export type MobileRouteStop = {
+  visitId: string;
+  patientDisplaySummary: string;
+  addressSummary: string | null;
+  plannedStartAt: string;
+  plannedEndAt: string;
+  sortOrder: number;
+  executionStatus: MobileExecutionSessionStatus | null;
+};
+
+export type MobileRouteProjectionResponse = {
+  caregiverProfileId: string;
+  day: string;
+  timezone: string;
+  stops: MobileRouteStop[];
+};
+
+export type MobilePatientContactSummary = {
+  fullName: string;
+  relationshipType: string | null;
+  phone: string | null;
+  email: string | null;
+};
+
+export type MobilePatientSummary = {
+  patientId: string;
+  patientDisplaySummary: string;
+  dateOfBirth: string;
+  addressSummary: string | null;
+  contactSummary: MobilePatientContactSummary | null;
+  diagnosisSummaries: string[];
+  serviceLineSummary: string | null;
+  visitTypeSummary: string | null;
+  payerSnippet: string | null;
+};
+
+export type MobileCareInstructionSummary = {
+  visitId: string;
+  visitTypeInstructions: string | null;
+  serviceLineInstructions: string | null;
+  branchInstructions: string | null;
+  patientSpecificCareNotes: string | null;
+};
+
+export type MobileVisitDetailResponse = {
+  visitId: string;
+  patientSummary: MobilePatientSummary;
+  careInstructions: MobileCareInstructionSummary;
+};
+
+export type MobileDayQuery = AuthenticatedRequestContext & {
+  day: string;
+  timezone?: string;
+};
+
+export type MobileVisitDetailQuery = AuthenticatedRequestContext & {
+  visitId: string;
+};
+
 export type ScheduleBoardView = 'DAY' | 'WEEK' | 'MONTH';
 
 export type SchedulingVisitStatus =
@@ -1674,6 +1755,93 @@ export async function fetchSessionSnapshot(
     snapshot,
     authSource: devSession ? 'storage' : 'cookie',
   };
+}
+
+export async function fetchMobileHome(
+  request: MobileDayQuery,
+): Promise<MobileHomeResponse> {
+  const url = new URL(apiUrl('/api/mobile/home'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    day: request.day,
+    timezone: request.timezone,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileHomeResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Mobile home request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileHomeResponse;
+}
+
+export async function fetchMobileRoute(
+  request: MobileDayQuery,
+): Promise<MobileRouteProjectionResponse> {
+  const url = new URL(apiUrl('/api/mobile/route'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    day: request.day,
+    timezone: request.timezone,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileRouteProjectionResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Mobile route request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileRouteProjectionResponse;
+}
+
+export async function fetchMobileVisitDetail(
+  request: MobileVisitDetailQuery,
+): Promise<MobileVisitDetailResponse> {
+  const response = await fetch(apiUrl(`/api/mobile/visits/${request.visitId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | MobileVisitDetailResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'message' in payload && payload.message
+        ? payload.message
+        : `Mobile visit detail failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileVisitDetailResponse;
 }
 
 export async function loginWithPassword(request: LoginRequest): Promise<LoginResponse> {

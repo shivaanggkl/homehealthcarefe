@@ -55,4 +55,21 @@ describe('mapBackendPermissionsToFrontend', () => {
     expect(resolved).toContain('assign_caregivers');
     expect(resolved).toContain('view_schedule_conflicts');
   });
+
+  it('maps Epic 6 backend permissions to the caregiver mobile workspace capabilities', () => {
+    const resolved = mapBackendPermissionsToFrontend(
+      [
+        'VIEW_OWN_MOBILE_VISITS',
+        'EXECUTE_OWN_VISITS',
+        'SUBMIT_MOBILE_VISIT_DOCUMENTATION',
+        'VIEW_MOBILE_MESSAGES',
+      ],
+      ['view_mobile_app'],
+    );
+
+    expect(resolved).toContain('view_mobile_app');
+    expect(resolved).toContain('execute_mobile_visits');
+    expect(resolved).toContain('submit_mobile_visit_documentation');
+    expect(resolved).toContain('view_mobile_messages');
+  });
 });

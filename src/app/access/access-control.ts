@@ -7,6 +7,13 @@ export type FrontendPermission =
   | 'manage_self_password'
   | 'manage_self_mfa'
   | 'manage_self_sessions'
+  | 'view_mobile_app'
+  | 'execute_mobile_visits'
+  | 'submit_mobile_visit_documentation'
+  | 'upload_mobile_visit_artifacts'
+  | 'create_mobile_incidents'
+  | 'view_mobile_messages'
+  | 'send_mobile_messages'
   | 'view_scheduling_workspace'
   | 'manage_schedule_visits'
   | 'assign_caregivers'
@@ -72,6 +79,7 @@ export type AppRouteDefinition = {
   navBehavior: 'visible' | 'disabled';
   section:
     | 'workspace'
+    | 'mobile'
     | 'scheduling'
     | 'workforce'
     | 'patients'
@@ -100,6 +108,13 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Agency-wide branch access',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_mobile_app',
+      'execute_mobile_visits',
+      'submit_mobile_visit_documentation',
+      'upload_mobile_visit_artifacts',
+      'create_mobile_incidents',
+      'view_mobile_messages',
+      'send_mobile_messages',
       'view_scheduling_workspace',
       'manage_schedule_visits',
       'assign_caregivers',
@@ -226,7 +241,7 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScope: 'branch-assigned',
     branchScopeLabel: 'Assigned branches only',
     permissions: [...COMMON_SELF_SERVICE_PERMISSIONS],
-    defaultRoute: '/app/settings/mfa',
+    defaultRoute: '/mobile',
   },
   QA_CLINICAL_REVIEWER: {
     role: 'QA_CLINICAL_REVIEWER',
@@ -275,6 +290,14 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     description: 'Authenticated session dashboard and backend session snapshot.',
     navBehavior: 'visible',
     section: 'workspace',
+  },
+  {
+    path: '/mobile',
+    navLabel: 'Mobile Field App',
+    permission: 'view_mobile_app',
+    description: 'Epic 6 caregiver mobile home and field execution shell.',
+    navBehavior: 'disabled',
+    section: 'mobile',
   },
   {
     path: '/app/scheduling',
@@ -496,6 +519,16 @@ export const APP_ROUTES: AppRouteDefinition[] = [
 ];
 
 const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
+  VIEW_OWN_MOBILE_VISITS: ['view_mobile_app'],
+  EXECUTE_OWN_VISITS: ['view_mobile_app', 'execute_mobile_visits'],
+  SUBMIT_MOBILE_VISIT_DOCUMENTATION: [
+    'view_mobile_app',
+    'submit_mobile_visit_documentation',
+  ],
+  UPLOAD_MOBILE_VISIT_ARTIFACTS: ['view_mobile_app', 'upload_mobile_visit_artifacts'],
+  CREATE_MOBILE_INCIDENTS: ['view_mobile_app', 'create_mobile_incidents'],
+  VIEW_MOBILE_MESSAGES: ['view_mobile_app', 'view_mobile_messages'],
+  SEND_MOBILE_MESSAGES: ['view_mobile_app', 'view_mobile_messages', 'send_mobile_messages'],
   VIEW_SCHEDULING_WORKSPACE: ['view_scheduling_workspace'],
   MANAGE_SCHEDULE_VISITS: ['view_scheduling_workspace', 'manage_schedule_visits'],
   ASSIGN_CAREGIVERS: ['view_scheduling_workspace', 'assign_caregivers'],
@@ -643,6 +676,7 @@ export const NAV_SECTIONS: Array<{
   label: string;
 }> = [
   { key: 'workspace', label: 'Workspace' },
+  { key: 'mobile', label: 'Caregiver Mobile' },
   { key: 'scheduling', label: 'Scheduling' },
   { key: 'workforce', label: 'Workforce' },
   { key: 'patients', label: 'Patients' },
