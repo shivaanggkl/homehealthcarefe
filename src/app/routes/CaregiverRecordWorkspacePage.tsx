@@ -371,6 +371,10 @@ function buildDefaultPerformanceWindow(days: number) {
   };
 }
 
+function workforceAuditHref(actionType: string) {
+  return `/app/admin/audit?actionType=${encodeURIComponent(actionType)}`;
+}
+
 function buildFieldValues(
   caregiver: CaregiverProfile | null,
   section: CaregiverSectionKey,
@@ -1008,6 +1012,18 @@ export function CaregiverRecordWorkspacePage({
     return branches.find((branch) => branch.id === branchId)?.name ?? branchId;
   }
 
+  function renderAuditCallout(actionType: string, title: string, description: string) {
+    return (
+      <div className="workforce-audit-callout">
+        <strong>{title}</strong>
+        <p>{description}</p>
+        <Link className="workforce-audit-link" to={workforceAuditHref(actionType)}>
+          Open matching audit activity
+        </Link>
+      </div>
+    );
+  }
+
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setProfileError(null);
@@ -1538,6 +1554,11 @@ export function CaregiverRecordWorkspacePage({
           title={createMode ? 'Create caregiver profile' : 'Edit caregiver profile'}
           description="The profile form is backed by the Epic 4 profile APIs and the existing branch/user directory data sources."
         >
+          {renderAuditCallout(
+            'WORKFORCE_RECORD_UPDATED',
+            'Audit-sensitive profile changes',
+            'Caregiver profile updates and status changes are logged. Use the filtered audit view when you need to confirm who changed workforce identity or employment details.',
+          )}
           <form className="stack-form-light" onSubmit={handleProfileSubmit}>
             <div className="workforce-form-grid">
               <label className="field field-light">
@@ -1681,6 +1702,11 @@ export function CaregiverRecordWorkspacePage({
           title="Credential form"
           description="Invalid date windows and backend conflicts surface here as controlled inline errors."
         >
+          {renderAuditCallout(
+            'WORKFORCE_RECORD_UPDATED',
+            'Credential changes are logged',
+            'Credential saves and deactivations are treated as controlled workforce mutations. Review the audit log when you need to confirm credential maintenance activity.',
+          )}
           <form className="stack-form-light" onSubmit={handleCredentialSubmit}>
             <div className="workforce-form-grid">
               <label className="field field-light">
@@ -1909,6 +1935,11 @@ export function CaregiverRecordWorkspacePage({
           title="Language profile"
           description="Primary language and proficiency are saved through the live language API."
         >
+          {renderAuditCallout(
+            'WORKFORCE_RECORD_UPDATED',
+            'Capability changes are logged',
+            'Language and skill profile updates feed later scheduling decisions, so successful mutations explicitly link back to workforce audit activity.',
+          )}
           <form className="stack-form-light" onSubmit={handleLanguageSubmit}>
             <div className="workforce-form-grid">
               <label className="field field-light">
@@ -2158,6 +2189,11 @@ export function CaregiverRecordWorkspacePage({
           title="Geography preference form"
           description="Priority rank stays visible so schedulability inputs remain understandable before scheduling logic arrives in Epic 5."
         >
+          {renderAuditCallout(
+            'WORKFORCE_RECORD_UPDATED',
+            'Geography preferences are logged',
+            'Branch, area, and radius changes affect future assignment behavior. Use the filtered audit view to review recent geography updates.',
+          )}
           <form className="stack-form-light" onSubmit={handleGeographySubmit}>
             <div className="workforce-form-grid">
               <label className="field field-light">
@@ -2394,6 +2430,11 @@ export function CaregiverRecordWorkspacePage({
           title="Shift preference form"
           description="These are preferences, not guaranteed assignments, so the screen keeps work-pattern intent readable without implying a schedule."
         >
+          {renderAuditCallout(
+            'WORKFORCE_RECORD_UPDATED',
+            'Shift preferences are logged',
+            'Shift preference changes are tracked as workforce record updates so later scheduling decisions can be audited against caregiver-stated patterns.',
+          )}
           <form className="stack-form-light" onSubmit={handleShiftSubmit}>
             <div className="workforce-form-grid">
               <label className="field field-light">
@@ -2595,6 +2636,11 @@ export function CaregiverRecordWorkspacePage({
           title="Availability form"
           description="Recurring patterns stay separate from date-specific windows so schedulability inputs remain clear."
         >
+          {renderAuditCallout(
+            'WORKFORCE_CONFLICT_FLAGGED',
+            'Availability conflicts are audit-sensitive',
+            'Availability changes can trigger overlap conflicts. The filtered audit view helps confirm when schedulability windows were updated or conflict-flagged.',
+          )}
           <form className="stack-form-light" onSubmit={handleAvailabilitySubmit}>
             <div className="workforce-form-grid">
               <label className="field field-light">
@@ -2832,6 +2878,11 @@ export function CaregiverRecordWorkspacePage({
           title="Unavailability form"
           description="The form keeps PTO, blocked, training, and other time away in a single consistent structure."
         >
+          {renderAuditCallout(
+            'WORKFORCE_RECORD_UPDATED',
+            'PTO and blocked time are logged',
+            'Unavailability updates affect schedulability directly, so successful saves and deactivations should be reviewed through the workforce audit trail when needed.',
+          )}
           <form className="stack-form-light" onSubmit={handleUnavailabilitySubmit}>
             <div className="workforce-form-grid">
               <label className="field field-light">
@@ -3016,6 +3067,11 @@ export function CaregiverRecordWorkspacePage({
           title="Performance summary"
           description="Window controls stay simple in Epic 4 so the profile surface remains concise."
         >
+          {renderAuditCallout(
+            'WORKFORCE_PERFORMANCE_REFRESHED',
+            'Performance refreshes are logged',
+            'Refreshing performance indicators is treated as an audit-visible workforce action without exposing internal analytics metadata.',
+          )}
           <div className="workforce-toolbar">
             <label className="field field-light">
               <span>Window</span>

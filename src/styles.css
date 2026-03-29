@@ -1839,6 +1839,11 @@ code {
 
 .workforce-audit-link {
   color: var(--brand);
+  overflow-wrap: anywhere;
+}
+
+.workforce-record-id code {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1200px) {
