@@ -2599,6 +2599,81 @@ code {
   gap: 0.85rem;
 }
 
+.mobile-evv-tabs {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mobile-evv-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(11, 77, 115, 0.14);
+  background: rgba(255, 255, 255, 0.85);
+  color: #446174;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+}
+
+.mobile-evv-tab-active {
+  background: linear-gradient(135deg, #0b4d73, #147a95);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.mobile-evv-summary {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(11, 77, 115, 0.12);
+}
+
+.mobile-evv-summary-ok {
+  background: linear-gradient(180deg, rgba(233, 247, 238, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.mobile-evv-summary-warning {
+  background: linear-gradient(180deg, rgba(255, 247, 226, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.mobile-evv-summary-blocked {
+  background: linear-gradient(180deg, rgba(255, 236, 230, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.mobile-evv-summary-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobile-status-pill-ok {
+  background: rgba(25, 118, 84, 0.14);
+  color: #1a6d49;
+}
+
+.mobile-status-pill-warning {
+  background: rgba(193, 122, 0, 0.14);
+  color: #925e00;
+}
+
+.mobile-status-pill-blocked {
+  background: rgba(172, 55, 34, 0.14);
+  color: #9a381d;
+}
+
+.mobile-evv-action-stack,
+.mobile-evv-deferred {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .mobile-visit-card {
   display: grid;
   gap: 0.75rem;
@@ -2867,6 +2942,7 @@ code {
 
 @media (max-width: 720px) {
   .mobile-topbar,
+  .mobile-evv-summary-header,
   .mobile-visit-card-header,
   .mobile-route-stop,
   .mobile-mutation-header,
@@ -2886,6 +2962,10 @@ code {
   .mobile-tabbar {
     gap: 0.35rem;
     padding-inline: 0.6rem;
+  }
+
+  .mobile-evv-tabs {
+    grid-template-columns: 1fr;
   }
 
   .mobile-thread-card,

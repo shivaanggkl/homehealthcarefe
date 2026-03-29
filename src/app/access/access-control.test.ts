@@ -72,4 +72,23 @@ describe('mapBackendPermissionsToFrontend', () => {
     expect(resolved).toContain('submit_mobile_visit_documentation');
     expect(resolved).toContain('view_mobile_messages');
   });
+
+  it('maps Epic 7 backend permissions to the shared mobile EVV capabilities', () => {
+    const resolved = mapBackendPermissionsToFrontend(
+      [
+        'VIEW_OWN_EVV',
+        'SUBMIT_OWN_EVV',
+        'MANAGE_EVV_EXCEPTIONS',
+        'VIEW_MISSED_VISITS',
+        'RECEIVE_EVV_NOTIFICATIONS',
+      ],
+      ['view_mobile_app'],
+    );
+
+    expect(resolved).toContain('view_mobile_evv');
+    expect(resolved).toContain('submit_mobile_evv');
+    expect(resolved).toContain('manage_mobile_evv_exceptions');
+    expect(resolved).toContain('view_mobile_missed_visits');
+    expect(resolved).toContain('receive_mobile_evv_notifications');
+  });
 });

@@ -123,6 +123,42 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/mobile/visits/:visitId/evv"
+        element={
+          <MobileProtectedRoute
+            deniedMessage="Only caregivers with EVV access can open mobile visit verification routes."
+            deniedTitle="Mobile EVV verification is not available for this role."
+            requiredPermission="view_mobile_evv"
+          >
+            <MobileWorkspacePage />
+          </MobileProtectedRoute>
+        }
+      />
+      <Route
+        path="/mobile/visits/:visitId/evv/missed-visit"
+        element={
+          <MobileProtectedRoute
+            deniedMessage="Only caregivers with EVV access can open missed-visit reporting routes."
+            deniedTitle="Mobile missed-visit workflow is not available for this role."
+            requiredPermission="view_mobile_evv"
+          >
+            <MobileWorkspacePage />
+          </MobileProtectedRoute>
+        }
+      />
+      <Route
+        path="/mobile/visits/:visitId/evv/exception"
+        element={
+          <MobileProtectedRoute
+            deniedMessage="Only caregivers with EVV access can open visit-exception routes."
+            deniedTitle="Mobile EVV exception workflow is not available for this role."
+            requiredPermission="view_mobile_evv"
+          >
+            <MobileWorkspacePage />
+          </MobileProtectedRoute>
+        }
+      />
+      <Route
         path="/mobile/messages"
         element={
           <MobileProtectedRoute

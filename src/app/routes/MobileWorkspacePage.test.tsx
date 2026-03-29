@@ -22,6 +22,7 @@ vi.mock('../auth/session-api', async () => {
     createMobileMessageThread: vi.fn(),
     downloadMobileFieldArtifact: vi.fn(),
     endMobileVisitExecution: vi.fn(),
+    fetchOwnMobileEvvSummary: vi.fn(),
     fetchMobileHome: vi.fn(),
     fetchMobileMessageThread: vi.fn(),
     fetchMobileMessageThreads: vi.fn(),
@@ -84,6 +85,8 @@ describe('MobileWorkspacePage', () => {
         assignedBranchIds: ['branch-1'],
         permissions: [
           'view_mobile_app',
+          'view_mobile_evv',
+          'submit_mobile_evv',
           'execute_mobile_visits',
           'submit_mobile_visit_documentation',
           'view_mobile_messages',
@@ -152,6 +155,23 @@ describe('MobileWorkspacePage', () => {
         branchInstructions: 'Call branch for urgent changes.',
         patientSpecificCareNotes: 'Patient prefers morning visits.',
       },
+    });
+    vi.mocked(sessionApi.fetchOwnMobileEvvSummary).mockResolvedValue({
+      visitId: 'visit-1',
+      verificationSessionId: 'evv-session-1',
+      patientId: 'patient-1',
+      branchId: 'branch-1',
+      caregiverProfileId: 'caregiver-1',
+      verificationStatus: 'PENDING_VERIFICATION',
+      complianceOutcome: 'BLOCKED',
+      startEventPresent: false,
+      endEventPresent: false,
+      geofenceOutcome: 'NOT_EVALUABLE',
+      signatureComplete: false,
+      openExceptionCount: 0,
+      missedVisitReported: false,
+      warnings: ['Geofence could not be evaluated'],
+      blockers: ['Missing clock-in', 'Missing clock-out', 'Missing required signature'],
     });
     vi.mocked(sessionApi.startMobileVisitExecution).mockResolvedValue({
       id: 'execution-1',
@@ -295,6 +315,31 @@ describe('MobileWorkspacePage', () => {
 
     expect(await screen.findByText('Visit started. The field session is now active and recorded.')).toBeInTheDocument();
     expect(screen.getByText(/Latitude 41.8810, longitude -87.6230/)).toBeInTheDocument();
+  });
+
+  it('renders the dedicated EVV route with backend summary and visit workflow tabs', async () => {
+    render(
+      <MemoryRouter initialEntries={['/mobile/visits/visit-1/evv']}>
+        <Routes>
+          <Route element={<MobileWorkspacePage />} path="/mobile/visits/:visitId/evv" />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(sessionApi.fetchOwnMobileEvvSummary).toHaveBeenCalledWith({
+        accessToken: undefined,
+        sessionId: 'session-1',
+        visitId: 'visit-1',
+      });
+    });
+
+    expect(await screen.findByText('Pending verification')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Execution' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'EVV' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Missed Visit' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Exception' })).toBeInTheDocument();
+    expect(screen.getByText('EVV action framework')).toBeInTheDocument();
   });
 
   it('saves checklist items after the visit has started', async () => {

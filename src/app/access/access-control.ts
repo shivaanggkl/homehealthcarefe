@@ -8,6 +8,12 @@ export type FrontendPermission =
   | 'manage_self_mfa'
   | 'manage_self_sessions'
   | 'view_mobile_app'
+  | 'view_mobile_evv'
+  | 'submit_mobile_evv'
+  | 'manage_mobile_evv_exceptions'
+  | 'view_mobile_missed_visits'
+  | 'resolve_mobile_missed_visits'
+  | 'receive_mobile_evv_notifications'
   | 'execute_mobile_visits'
   | 'submit_mobile_visit_documentation'
   | 'upload_mobile_visit_artifacts'
@@ -109,6 +115,12 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
       'view_mobile_app',
+      'view_mobile_evv',
+      'submit_mobile_evv',
+      'manage_mobile_evv_exceptions',
+      'view_mobile_missed_visits',
+      'resolve_mobile_missed_visits',
+      'receive_mobile_evv_notifications',
       'execute_mobile_visits',
       'submit_mobile_visit_documentation',
       'upload_mobile_visit_artifacts',
@@ -168,6 +180,10 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'manage_mobile_evv_exceptions',
+      'view_mobile_missed_visits',
+      'resolve_mobile_missed_visits',
+      'receive_mobile_evv_notifications',
       'view_scheduling_workspace',
       'manage_schedule_visits',
       'assign_caregivers',
@@ -219,6 +235,10 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'manage_mobile_evv_exceptions',
+      'view_mobile_missed_visits',
+      'resolve_mobile_missed_visits',
+      'receive_mobile_evv_notifications',
       'view_scheduling_workspace',
       'manage_schedule_visits',
       'assign_caregivers',
@@ -240,7 +260,18 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     roleLabel: 'Caregiver',
     branchScope: 'branch-assigned',
     branchScopeLabel: 'Assigned branches only',
-    permissions: [...COMMON_SELF_SERVICE_PERMISSIONS],
+    permissions: [
+      ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'view_mobile_app',
+      'view_mobile_evv',
+      'submit_mobile_evv',
+      'execute_mobile_visits',
+      'submit_mobile_visit_documentation',
+      'upload_mobile_visit_artifacts',
+      'create_mobile_incidents',
+      'view_mobile_messages',
+      'send_mobile_messages',
+    ],
     defaultRoute: '/mobile',
   },
   QA_CLINICAL_REVIEWER: {
@@ -250,6 +281,10 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
     branchScopeLabel: 'Assigned branches only',
     permissions: [
       ...COMMON_SELF_SERVICE_PERMISSIONS,
+      'manage_mobile_evv_exceptions',
+      'view_mobile_missed_visits',
+      'resolve_mobile_missed_visits',
+      'receive_mobile_evv_notifications',
       'view_patient_workspace',
       'manage_patient_eligibility',
       'manage_patient_diagnoses',
@@ -296,6 +331,14 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     navLabel: 'Mobile Field App',
     permission: 'view_mobile_app',
     description: 'Epic 6 caregiver mobile home and field execution shell.',
+    navBehavior: 'disabled',
+    section: 'mobile',
+  },
+  {
+    path: '/mobile/visits/:visitId/evv',
+    navLabel: 'Visit EVV',
+    permission: 'view_mobile_evv',
+    description: 'Epic 7 EVV verification status and proof-of-visit workflow entry point.',
     navBehavior: 'disabled',
     section: 'mobile',
   },
@@ -520,6 +563,12 @@ export const APP_ROUTES: AppRouteDefinition[] = [
 
 const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
   VIEW_OWN_MOBILE_VISITS: ['view_mobile_app'],
+  VIEW_OWN_EVV: ['view_mobile_app', 'view_mobile_evv'],
+  SUBMIT_OWN_EVV: ['view_mobile_app', 'view_mobile_evv', 'submit_mobile_evv'],
+  MANAGE_EVV_EXCEPTIONS: ['manage_mobile_evv_exceptions'],
+  VIEW_MISSED_VISITS: ['view_mobile_missed_visits'],
+  RESOLVE_MISSED_VISITS: ['view_mobile_missed_visits', 'resolve_mobile_missed_visits'],
+  RECEIVE_EVV_NOTIFICATIONS: ['receive_mobile_evv_notifications'],
   EXECUTE_OWN_VISITS: ['view_mobile_app', 'execute_mobile_visits'],
   SUBMIT_MOBILE_VISIT_DOCUMENTATION: [
     'view_mobile_app',

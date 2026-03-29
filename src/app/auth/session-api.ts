@@ -446,6 +446,46 @@ export type MobileVisitDetailQuery = AuthenticatedRequestContext & {
   visitId: string;
 };
 
+export type EvvVerificationStatus =
+  | 'PENDING_VERIFICATION'
+  | 'VERIFIED'
+  | 'VERIFIED_WITH_WARNING'
+  | 'EXCEPTION_OPEN'
+  | 'EXCEPTION_ACKNOWLEDGED'
+  | 'MISSED_VISIT_REPORTED'
+  | 'ESCALATED'
+  | 'RESOLVED';
+
+export type GeofenceEvaluationOutcome =
+  | 'WITHIN_TOLERANCE'
+  | 'OUTSIDE_TOLERANCE_WARNING'
+  | 'OUTSIDE_TOLERANCE_BLOCKED'
+  | 'NOT_EVALUABLE';
+
+export type EvvComplianceOutcome =
+  | 'READY'
+  | 'READY_WITH_WARNING'
+  | 'BLOCKED'
+  | 'MISSED_VISIT';
+
+export type MobileEvvSummaryResponse = {
+  visitId: string;
+  verificationSessionId: string | null;
+  patientId: string;
+  branchId: string | null;
+  caregiverProfileId: string | null;
+  verificationStatus: EvvVerificationStatus;
+  complianceOutcome: EvvComplianceOutcome;
+  startEventPresent: boolean;
+  endEventPresent: boolean;
+  geofenceOutcome: GeofenceEvaluationOutcome;
+  signatureComplete: boolean;
+  openExceptionCount: number;
+  missedVisitReported: boolean;
+  warnings: string[];
+  blockers: string[];
+};
+
 export type ScheduleBoardView = 'DAY' | 'WEEK' | 'MONTH';
 
 export type SchedulingVisitStatus =
@@ -2030,6 +2070,32 @@ export async function fetchMobileVisitDetail(
   }
 
   return payload as MobileVisitDetailResponse;
+}
+
+export async function fetchOwnMobileEvvSummary(
+  request: MobileVisitDetailQuery,
+): Promise<MobileEvvSummaryResponse> {
+  const response = await fetch(apiUrl(`/api/evv/my/visits/${request.visitId}/summary`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MobileEvvSummaryResponse
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload &&
+      (('error' in payload && payload.error) || ('message' in payload && payload.message))
+        ? ('error' in payload ? payload.error : payload.message)!
+        : `Mobile EVV summary failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return payload as MobileEvvSummaryResponse;
 }
 
 export async function startMobileVisitExecution(

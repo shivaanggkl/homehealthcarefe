@@ -10,11 +10,13 @@ import {
   createMobileMessageThread,
   downloadMobileFieldArtifact,
   endMobileVisitExecution,
+  fetchOwnMobileEvvSummary,
   fetchMobileHome,
   fetchMobileMessageThread,
   fetchMobileMessageThreads,
   fetchMobileRoute,
   fetchMobileVisitDetail,
+  MobileEvvSummaryResponse,
   MobileFieldArtifact,
   MobileHomeResponse,
   MobileIncident,
@@ -33,6 +35,12 @@ import {
   startMobileVisitExecution,
   uploadMobileFieldArtifact,
 } from '../auth/session-api';
+import {
+  MobileEvvActionFramework,
+  MobileEvvDeferredState,
+  MobileEvvRouteTabs,
+  MobileEvvSummaryCard,
+} from '../components/MobileEvvFoundation';
 import {
   clearMobileExecutionSessionId,
   loadMobileExecutionSessionIds,
@@ -358,8 +366,11 @@ export function MobileWorkspacePage() {
   const [home, setHome] = useState<MobileHomeResponse | null>(null);
   const [routeProjection, setRouteProjection] = useState<MobileRouteProjectionResponse | null>(null);
   const [visitDetail, setVisitDetail] = useState<MobileVisitDetailResponse | null>(null);
+  const [evvSummary, setEvvSummary] = useState<MobileEvvSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [evvLoading, setEvvLoading] = useState(false);
+  const [evvError, setEvvError] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<MobileSyncVisualState>('idle');
   const [syncMessage, setSyncMessage] = useState(
     'Field app is ready. Pull fresh data when you need it.',
@@ -422,6 +433,9 @@ export function MobileWorkspacePage() {
   const inMessages = location.pathname === '/mobile/messages';
   const inAccount = location.pathname === '/mobile/account';
   const inVisit = Boolean(visitId);
+  const inEvvRoute = location.pathname.endsWith('/evv');
+  const inMissedVisitRoute = location.pathname.endsWith('/evv/missed-visit');
+  const inExceptionRoute = location.pathname.endsWith('/evv/exception');
   const selectedThreadId = searchParams.get('threadId');
 
   const visits = home?.visits ?? [];
@@ -572,6 +586,48 @@ export function MobileWorkspacePage() {
   }, [inMessages, selectedThreadId, canViewMessages]);
 
   useEffect(() => {
+    if (!visitId || state.status !== 'authenticated' || !canAccessPermission(profile, 'view_mobile_evv')) {
+      setEvvSummary(null);
+      setEvvError(null);
+      setEvvLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setEvvLoading(true);
+    setEvvError(null);
+
+    void fetchOwnMobileEvvSummary({
+      ...authContext,
+      visitId,
+    })
+      .then((summary) => {
+        if (!cancelled) {
+          setEvvSummary(summary);
+        }
+      })
+      .catch((summaryError) => {
+        if (!cancelled) {
+          setEvvSummary(null);
+          setEvvError(
+            summaryError instanceof ApiError
+              ? summaryError.message
+              : 'Unable to load EVV readiness right now.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setEvvLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visitId, authContext.accessToken, authContext.sessionId, state.status, profile]);
+
+  useEffect(() => {
     setChecklistError(null);
     setChecklistSuccess(null);
     setNoteError(null);
@@ -584,6 +640,7 @@ export function MobileWorkspacePage() {
     setActionSuccess(null);
     setMessageError(null);
     setMessageSuccess(null);
+    setEvvError(null);
     setLocationCapture({ status: 'idle' });
     setChecklistDraft(defaultChecklist());
     setQuickNoteText('');
@@ -1114,6 +1171,8 @@ export function MobileWorkspacePage() {
     executionSession?.executionStatus ??
     visits.find((item) => item.visitId === visitId)?.executionStatus ??
     null;
+  const canViewMobileEvv = canAccessPermission(profile, 'view_mobile_evv');
+  const canSubmitMobileEvv = canAccessPermission(profile, 'submit_mobile_evv');
 
   return (
     <MobileAppShell
@@ -1349,6 +1408,118 @@ export function MobileWorkspacePage() {
             careInstructions={visitDetail.careInstructions}
             patientSummary={visitDetail.patientSummary}
           >
+            <MobileEvvRouteTabs visitId={visitId!} />
+            {evvLoading ? (
+              <MobileModuleState
+                description="Loading backend EVV readiness for this assigned visit."
+                title="Loading EVV summary"
+                variant="info"
+              />
+            ) : null}
+            {evvError ? (
+              <MobileModuleState
+                description={evvError}
+                title="EVV summary unavailable"
+                variant="error"
+              />
+            ) : null}
+            {evvSummary ? <MobileEvvSummaryCard compact={!inEvvRoute && !inMissedVisitRoute && !inExceptionRoute} summary={evvSummary} /> : null}
+            {!inEvvRoute && !inMissedVisitRoute && !inExceptionRoute ? (
+              <MobilePanel
+                description="Epic 7 keeps proof-of-visit status visible from the normal visit flow without forcing the caregiver into a separate admin experience."
+                title="EVV readiness"
+              >
+                {evvSummary ? (
+                  <>
+                    <p className="support-copy">
+                      Open the dedicated EVV section when you need verification-specific detail,
+                      warning context, or follow-up paths for missed-visit and exception reporting.
+                    </p>
+                    <MobileActionFooter
+                      primaryDisabled={!canViewMobileEvv}
+                      primaryLabel="Open EVV status"
+                      secondaryLabel={canViewMobileEvv ? 'Missed visit route' : undefined}
+                      onPrimaryClick={() => navigate(`/mobile/visits/${visitId}/evv`)}
+                      onSecondaryClick={() => navigate(`/mobile/visits/${visitId}/evv/missed-visit`)}
+                    />
+                  </>
+                ) : (
+                  <MobileModuleState
+                    description="EVV readiness will appear here once the backend summary is available for this visit."
+                    title="No EVV summary yet"
+                    variant="info"
+                  />
+                )}
+              </MobilePanel>
+            ) : null}
+
+            {inEvvRoute ? (
+              <MobileEvvActionFramework
+                helper="Epic 7 Phase A standardizes EVV-ready states, proof summaries, and retry messaging before the dedicated clock, geofence, and signature workflows land."
+                mode={canSubmitMobileEvv ? 'editable' : 'read-only'}
+                syncMessage={syncMessage}
+                syncState={syncState}
+                title="EVV action framework"
+              >
+                {evvSummary ? (
+                  <div className="mobile-inline-note">
+                    <strong>Current proof status</strong>
+                    <p>
+                      {evvSummary.complianceOutcome === 'READY'
+                        ? 'This visit is currently ready from an EVV perspective.'
+                        : evvSummary.complianceOutcome === 'READY_WITH_WARNING'
+                          ? 'This visit has EVV warnings that still need caregiver attention.'
+                          : evvSummary.complianceOutcome === 'MISSED_VISIT'
+                            ? 'This visit has already moved into a missed-visit state.'
+                            : 'This visit still has blocking EVV requirements.'}
+                    </p>
+                  </div>
+                ) : null}
+                <MobileEvvDeferredState
+                  ctaLabel="Return to visit execution"
+                  ctaTo={`/mobile/visits/${visitId}`}
+                  description="Clock-in, clock-out, geofence submission, and signature-aware EVV completion actions will plug into this shared framework in the next Epic 7 phase."
+                  title="EVV mutation pattern is ready"
+                />
+              </MobileEvvActionFramework>
+            ) : null}
+
+            {inMissedVisitRoute ? (
+              <MobileEvvActionFramework
+                helper="Missed-visit submission will reuse the same sensitive-mutation framing, retry language, and controlled outcomes as the rest of the EVV workflow."
+                mode={canSubmitMobileEvv ? 'editable' : 'read-only'}
+                syncMessage={syncMessage}
+                syncState={syncState}
+                title="Missed-visit reporting foundation"
+              >
+                <MobileEvvDeferredState
+                  ctaLabel="Open EVV overview"
+                  ctaTo={`/mobile/visits/${visitId}/evv`}
+                  description="The dedicated missed-visit form is intentionally deferred to the next Epic 7 phase, but this route and mobile-safe result language are now in place."
+                  title="Missed-visit route is reserved"
+                />
+              </MobileEvvActionFramework>
+            ) : null}
+
+            {inExceptionRoute ? (
+              <MobileEvvActionFramework
+                helper="Exception capture and follow-up routes need to feel like part of the same verification system, not a separate ad hoc incident screen."
+                mode={canSubmitMobileEvv ? 'editable' : 'read-only'}
+                syncMessage={syncMessage}
+                syncState={syncState}
+                title="Exception follow-up foundation"
+              >
+                <MobileEvvDeferredState
+                  ctaLabel="Back to EVV summary"
+                  ctaTo={`/mobile/visits/${visitId}/evv`}
+                  description="Exception creation and escalation flows will land in the next Epic 7 phase. This route now gives the mobile shell a stable information architecture and controlled placeholder state."
+                  title="Exception route is reserved"
+                />
+              </MobileEvvActionFramework>
+            ) : null}
+
+            {!inEvvRoute && !inMissedVisitRoute && !inExceptionRoute ? (
+              <>
             <MobilePanel
               description="The visit detail keeps route timing, execution state, and next action in one mobile-safe workflow."
               title="Visit execution"
@@ -1752,6 +1923,8 @@ export function MobileWorkspacePage() {
                 body="Visit-linked coordination messages are logged for traceability, while the field app keeps the conversation surface lightweight."
               />
             </MobilePanel>
+              </>
+            ) : null}
           </MobileVisitDetailLayout>
         </div>
       ) : null}
