@@ -2360,10 +2360,12 @@ export type RevokeSessionResponse = {
 
 export class ApiError extends Error {
   status: number;
+  details?: unknown;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, details?: unknown) {
     super(message);
     this.status = status;
+    this.details = details;
   }
 }
 
@@ -2468,7 +2470,7 @@ export async function fetchMobileHome(
       payload && 'message' in payload && payload.message
         ? payload.message
         : `Mobile home request failed with status ${response.status}`;
-    throw new ApiError(response.status, message);
+    throw new ApiError(response.status, message, payload);
   }
 
   return payload as MobileHomeResponse;
@@ -7922,10 +7924,81 @@ export async function submitVisitDocumentation(
         : payload && 'message' in payload && payload.message
           ? payload.message
           : `Visit documentation submission failed with status ${response.status}`;
-    throw new ApiError(response.status, message);
+    throw new ApiError(response.status, message, payload);
   }
 
   return payload as VisitDocumentationAggregate;
+}
+
+export async function linkVisitDocumentationPatientAttachment(
+  request: AuthenticatedRequestContext & {
+    documentationRecordId: string;
+    patientAttachmentId: string;
+    caption?: string | null;
+    description?: string | null;
+  },
+): Promise<VisitDocumentationAttachmentLink> {
+  const response = await fetch(
+    apiUrl(`/api/visit-documentation/${request.documentationRecordId}/attachments/patient-links`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        patientAttachmentId: request.patientAttachmentId,
+        caption: request.caption ?? null,
+        description: request.description ?? null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | VisitDocumentationAttachmentLink
+    | null;
+
+  if (!response.ok) {
+    const message =
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Attachment link failed with status ${response.status}`;
+    throw new ApiError(response.status, message, payload);
+  }
+
+  return payload as VisitDocumentationAttachmentLink;
+}
+
+export async function unlinkVisitDocumentationAttachment(
+  request: AuthenticatedRequestContext & {
+    documentationRecordId: string;
+    attachmentLinkId: string;
+  },
+): Promise<void> {
+  const response = await fetch(
+    apiUrl(
+      `/api/visit-documentation/${request.documentationRecordId}/attachments/${request.attachmentLinkId}`,
+    ),
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { error?: string; message?: string }
+      | null;
+    const message =
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Attachment unlink failed with status ${response.status}`;
+    throw new ApiError(response.status, message, payload);
+  }
 }
 
 export async function fetchPrintableDocumentationSummary(

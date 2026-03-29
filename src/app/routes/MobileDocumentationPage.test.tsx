@@ -6,22 +6,22 @@ vi.mock('../auth/auth-context', () => ({
   useAuth: vi.fn(),
 }));
 
+vi.mock('../access/access-context', () => ({
+  useAccess: vi.fn(),
+}));
+
 vi.mock('../auth/session-storage', () => ({
   loadDevSessionCredentials: vi.fn(() => null),
 }));
 
-vi.mock('../auth/session-api', async () => {
-  const actual = await vi.importActual('../auth/session-api');
-  return {
-    ...actual,
-    fetchMobileHome: vi.fn(),
-    fetchMobileVisitDetail: vi.fn(),
-    loadVisitDocumentationForVisit: vi.fn(),
-  };
-});
+vi.mock('../components/DocumentationRecordEditor', () => ({
+  DocumentationRecordEditor: ({ visitId }: { visitId: string }) => (
+    <div>documentation-editor-{visitId}</div>
+  ),
+}));
 
 const { useAuth } = await import('../auth/auth-context');
-const sessionApi = await import('../auth/session-api');
+const { useAccess } = await import('../access/access-context');
 
 describe('MobileDocumentationPage', () => {
   beforeEach(() => {
@@ -39,66 +39,26 @@ describe('MobileDocumentationPage', () => {
       },
     } as never);
 
-    vi.mocked(sessionApi.fetchMobileHome).mockResolvedValue({
-      day: '2026-04-21',
-      timezone: 'America/Chicago',
-      visits: [
-        {
-          visitId: 'visit-1',
-          patientDisplaySummary: 'Ava Patient',
-          branchName: 'North Branch',
-          plannedStartAt: '2026-04-21T09:00:00-05:00',
-          plannedEndAt: '2026-04-21T10:00:00-05:00',
-          timezone: 'America/Chicago',
-          scheduleStatus: 'ASSIGNED',
-          routeOrder: 1,
-          executionStatus: null,
-        },
-      ],
-    });
-    vi.mocked(sessionApi.fetchMobileVisitDetail).mockResolvedValue({
-      visitId: 'visit-1',
-      patientSummary: {
-        patientId: 'patient-1',
-        patientDisplaySummary: 'Ava Patient',
-        dateOfBirth: '1950-01-01',
-        addressSummary: '123 Main, Chicago, IL 60601',
-        contactSummary: null,
-        diagnosisSummaries: [],
-        serviceLineSummary: 'Skilled Nursing',
-        visitTypeSummary: 'Routine Visit',
-        payerSnippet: 'Medicare',
+    vi.mocked(useAccess).mockReturnValue({
+      profile: {
+        role: 'CAREGIVER',
+        roleLabel: 'Caregiver',
+        branchScope: 'branch-assigned',
+        branchScopeLabel: 'Assigned branches only',
+        assignedBranchIds: ['branch-1'],
+        permissions: [
+          'view_mobile_app',
+          'view_visit_documentation',
+          'draft_visit_documentation',
+          'submit_visit_documentation',
+        ],
+        defaultRoute: '/mobile',
+        source: 'backend',
       },
-      careInstructions: {
-        visitId: 'visit-1',
-        visitTypeInstructions: null,
-        serviceLineInstructions: null,
-        branchInstructions: null,
-        patientSpecificCareNotes: null,
-      },
-    });
-    vi.mocked(sessionApi.loadVisitDocumentationForVisit).mockResolvedValue({
-      record: {
-        id: 'record-1',
-        visitOccurrenceId: 'visit-1',
-        patientId: 'patient-1',
-        branchId: 'branch-1',
-        selectedTemplateId: 'template-1',
-        authorMembershipId: 'membership-1',
-        lastEditorMembershipId: 'membership-1',
-        status: 'DRAFT',
-        startedAt: null,
-        submittedAt: null,
-        lastSavedAt: '2026-04-21T09:15:00-05:00',
-        printableSummaryVersion: 1,
-      },
-      fieldResponses: [],
-      taskResponses: [],
-      attachmentLinks: [],
-    });
+    } as never);
   });
 
-  it('renders the caregiver documentation route with backend state', async () => {
+  it('renders the mobile documentation route with the shared editor', async () => {
     render(
       <MemoryRouter initialEntries={['/mobile/visits/visit-1/documentation']}>
         <Routes>
@@ -108,7 +68,6 @@ describe('MobileDocumentationPage', () => {
     );
 
     expect(screen.getByRole('heading', { level: 1, name: 'Visit documentation' })).toBeInTheDocument();
-    expect(await screen.findByText('Ava Patient')).toBeInTheDocument();
-    expect(await screen.findByText('DRAFT')).toBeInTheDocument();
+    expect(screen.getByText('documentation-editor-visit-1')).toBeInTheDocument();
   });
 });

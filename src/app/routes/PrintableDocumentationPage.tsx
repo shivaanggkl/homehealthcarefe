@@ -108,6 +108,26 @@ export function PrintableDocumentationPage() {
                   </article>
                 ))}
               </section>
+              <section>
+                <h4>Tasks</h4>
+                {summary.tasks.length === 0 ? <p>No structured tasks captured.</p> : null}
+                {summary.tasks.map((task) => (
+                  <article key={`${task.taskTitle}-${task.completionState}`} className="documentation-print-row">
+                    <strong>{task.taskTitle}</strong>
+                    <p>{task.completionState}{task.completionNotes ? ` · ${task.completionNotes}` : ''}</p>
+                  </article>
+                ))}
+              </section>
+              <section>
+                <h4>Attachments</h4>
+                {summary.attachments.length === 0 ? <p>No supporting attachments linked.</p> : null}
+                {summary.attachments.map((attachment) => (
+                  <article key={`${attachment.attachmentLabel}-${attachment.caption ?? ''}`} className="documentation-print-row">
+                    <strong>{attachment.attachmentLabel}</strong>
+                    <p>{attachment.caption ?? attachment.description ?? 'Linked without extra note-specific text.'}</p>
+                  </article>
+                ))}
+              </section>
             </div>
           ) : null}
         </DocumentationPanel>
