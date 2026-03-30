@@ -113,4 +113,23 @@ describe('mapBackendPermissionsToFrontend', () => {
     expect(resolved).toContain('submit_visit_documentation');
     expect(resolved).toContain('generate_printable_documentation_summary');
   });
+
+  it('maps Epic 9 backend permissions to the shared messaging workspace capabilities', () => {
+    const resolved = mapBackendPermissionsToFrontend(
+      [
+        'VIEW_MESSAGING_WORKSPACE',
+        'SEND_SECURE_MESSAGES',
+        'MANAGE_STAFF_GROUPS',
+        'SEND_BRANCH_BROADCASTS',
+        'MANAGE_MESSAGE_ESCALATIONS',
+      ],
+      ['view_messaging_workspace'],
+    );
+
+    expect(resolved).toContain('view_messaging_workspace');
+    expect(resolved).toContain('send_secure_messages');
+    expect(resolved).toContain('manage_staff_groups');
+    expect(resolved).toContain('send_branch_broadcasts');
+    expect(resolved).toContain('manage_message_escalations');
+  });
 });

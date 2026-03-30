@@ -31,6 +31,8 @@ import { MobileLoginPage } from './routes/MobileLoginPage';
 import { MobileWorkspacePage } from './routes/MobileWorkspacePage';
 import { MfaChallengePage } from './routes/MfaChallengePage';
 import { MfaSettingsPage } from './routes/MfaSettingsPage';
+import { MessagingWorkspacePage } from './routes/MessagingWorkspacePage';
+import { MessagingCommandCenterPage } from './routes/MessagingCommandCenterPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { PatientRecordWorkspacePage } from './routes/PatientRecordWorkspacePage';
 import { PatientWorkspacePage } from './routes/PatientWorkspacePage';
@@ -243,6 +245,104 @@ function AppRoutes() {
           >
             <AppShell>
               <SchedulingWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/messaging"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 9 messaging access can open the secure coordination workspace."
+            deniedTitle="Messaging workspace is not available for this role."
+            requiredPermission="view_messaging_workspace"
+          >
+            <AppShell>
+              <MessagingWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/messaging/command-center"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 9 messaging access can open the coordinator communication summary."
+            deniedTitle="Communication summary is not available for this role."
+            requiredPermission="view_messaging_workspace"
+          >
+            <AppShell>
+              <MessagingCommandCenterPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/messaging/threads/:threadId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 9 messaging access can open secure thread detail routes."
+            deniedTitle="Messaging thread detail is not available for this role."
+            requiredPermission="view_messaging_workspace"
+          >
+            <AppShell>
+              <MessagingWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patients/:patientId/discussion"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 9 messaging access can open patient-linked discussion routes."
+            deniedTitle="Patient discussion is not available for this role."
+            requiredPermission="view_messaging_workspace"
+          >
+            <AppShell>
+              <MessagingWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/scheduling/visits/:visitId/discussion"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 9 messaging access can open visit-linked discussion routes."
+            deniedTitle="Visit discussion is not available for this role."
+            requiredPermission="view_messaging_workspace"
+          >
+            <AppShell>
+              <MessagingWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/documentation/tasks/:taskTemplateId/discussion"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 9 messaging access can open task-linked discussion routes."
+            deniedTitle="Task discussion is not available for this role."
+            requiredPermission="view_messaging_workspace"
+          >
+            <AppShell>
+              <MessagingWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/messaging/admin"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 9 messaging access can open the messaging admin surface."
+            deniedTitle="Messaging admin routes are not available for this role."
+            requiredPermission="view_messaging_workspace"
+          >
+            <AppShell>
+              <MessagingWorkspacePage />
             </AppShell>
           </ProtectedRoute>
         }

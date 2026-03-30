@@ -52,6 +52,11 @@ export type FrontendPermission =
   | 'submit_visit_documentation'
   | 'amend_visit_documentation'
   | 'generate_printable_documentation_summary'
+  | 'view_messaging_workspace'
+  | 'send_secure_messages'
+  | 'manage_staff_groups'
+  | 'send_branch_broadcasts'
+  | 'manage_message_escalations'
   | 'view_setup_console'
   | 'manage_agency_profile_setup'
   | 'manage_service_line_setup'
@@ -99,6 +104,7 @@ export type AppRouteDefinition = {
     | 'workforce'
     | 'patients'
     | 'documentation'
+    | 'messaging'
     | 'configuration'
     | 'people'
     | 'security'
@@ -169,6 +175,11 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'submit_visit_documentation',
       'amend_visit_documentation',
       'generate_printable_documentation_summary',
+      'view_messaging_workspace',
+      'send_secure_messages',
+      'manage_staff_groups',
+      'send_branch_broadcasts',
+      'manage_message_escalations',
       'view_setup_console',
       'manage_agency_profile_setup',
       'manage_service_line_setup',
@@ -235,6 +246,11 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'submit_visit_documentation',
       'amend_visit_documentation',
       'generate_printable_documentation_summary',
+      'view_messaging_workspace',
+      'send_secure_messages',
+      'manage_staff_groups',
+      'send_branch_broadcasts',
+      'manage_message_escalations',
       'view_setup_console',
       'manage_agency_profile_setup',
       'manage_service_line_setup',
@@ -281,6 +297,10 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'manage_caregiver_availability',
       'manage_caregiver_unavailability',
       'view_caregiver_performance',
+      'view_messaging_workspace',
+      'send_secure_messages',
+      'send_branch_broadcasts',
+      'manage_message_escalations',
       'view_documentation_workspace',
       'view_visit_documentation',
       'draft_visit_documentation',
@@ -300,6 +320,8 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'view_mobile_evv',
       'submit_mobile_evv',
       'execute_mobile_visits',
+      'view_messaging_workspace',
+      'send_secure_messages',
       'submit_mobile_visit_documentation',
       'view_documentation_workspace',
       'view_visit_documentation',
@@ -328,6 +350,9 @@ const ROLE_DEFINITIONS: Record<AgencyRole, RoleDefinition> = {
       'manage_patient_eligibility',
       'manage_patient_diagnoses',
       'view_patient_attachments',
+      'view_messaging_workspace',
+      'send_secure_messages',
+      'manage_message_escalations',
       'view_documentation_workspace',
       'view_visit_documentation',
       'amend_visit_documentation',
@@ -480,6 +505,63 @@ export const APP_ROUTES: AppRouteDefinition[] = [
     description: 'Read-only printable documentation summary backed by the Epic 8 summary contract.',
     navBehavior: 'disabled',
     section: 'documentation',
+  },
+  {
+    path: '/app/messaging',
+    navLabel: 'Messaging Workspace',
+    permission: 'view_messaging_workspace',
+    description: 'Epic 9 messaging inbox, contextual coordination routes, and secure branch communication workspace.',
+    navBehavior: 'visible',
+    section: 'messaging',
+  },
+  {
+    path: '/app/messaging/threads/:threadId',
+    navLabel: 'Thread Detail',
+    permission: 'view_messaging_workspace',
+    description: 'Open a secure Epic 9 thread detail route with message timeline and participant summary.',
+    navBehavior: 'disabled',
+    section: 'messaging',
+  },
+  {
+    path: '/app/patients/:patientId/discussion',
+    navLabel: 'Patient Discussion',
+    permission: 'view_messaging_workspace',
+    description: 'Patient-linked Epic 9 discussion route for care-team coordination.',
+    navBehavior: 'disabled',
+    section: 'messaging',
+  },
+  {
+    path: '/app/scheduling/visits/:visitId/discussion',
+    navLabel: 'Visit Discussion',
+    permission: 'view_messaging_workspace',
+    description: 'Visit-linked Epic 9 discussion route for schedule coordination.',
+    navBehavior: 'disabled',
+    section: 'messaging',
+  },
+  {
+    path: '/app/documentation/tasks/:taskTemplateId/discussion',
+    navLabel: 'Task Discussion',
+    permission: 'view_messaging_workspace',
+    description: 'Task-linked Epic 9 discussion route for reusable workflow follow-up.',
+    navBehavior: 'disabled',
+    section: 'messaging',
+  },
+  {
+    path: '/app/messaging/admin',
+    navLabel: 'Groups & Broadcasts',
+    permission: 'view_messaging_workspace',
+    description: 'Epic 9 admin messaging surface for staff-group and branch-broadcast route entry points.',
+    navBehavior: 'visible',
+    section: 'messaging',
+    audience: 'admin',
+  },
+  {
+    path: '/app/messaging/command-center',
+    navLabel: 'Communication Summary',
+    permission: 'view_messaging_workspace',
+    description: 'Coordinator-facing Epic 9 communication visibility screen for unread, escalated, broadcast, and context-linked work.',
+    navBehavior: 'visible',
+    section: 'messaging',
   },
   {
     path: '/app/setup',
@@ -747,6 +829,11 @@ const BACKEND_PERMISSION_MAPPING: Record<string, FrontendPermission[]> = {
     'view_visit_documentation',
     'generate_printable_documentation_summary',
   ],
+  VIEW_MESSAGING_WORKSPACE: ['view_messaging_workspace'],
+  SEND_SECURE_MESSAGES: ['view_messaging_workspace', 'send_secure_messages'],
+  MANAGE_STAFF_GROUPS: ['view_messaging_workspace', 'manage_staff_groups'],
+  SEND_BRANCH_BROADCASTS: ['view_messaging_workspace', 'send_branch_broadcasts'],
+  MANAGE_MESSAGE_ESCALATIONS: ['view_messaging_workspace', 'manage_message_escalations'],
   VIEW_USER_DIRECTORY: ['view_user_directory'],
   INVITE_USER: ['invite_users'],
   EDIT_USER_PROFILE: ['edit_user_accounts'],
@@ -869,6 +956,7 @@ export const NAV_SECTIONS: Array<{
   { key: 'workforce', label: 'Workforce' },
   { key: 'patients', label: 'Patients' },
   { key: 'documentation', label: 'Documentation' },
+  { key: 'messaging', label: 'Messaging' },
   { key: 'configuration', label: 'Agency Setup' },
   { key: 'people', label: 'People & Audit' },
   { key: 'security', label: 'Security' },

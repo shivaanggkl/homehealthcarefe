@@ -2334,6 +2334,206 @@ export type AdminNotificationPreferencesResponse = {
   newAdminAlertsEnabled: boolean;
 };
 
+export type MessagingThreadType =
+  | 'DIRECT_SECURE'
+  | 'PATIENT_COORDINATION'
+  | 'VISIT_COORDINATION'
+  | 'TASK_DISCUSSION'
+  | 'BRANCH_BROADCAST';
+
+export type MessagingEscalationStatus =
+  | 'NORMAL'
+  | 'URGENT'
+  | 'ESCALATED'
+  | 'RESOLVED';
+
+export type MessagingThreadStatus = 'ACTIVE' | 'ARCHIVED';
+
+export type CommunicationMessageType =
+  | 'USER_MESSAGE'
+  | 'SYSTEM_NOTE'
+  | 'BRANCH_ANNOUNCEMENT';
+
+export type MessagingDeliveryState = 'PENDING' | 'DELIVERED' | 'READ';
+
+export type CoordinationContextType =
+  | 'PATIENT'
+  | 'VISIT'
+  | 'TASK'
+  | 'STAFF_GROUP'
+  | 'BRANCH';
+
+export type MessagingThreadSummary = {
+  id: string;
+  threadType: MessagingThreadType;
+  subject: string | null;
+  status: MessagingThreadStatus;
+  branchId: string | null;
+  patientId: string | null;
+  visitOccurrenceId: string | null;
+  escalationStatus: MessagingEscalationStatus;
+  lastMessageAt: string | null;
+  createdAt: string;
+  createdByMembershipId: string;
+};
+
+export type MessagingParticipant = {
+  id: string;
+  membershipId: string;
+  role: AgencyRole;
+  participantRole: string | null;
+  addedAt: string;
+  removedAt: string | null;
+  muted: boolean;
+};
+
+export type MessagingMessage = {
+  id: string;
+  threadId: string;
+  senderMembershipId: string;
+  messageBody: string;
+  createdAt: string;
+  editedAt: string | null;
+  messageType: CommunicationMessageType;
+  attachmentReference: string | null;
+};
+
+export type MessagingContextLink = {
+  id: string;
+  contextType: CoordinationContextType;
+  contextId: string;
+};
+
+export type MessagingThreadDetail = {
+  thread: MessagingThreadSummary;
+  participants: MessagingParticipant[];
+  messages: MessagingMessage[];
+  contextLinks: MessagingContextLink[];
+};
+
+export type MessagingReadReceipt = {
+  id: string;
+  messageId: string;
+  recipientMembershipId: string;
+  readAt: string | null;
+  deliveryState: MessagingDeliveryState;
+};
+
+export type MessagingStaffGroupMember = {
+  id: string;
+  staffGroupId: string;
+  membershipId: string;
+  role: AgencyRole;
+  addedAt: string;
+  removedAt: string | null;
+};
+
+export type MessagingStaffGroup = {
+  id: string;
+  name: string;
+  description: string | null;
+  branchId: string | null;
+  active: boolean;
+  members: MessagingStaffGroupMember[];
+};
+
+export type MessagingBranchBroadcastStatus = 'SENT' | 'CANCELLED';
+
+export type MessagingBranchBroadcast = {
+  id: string;
+  branchId: string;
+  eligibleRolesCsv: string | null;
+  subject: string;
+  body: string;
+  threadId: string;
+  expiresAt: string | null;
+  status: MessagingBranchBroadcastStatus;
+  createdAt: string;
+};
+
+export type MessagingEscalationRecord = {
+  id: string;
+  threadId: string;
+  status: MessagingEscalationStatus;
+  tag: string;
+  reason: string | null;
+  taggedByMembershipId: string;
+  taggedAt: string;
+  clearedByMembershipId: string | null;
+  clearedAt: string | null;
+};
+
+export type MessagingSummary = {
+  unread: {
+    unreadThreadCount: number;
+    unreadMessageCount: number;
+    escalatedThreadCount: number;
+    activeBroadcastCount: number;
+  };
+  recentBroadcasts: Array<{
+    id: string;
+    branchId: string;
+    eligibleRolesCsv: string | null;
+    subject: string;
+    body: string;
+    threadId: string;
+    expiresAt: string | null;
+    status: 'SENT' | 'CANCELLED';
+    createdAt: string;
+  }>;
+  recentContextThreads: MessagingThreadSummary[];
+};
+
+export type CreateMessagingThreadRequest = AuthenticatedRequestContext & {
+  threadType: MessagingThreadType;
+  subject?: string;
+  branchId?: string;
+  patientId?: string;
+  visitOccurrenceId?: string;
+  taskTemplateId?: string;
+  participantMembershipIds?: string[];
+  staffGroupIds?: string[];
+};
+
+export type SendMessagingMessageRequest = AuthenticatedRequestContext & {
+  threadId: string;
+  messageBody: string;
+  sentAt?: string;
+  messageType?: CommunicationMessageType;
+  attachmentReference?: string;
+};
+
+export type MessagingMarkReadRequest = AuthenticatedRequestContext & {
+  readAt?: string;
+};
+
+export type ManageMessagingStaffGroupRequest = AuthenticatedRequestContext & {
+  staffGroupId?: string;
+  name: string;
+  description?: string;
+  branchId?: string;
+};
+
+export type ManageMessagingStaffGroupMemberRequest = AuthenticatedRequestContext & {
+  staffGroupId: string;
+  membershipId: string;
+};
+
+export type CreateMessagingBranchBroadcastRequest = AuthenticatedRequestContext & {
+  branchId: string;
+  eligibleRoles: AgencyRole[];
+  subject: string;
+  body: string;
+  expiresAt?: string;
+};
+
+export type ManageMessagingEscalationRequest = AuthenticatedRequestContext & {
+  threadId: string;
+  status: MessagingEscalationStatus;
+  tag: string;
+  reason?: string;
+};
+
 export type UpdateAdminNotificationPreferencesRequest = AuthenticatedRequestContext & {
   emailEnabled: boolean;
   failedLoginAlertsEnabled: boolean;
@@ -7722,6 +7922,611 @@ export async function deactivateDocumentationTaskLibraryItem(
   }
 
   return payload as DocumentationTaskLibraryItem;
+}
+
+export async function fetchMessagingThreads(
+  request: AuthenticatedRequestContext,
+): Promise<MessagingThreadSummary[]> {
+  const response = await fetch(apiUrl('/api/messaging/threads'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingThreadSummary[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging thread request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingThreadSummary[];
+}
+
+export async function fetchMessagingThreadDetail(
+  request: AuthenticatedRequestContext & { threadId: string },
+): Promise<MessagingThreadDetail> {
+  const response = await fetch(apiUrl(`/api/messaging/threads/${request.threadId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingThreadDetail
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging thread detail failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingThreadDetail;
+}
+
+export async function fetchMessagingThreadsByPatient(
+  request: AuthenticatedRequestContext & { patientId: string },
+): Promise<MessagingThreadSummary[]> {
+  const response = await fetch(apiUrl(`/api/messaging/threads/by-patient/${request.patientId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingThreadSummary[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient messaging thread request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingThreadSummary[];
+}
+
+export async function fetchMessagingThreadsByVisit(
+  request: AuthenticatedRequestContext & { visitId: string },
+): Promise<MessagingThreadSummary[]> {
+  const response = await fetch(apiUrl(`/api/messaging/threads/by-visit/${request.visitId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingThreadSummary[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Visit messaging thread request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingThreadSummary[];
+}
+
+export async function fetchMessagingThreadsByTask(
+  request: AuthenticatedRequestContext & { taskTemplateId: string },
+): Promise<MessagingThreadSummary[]> {
+  const response = await fetch(apiUrl(`/api/messaging/threads/by-task/${request.taskTemplateId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingThreadSummary[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Task messaging thread request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingThreadSummary[];
+}
+
+export async function createMessagingThread(
+  request: CreateMessagingThreadRequest,
+): Promise<MessagingThreadSummary> {
+  const response = await fetch(apiUrl('/api/messaging/threads'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      threadType: request.threadType,
+      subject: request.subject ?? null,
+      branchId: request.branchId ?? null,
+      patientId: request.patientId ?? null,
+      visitOccurrenceId: request.visitOccurrenceId ?? null,
+      taskTemplateId: request.taskTemplateId ?? null,
+      participantMembershipIds: request.participantMembershipIds ?? [],
+      staffGroupIds: request.staffGroupIds ?? [],
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingThreadSummary
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging thread creation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingThreadSummary;
+}
+
+export async function sendMessagingMessage(
+  request: SendMessagingMessageRequest,
+): Promise<MessagingMessage> {
+  const response = await fetch(apiUrl(`/api/messaging/threads/${request.threadId}/messages`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      messageBody: request.messageBody,
+      sentAt: request.sentAt ?? null,
+      messageType: request.messageType ?? 'USER_MESSAGE',
+      attachmentReference: request.attachmentReference ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingMessage
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Message send failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingMessage;
+}
+
+export async function fetchMessagingSummary(
+  request: AuthenticatedRequestContext,
+): Promise<MessagingSummary> {
+  const response = await fetch(apiUrl('/api/messaging/summary'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingSummary
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging summary failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingSummary;
+}
+
+export async function markMessagingThreadRead(
+  request: AuthenticatedRequestContext & { threadId: string; readAt?: string },
+): Promise<MessagingReadReceipt[]> {
+  const response = await fetch(apiUrl(`/api/messaging/threads/${request.threadId}/read`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({ readAt: request.readAt ?? null }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingReadReceipt[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging read update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingReadReceipt[];
+}
+
+export async function fetchMessagingReadReceipts(
+  request: AuthenticatedRequestContext & { messageId: string },
+): Promise<MessagingReadReceipt[]> {
+  const response = await fetch(apiUrl(`/api/messaging/messages/${request.messageId}/read-receipts`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingReadReceipt[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging read receipt request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingReadReceipt[];
+}
+
+export async function fetchMessagingStaffGroups(
+  request: AuthenticatedRequestContext,
+): Promise<MessagingStaffGroup[]> {
+  const response = await fetch(apiUrl('/api/messaging/groups'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingStaffGroup[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging staff group request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingStaffGroup[];
+}
+
+export async function saveMessagingStaffGroup(
+  request: ManageMessagingStaffGroupRequest,
+): Promise<MessagingStaffGroup> {
+  const method = request.staffGroupId ? 'PUT' : 'POST';
+  const path = request.staffGroupId
+    ? `/api/messaging/groups/${request.staffGroupId}`
+    : '/api/messaging/groups';
+
+  const response = await fetch(apiUrl(path), {
+    method,
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      name: request.name,
+      description: request.description ?? null,
+      branchId: request.branchId ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingStaffGroup
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging staff group save failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingStaffGroup;
+}
+
+export async function deactivateMessagingStaffGroup(
+  request: AuthenticatedRequestContext & { staffGroupId: string },
+): Promise<MessagingStaffGroup> {
+  const response = await fetch(apiUrl(`/api/messaging/groups/${request.staffGroupId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingStaffGroup
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging staff group deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingStaffGroup;
+}
+
+export async function addMessagingStaffGroupMember(
+  request: ManageMessagingStaffGroupMemberRequest,
+): Promise<MessagingStaffGroupMember> {
+  const response = await fetch(apiUrl(`/api/messaging/groups/${request.staffGroupId}/members`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      membershipId: request.membershipId,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingStaffGroupMember
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging staff group member add failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingStaffGroupMember;
+}
+
+export async function removeMessagingStaffGroupMember(
+  request: ManageMessagingStaffGroupMemberRequest,
+): Promise<MessagingStaffGroupMember> {
+  const response = await fetch(
+    apiUrl(`/api/messaging/groups/${request.staffGroupId}/members/${request.membershipId}`),
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingStaffGroupMember
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging staff group member removal failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingStaffGroupMember;
+}
+
+export async function fetchMessagingBranchBroadcasts(
+  request: AuthenticatedRequestContext,
+): Promise<MessagingBranchBroadcast[]> {
+  const response = await fetch(apiUrl('/api/messaging/broadcasts'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingBranchBroadcast[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging broadcast request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingBranchBroadcast[];
+}
+
+export async function createMessagingBranchBroadcast(
+  request: CreateMessagingBranchBroadcastRequest,
+): Promise<MessagingBranchBroadcast> {
+  const response = await fetch(apiUrl('/api/messaging/broadcasts'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId,
+      eligibleRoles: request.eligibleRoles,
+      subject: request.subject,
+      body: request.body,
+      expiresAt: request.expiresAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingBranchBroadcast
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging broadcast creation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingBranchBroadcast;
+}
+
+export async function cancelMessagingBranchBroadcast(
+  request: AuthenticatedRequestContext & { broadcastId: string },
+): Promise<MessagingBranchBroadcast> {
+  const response = await fetch(apiUrl(`/api/messaging/broadcasts/${request.broadcastId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingBranchBroadcast
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging broadcast cancellation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingBranchBroadcast;
+}
+
+export async function tagMessagingEscalation(
+  request: ManageMessagingEscalationRequest,
+): Promise<MessagingEscalationRecord> {
+  const response = await fetch(apiUrl(`/api/messaging/threads/${request.threadId}/escalation`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      status: request.status,
+      tag: request.tag,
+      reason: request.reason ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingEscalationRecord
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging escalation update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingEscalationRecord;
+}
+
+export async function resolveMessagingEscalation(
+  request: AuthenticatedRequestContext & { threadId: string },
+): Promise<MessagingEscalationRecord> {
+  const response = await fetch(apiUrl(`/api/messaging/threads/${request.threadId}/escalation`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | MessagingEscalationRecord
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Messaging escalation clear failed with status ${response.status}`,
+    );
+  }
+
+  return payload as MessagingEscalationRecord;
 }
 
 export async function fetchVisitDocumentationRecords(
