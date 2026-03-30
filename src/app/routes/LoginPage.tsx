@@ -9,6 +9,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [persistDevSession, setPersistDevSession] = useState(
     window.location.protocol === 'http:' || window.location.hostname === 'localhost',
   );
@@ -27,6 +28,10 @@ export function LoginPage() {
     const search = new URLSearchParams(location.search);
     return search.get('timedOut') === '1';
   }, [location.search]);
+  const isLocalDev = useMemo(
+    () => window.location.protocol === 'http:' || window.location.hostname === 'localhost',
+    [],
+  );
 
   if (state.status === 'authenticated') {
     return <Navigate to={requestedPath} replace />;
@@ -66,16 +71,49 @@ export function LoginPage() {
   }
 
   return (
-    <div className="auth-layout">
-      <section className="auth-card auth-card-primary">
-        <span className="eyebrow">Frontend Story FE-02</span>
-        <h1>Sign in to HomeHealthCareFE</h1>
-        <p>
-          This screen is wired to the backend login contract and preserves the FE-01 session bootstrap model.
-          Successful password login routes either into the protected app shell or into the MFA challenge path.
+    <div className="login-layout">
+      <section className="login-hero-panel">
+        <div className="login-brand-lockup">
+          <span className="login-brand-mark">MH</span>
+          <div>
+            <span className="eyebrow login-eyebrow">MavieHealth</span>
+            <h1>Built for modern home health operations.</h1>
+          </div>
+        </div>
+        <p className="login-hero-copy">
+          Coordinate field care, documentation, compliance, readiness, and operational oversight in one secure platform.
         </p>
+        <div className="login-value-grid">
+          <article className="login-value-card">
+            <strong>Secure access</strong>
+            <p>Password policy, session controls, MFA, and audit-aware workflows are built into the product.</p>
+          </article>
+          <article className="login-value-card">
+            <strong>Care delivery visibility</strong>
+            <p>Scheduling, mobile execution, EVV, documentation, QA, and compliance stay connected.</p>
+          </article>
+          <article className="login-value-card">
+            <strong>Operational readiness</strong>
+            <p>Revenue readiness and analytics surface the downstream impact of upstream care operations.</p>
+          </article>
+        </div>
+        <div className="login-trust-strip">
+          <span>Role-based access</span>
+          <span>Multi-factor capable</span>
+          <span>Audit-aware actions</span>
+        </div>
+      </section>
 
-        <form className="stack-form" onSubmit={handleSubmit}>
+      <section className="login-form-panel">
+        <div className="login-form-intro">
+          <span className="eyebrow">Secure Sign In</span>
+          <h2>Welcome back</h2>
+          <p>
+            Sign in with your agency email and password. If your organization requires multi-factor verification, you’ll continue there automatically.
+          </p>
+        </div>
+
+        <form className="stack-form login-form-stack" onSubmit={handleSubmit}>
           {logoutConfirmed ? (
             <p className="success-note">You have been logged out and the current session is closed.</p>
           ) : null}
@@ -100,38 +138,42 @@ export function LoginPage() {
 
           <label className="field">
             <span>Password</span>
-            <input
-              autoComplete="current-password"
-              className="input"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-              required
-              type="password"
-              value={password}
-            />
+            <div className="login-password-row">
+              <input
+                autoComplete="current-password"
+                className="input login-input"
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Enter your password"
+                required
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+              />
+              <button
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="login-password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+                type="button"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </label>
 
-          <label className="checkbox">
-            <input
-              checked={persistDevSession}
-              onChange={(event) => setPersistDevSession(event.target.checked)}
-              type="checkbox"
-            />
-            <span>Store token fallback locally for plain localhost development</span>
-          </label>
-
-          <div className="button-row">
-            <button className="button" disabled={submitting} type="submit">
+          <div className="login-primary-actions">
+            <button className="button login-submit-button" disabled={submitting} type="submit">
               {submitting ? 'Signing in...' : 'Sign in'}
-            </button>
-            <button className="button button-secondary" onClick={() => void refreshAuth()} type="button">
-              Retry Existing Session
             </button>
           </div>
 
-          <div className="inline-links">
+          <div className="inline-links login-links">
             <Link className="text-link" to={`/forgot-password?email=${encodeURIComponent(email.trim())}`}>
               Forgot your password?
+            </Link>
+            <span className="login-link-divider" aria-hidden="true">
+              •
+            </span>
+            <Link className="text-link" to="/accept-invitation">
+              Accept invitation
             </Link>
           </div>
 
@@ -142,63 +184,43 @@ export function LoginPage() {
           ) : null}
         </form>
 
-        <div className="info-block">
-          <h2>Current behavior</h2>
-          <ul className="check-list">
-            <li>Posts email and password to <code>POST /api/auth/login</code></li>
-            <li>Shows the backend generic invalid-credentials response without account leakage</li>
-            <li>Handles rate limiting and temporary lockout with a distinct UI message</li>
-            <li>Routes to app home or MFA challenge depending on backend response</li>
-          </ul>
-        </div>
-      </section>
-
-      <section className="auth-card">
-        <h2>Backend contract used by FE-02</h2>
-        <dl className="definition-list compact">
-          <div>
-            <dt>Login endpoint</dt>
-            <dd>
-              <code>POST /api/auth/login</code>
-            </dd>
-          </div>
-          <div>
-            <dt>Success branch</dt>
-            <dd>
-              Session tokens are returned and secure cookies are set by the backend
-            </dd>
-          </div>
-          <div>
-            <dt>MFA branch</dt>
-            <dd>
-              Backend returns <code>mfaRequired=true</code> and a login challenge token
-            </dd>
-          </div>
-          <div>
-            <dt>Fallback dev mode</dt>
-            <dd>
-              Access token and session id can be stored locally when secure cookies do not round-trip on localhost
-            </dd>
-          </div>
-        </dl>
-
-        {formError || state.error ? (
-          <p className="alert">
-            {formError ? (
-              formError
-            ) : (
-              <>
-                Session bootstrap failed: <strong>{state.error}</strong>
-              </>
-            )}
+        <div className="login-support-card">
+          <strong>Need help signing in?</strong>
+          <p>
+            Use your agency-issued credentials. If access was just granted, accept your invitation first. Contact your administrator if your access profile or branch scope looks wrong after sign in.
           </p>
-        ) : null}
-
-        <div className="button-row">
-          <button className="button button-ghost" onClick={clearLocalAuthState} type="button">
-            Clear Stored Dev Tokens
-          </button>
         </div>
+
+        {isLocalDev ? (
+          <details className="login-dev-tools">
+            <summary>Local development tools</summary>
+            <div className="login-dev-tools-body">
+              <label className="checkbox checkbox-light">
+                <input
+                  checked={persistDevSession}
+                  onChange={(event) => setPersistDevSession(event.target.checked)}
+                  type="checkbox"
+                />
+                <span>Store token fallback locally when secure cookies do not round-trip on localhost</span>
+              </label>
+
+              {state.error ? (
+                <p className="alert">
+                  Session bootstrap failed: <strong>{state.error}</strong>
+                </p>
+              ) : null}
+
+              <div className="button-row login-dev-actions">
+                <button className="button button-secondary" onClick={() => void refreshAuth()} type="button">
+                  Retry existing session
+                </button>
+                <button className="button button-ghost" onClick={clearLocalAuthState} type="button">
+                  Clear stored dev tokens
+                </button>
+              </div>
+            </div>
+          </details>
+        ) : null}
       </section>
     </div>
   );

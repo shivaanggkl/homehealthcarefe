@@ -114,6 +114,13 @@ function defaultEscalationForm(
   };
 }
 
+function branchLabel(branchNames: Map<string, string>, branchId: string | null | undefined) {
+  if (!branchId) {
+    return 'Agency-wide';
+  }
+  return branchNames.get(branchId) ?? 'Unknown branch';
+}
+
 export function MessagingWorkspacePage() {
   const { state } = useAuth();
   const { profile } = useAccess();
@@ -187,6 +194,10 @@ export function MessagingWorkspacePage() {
   const activeBranches = useMemo(
     () => branches.filter((branch) => branch.status === 'ACTIVE'),
     [branches],
+  );
+  const branchNames = useMemo(
+    () => new Map(activeBranches.map((branch) => [branch.id, branch.name])),
+    [activeBranches],
   );
   const activeDirectory = useMemo(
     () => directory.filter((entry) => entry.userStatus === 'ACTIVE'),
@@ -821,7 +832,7 @@ export function MessagingWorkspacePage() {
                       </header>
                       <p>{broadcast.body}</p>
                       <small>
-                        Branch {broadcast.branchId}
+                        {branchLabel(branchNames, broadcast.branchId)}
                         {broadcast.expiresAt ? ` · Expires ${new Date(broadcast.expiresAt).toLocaleString()}` : ' · No expiration'}
                       </small>
                     </article>
@@ -1365,7 +1376,7 @@ export function MessagingWorkspacePage() {
                         </header>
                         <p>{broadcast.body}</p>
                         <small>
-                          Branch {broadcast.branchId}
+                          {branchLabel(branchNames, broadcast.branchId)}
                           {broadcast.eligibleRolesCsv ? ` · ${broadcast.eligibleRolesCsv}` : ' · All branch roles'}
                           {broadcast.expiresAt ? ` · Expires ${new Date(broadcast.expiresAt).toLocaleString()}` : ' · No expiration'}
                         </small>

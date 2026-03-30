@@ -66,7 +66,7 @@ function BootstrapScreen() {
   return (
     <div className="boot-screen">
       <div className="boot-card">
-        <span className="eyebrow">HomeHealthCare</span>
+        <span className="eyebrow">MavieHealth</span>
         <h1>Restoring secure session</h1>
         <p>Checking the backend session API before rendering protected routes.</p>
       </div>

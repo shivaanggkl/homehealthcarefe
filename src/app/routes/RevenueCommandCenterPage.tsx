@@ -44,6 +44,13 @@ function branchValue(branchId: string | 'ALL') {
   return branchId !== 'ALL' ? branchId : undefined;
 }
 
+function branchLabel(branchNames: Map<string, string>, branchId: string | null | undefined) {
+  if (!branchId) {
+    return 'Agency-wide';
+  }
+  return branchNames.get(branchId) ?? 'Unknown branch';
+}
+
 function humanizeToken(value: string | null | undefined) {
   if (!value) {
     return 'Not available';
@@ -326,7 +333,7 @@ export function RevenueCommandCenterPage() {
                       <strong>Visit {item.visitOccurrenceId}</strong>
                       <p>{item.payerName ?? 'Unlinked payer context'}</p>
                       <span>
-                        {item.branchId ? branchNames.get(item.branchId) ?? item.branchId : 'Agency-wide'} ·
+                        {branchLabel(branchNames, item.branchId)} ·
                         {' '}
                         {formatDateTime(item.evaluatedAt)}
                       </span>

@@ -1,6 +1,9 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useAccess } from '../access/access-context';
 import { APP_ROUTES, canAccessPermission } from '../access/access-control';
+import { fetchBranches, type BranchSummary } from '../auth/session-api';
 import { useAuth } from '../auth/auth-context';
+import { loadDevSessionCredentials } from '../auth/session-storage';
 
 function formatTimestamp(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -12,6 +15,29 @@ function formatTimestamp(value: string): string {
 export function HomePage() {
   const { state } = useAuth();
   const { profile } = useAccess();
+  const [branches, setBranches] = useState<BranchSummary[]>([]);
+
+  const authContext = useMemo(() => {
+    const devSession = loadDevSessionCredentials();
+    return {
+      accessToken: devSession?.accessToken,
+      sessionId:
+        devSession?.sessionId ??
+        (state.status === 'authenticated' ? state.session.sessionId : undefined),
+    };
+  }, [state]);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated') {
+      return;
+    }
+
+    void fetchBranches(authContext)
+      .then(setBranches)
+      .catch(() => {
+        setBranches([]);
+      });
+  }, [authContext, state.status]);
 
   if (state.status !== 'authenticated') {
     return null;
@@ -45,6 +71,14 @@ export function HomePage() {
   };
 
   const accessibleRoutes = APP_ROUTES.filter((route) => canAccessPermission(profile, route.permission));
+  const branchNames = useMemo(
+    () => new Map(branches.map((branch) => [branch.id, branch.name])),
+    [branches],
+  );
+  const assignedBranchLabels =
+    profile.assignedBranchIds.length > 0
+      ? profile.assignedBranchIds.map((branchId) => branchNames.get(branchId) ?? 'Unknown branch').join(', ')
+      : 'None';
 
   return (
     <div className="page-grid">
@@ -163,7 +197,7 @@ export function HomePage() {
           </div>
           <div>
             <dt>Assigned branches</dt>
-            <dd>{profile.assignedBranchIds.length > 0 ? profile.assignedBranchIds.join(', ') : 'None'}</dd>
+            <dd>{assignedBranchLabels}</dd>
           </div>
           <div>
             <dt>Profile source</dt>

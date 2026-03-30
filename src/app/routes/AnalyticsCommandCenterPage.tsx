@@ -75,7 +75,7 @@ function branchName(branches: BranchSummary[], branchId: string | null | undefin
     return 'Agency-wide';
   }
 
-  return branches.find((branch) => branch.id === branchId)?.name ?? branchId;
+  return branches.find((branch) => branch.id === branchId)?.name ?? 'Unknown branch';
 }
 
 function analyticsAuditHref(actionType: string) {

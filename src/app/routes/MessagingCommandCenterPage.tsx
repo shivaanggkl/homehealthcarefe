@@ -6,8 +6,10 @@ import { useAuth } from '../auth/auth-context';
 import { loadDevSessionCredentials } from '../auth/session-storage';
 import {
   ApiError,
+  fetchBranches,
   fetchMessagingSummary,
   fetchMessagingThreads,
+  type BranchSummary,
   type MessagingSummary,
   type MessagingThreadSummary,
 } from '../auth/session-api';
@@ -25,9 +27,17 @@ function messagingAuditHref(actionType: string) {
   return `/app/admin/audit?actionType=${encodeURIComponent(actionType)}`;
 }
 
+function branchLabel(branchNames: Map<string, string>, branchId: string | null | undefined) {
+  if (!branchId) {
+    return 'Agency-wide';
+  }
+  return branchNames.get(branchId) ?? 'Unknown branch';
+}
+
 export function MessagingCommandCenterPage() {
   const { state } = useAuth();
   const { profile } = useAccess();
+  const [branches, setBranches] = useState<BranchSummary[]>([]);
   const [summary, setSummary] = useState<MessagingSummary | null>(null);
   const [threads, setThreads] = useState<MessagingThreadSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +55,10 @@ export function MessagingCommandCenterPage() {
 
   const canViewMessaging = canAccessPermission(profile, 'view_messaging_workspace');
   const canViewAudit = canAccessPermission(profile, 'view_audit_log');
+  const branchNames = useMemo(
+    () => new Map(branches.map((branch) => [branch.id, branch.name])),
+    [branches],
+  );
 
   useEffect(() => {
     if (state.status !== 'authenticated' || !canViewMessaging) {
@@ -55,12 +69,14 @@ export function MessagingCommandCenterPage() {
       setLoading(true);
       setError(null);
       try {
-        const [loadedSummary, loadedThreads] = await Promise.all([
+        const [loadedSummary, loadedThreads, loadedBranches] = await Promise.all([
           fetchMessagingSummary(authContext),
           fetchMessagingThreads(authContext),
+          fetchBranches(authContext).catch(() => [] as BranchSummary[]),
         ]);
         setSummary(loadedSummary);
         setThreads(loadedThreads);
+        setBranches(loadedBranches);
       } catch (requestError) {
         setError(
           requestError instanceof ApiError
@@ -174,7 +190,7 @@ export function MessagingCommandCenterPage() {
                   </header>
                   <p>{broadcast.body}</p>
                   <small>
-                    Branch {broadcast.branchId}
+                    {branchLabel(branchNames, broadcast.branchId)}
                     {broadcast.expiresAt ? ` · Expires ${new Date(broadcast.expiresAt).toLocaleString()}` : ' · No expiration'}
                   </small>
                 </article>

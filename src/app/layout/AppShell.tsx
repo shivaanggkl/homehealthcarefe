@@ -44,9 +44,9 @@ export function AppShell({ children }: PropsWithChildren) {
     <div className="shell">
       <aside className="sidebar">
         <Link className="brand" to="/app">
-          <span className="brand-mark">HHC</span>
+          <span className="brand-mark">MH</span>
           <div>
-            <strong>HomeHealthCare</strong>
+            <strong>MavieHealth</strong>
             <p>Secure operations console</p>
           </div>
         </Link>

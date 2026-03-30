@@ -97,6 +97,13 @@ function branchValue(branchId: string | 'ALL') {
   return branchId !== 'ALL' ? branchId : undefined;
 }
 
+function branchLabelValue(branchNames: Map<string, string>, branchId: string | null | undefined) {
+  if (!branchId) {
+    return 'Agency-wide';
+  }
+  return branchNames.get(branchId) ?? 'Unknown branch';
+}
+
 function humanizeToken(value: string | null | undefined) {
   if (!value) {
     return 'Not available';
@@ -692,7 +699,7 @@ export function RevenueReadinessWorkspacePage() {
                     </div>
                     <div className="revenue-inline-meta">
                       <span>Patient {item.patientId}</span>
-                      <span>Branch {item.branchId ? branchLabel.get(item.branchId) ?? item.branchId : 'Agency-wide'}</span>
+                      <span>Branch {branchLabelValue(branchLabel, item.branchId)}</span>
                       <span>Evaluated {formatDateTime(item.evaluatedAt)}</span>
                     </div>
                     <div className="revenue-action-row">
@@ -753,7 +760,7 @@ export function RevenueReadinessWorkspacePage() {
                   </div>
                   <div>
                     <dt>Branch</dt>
-                    <dd>{detail.summary.branchId ? branchLabel.get(detail.summary.branchId) ?? detail.summary.branchId : 'Agency-wide'}</dd>
+                    <dd>{branchLabelValue(branchLabel, detail.summary.branchId)}</dd>
                   </div>
                   <div>
                     <dt>Export state</dt>
@@ -814,7 +821,7 @@ export function RevenueReadinessWorkspacePage() {
                       </div>
                       <div>
                         <dt>Branch</dt>
-                        <dd>{payerServiceSummary.branchId ? branchLabel.get(payerServiceSummary.branchId) ?? payerServiceSummary.branchId : 'Agency-wide'}</dd>
+                        <dd>{branchLabelValue(branchLabel, payerServiceSummary.branchId)}</dd>
                       </div>
                       <div>
                         <dt>Policy number</dt>
@@ -953,7 +960,7 @@ export function RevenueReadinessWorkspacePage() {
                     <div className="revenue-inline-meta">
                       <span>{item.targetType === 'VISIT' ? 'Visit-linked blocker' : 'Authorization-linked blocker'}</span>
                       <span>Target {item.targetId}</span>
-                      <span>Branch {item.branchId ? branchLabel.get(item.branchId) ?? item.branchId : 'Agency-wide'}</span>
+                      <span>Branch {branchLabelValue(branchLabel, item.branchId)}</span>
                       <span>Detected {formatDateTime(item.detectedAt)}</span>
                       <span>{item.clearedAt ? `Cleared ${formatDateTime(item.clearedAt)}` : 'Active'}</span>
                     </div>
@@ -1096,7 +1103,7 @@ export function RevenueReadinessWorkspacePage() {
                   </div>
                   <div>
                     <dt>Branch</dt>
-                    <dd>{detail?.summary.branchId ? branchLabel.get(detail.summary.branchId) ?? detail.summary.branchId : 'Agency-wide'}</dd>
+                    <dd>{branchLabelValue(branchLabel, detail?.summary.branchId)}</dd>
                   </div>
                   <div>
                     <dt>Authorization</dt>
@@ -1172,7 +1179,7 @@ export function RevenueReadinessWorkspacePage() {
                   </div>
                   <div>
                     <dt>Branch</dt>
-                    <dd>{detail?.summary.branchId ? branchLabel.get(detail.summary.branchId) ?? detail.summary.branchId : 'Agency-wide'}</dd>
+                    <dd>{branchLabelValue(branchLabel, detail?.summary.branchId)}</dd>
                   </div>
                 </dl>
                 {canViewPayer && detail?.payerServiceSummary ? (
@@ -1193,7 +1200,7 @@ export function RevenueReadinessWorkspacePage() {
                       </div>
                       <div>
                         <dt>Branch</dt>
-                        <dd>{detail.payerServiceSummary.branchId ? branchLabel.get(detail.payerServiceSummary.branchId) ?? detail.payerServiceSummary.branchId : 'Agency-wide'}</dd>
+                        <dd>{branchLabelValue(branchLabel, detail.payerServiceSummary.branchId)}</dd>
                       </div>
                     </dl>
                   </div>
@@ -1276,7 +1283,7 @@ export function RevenueReadinessWorkspacePage() {
                   </div>
                   <div>
                     <dt>Branch</dt>
-                    <dd>{authorizationUsage.branchId ? branchLabel.get(authorizationUsage.branchId) ?? authorizationUsage.branchId : 'Agency-wide'}</dd>
+                    <dd>{branchLabelValue(branchLabel, authorizationUsage.branchId)}</dd>
                   </div>
                   <div>
                     <dt>Service line</dt>

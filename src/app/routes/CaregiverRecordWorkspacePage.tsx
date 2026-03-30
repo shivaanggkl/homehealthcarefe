@@ -1009,7 +1009,7 @@ export function CaregiverRecordWorkspacePage({
     if (!branchId) {
       return 'Agency-wide';
     }
-    return branches.find((branch) => branch.id === branchId)?.name ?? branchId;
+    return branches.find((branch) => branch.id === branchId)?.name ?? 'Unknown branch';
   }
 
   function renderAuditCallout(actionType: string, title: string, description: string) {
