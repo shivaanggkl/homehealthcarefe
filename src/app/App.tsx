@@ -21,6 +21,10 @@ import { DocumentationStatusPage } from './routes/DocumentationStatusPage';
 import { DocumentationTaskLibraryPage } from './routes/DocumentationTaskLibraryPage';
 import { DocumentationTemplateWorkspacePage } from './routes/DocumentationTemplateWorkspacePage';
 import { DocumentationWorkspacePage } from './routes/DocumentationWorkspacePage';
+import { GoalWorkspacePage } from './routes/GoalWorkspacePage';
+import { GoalCommandCenterPage } from './routes/GoalCommandCenterPage';
+import { ComplianceCommandCenterPage } from './routes/ComplianceCommandCenterPage';
+import { ComplianceWorkspacePage } from './routes/ComplianceWorkspacePage';
 import { EvvIssueListPage } from './routes/EvvIssueListPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { HomePage } from './routes/HomePage';
@@ -35,8 +39,16 @@ import { MessagingWorkspacePage } from './routes/MessagingWorkspacePage';
 import { MessagingCommandCenterPage } from './routes/MessagingCommandCenterPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { PatientRecordWorkspacePage } from './routes/PatientRecordWorkspacePage';
+import { PatientEventCommandCenterPage } from './routes/PatientEventCommandCenterPage';
+import { PatientEventWorkspacePage } from './routes/PatientEventWorkspacePage';
 import { PatientWorkspacePage } from './routes/PatientWorkspacePage';
 import { PrintableDocumentationPage } from './routes/PrintableDocumentationPage';
+import { RevenueReadinessWorkspacePage } from './routes/RevenueReadinessWorkspacePage';
+import { RevenueCommandCenterPage } from './routes/RevenueCommandCenterPage';
+import { ReviewCommandCenterPage } from './routes/ReviewCommandCenterPage';
+import { ReviewWorkspacePage } from './routes/ReviewWorkspacePage';
+import { AnalyticsWorkspacePage } from './routes/AnalyticsWorkspacePage';
+import { AnalyticsCommandCenterPage } from './routes/AnalyticsCommandCenterPage';
 import { ResetPasswordPage } from './routes/ResetPasswordPage';
 import { SecuritySettingsPage } from './routes/SecuritySettingsPage';
 import { SelfProfilePage } from './routes/SelfProfilePage';
@@ -250,6 +262,104 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/app/revenue-readiness"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized finance and operations roles can open the Epic 14 revenue-readiness workspace."
+            deniedTitle="Revenue-readiness workspace is not available for this role."
+            requiredPermission="view_revenue_readiness_workspace"
+          >
+            <AppShell>
+              <RevenueReadinessWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/revenue-readiness/visits/:visitId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized finance and operations roles can open Epic 14 readiness detail routes."
+            deniedTitle="Revenue-readiness detail is not available for this role."
+            requiredPermission="view_revenue_readiness_workspace"
+          >
+            <AppShell>
+              <RevenueReadinessWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/revenue-readiness/exceptions"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized finance and operations roles can open Epic 14 blocker routes."
+            deniedTitle="Revenue exception visibility is not available for this role."
+            requiredPermission="view_revenue_readiness_workspace"
+          >
+            <AppShell>
+              <RevenueReadinessWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/revenue-readiness/payroll-export"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized finance and operations roles can open Epic 14 payroll export routes."
+            deniedTitle="Payroll export preview is not available for this role."
+            requiredPermission="view_revenue_readiness_workspace"
+          >
+            <AppShell>
+              <RevenueReadinessWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/revenue-readiness/invoice-export"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized finance and operations roles can open Epic 14 invoice export routes."
+            deniedTitle="Invoice export preview is not available for this role."
+            requiredPermission="view_revenue_readiness_workspace"
+          >
+            <AppShell>
+              <RevenueReadinessWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/revenue-readiness/command-center"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized finance and operations roles can open the Epic 14 revenue summary route."
+            deniedTitle="Revenue summary is not available for this role."
+            requiredPermission="view_revenue_readiness_workspace"
+          >
+            <AppShell>
+              <RevenueCommandCenterPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/revenue-readiness/authorizations/:authorizationId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized finance and operations roles can open Epic 14 authorization usage routes."
+            deniedTitle="Authorization usage summary is not available for this role."
+            requiredPermission="view_revenue_readiness_workspace"
+          >
+            <AppShell>
+              <RevenueReadinessWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/app/messaging"
         element={
           <ProtectedRoute
@@ -348,6 +458,482 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/app/analytics/command-center"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized leadership and operations roles can open the Epic 15 analytics command center."
+            deniedTitle="Analytics command center is not available for this role."
+            requiredPermission="view_analytics_workspace"
+          >
+            <AppShell>
+              <AnalyticsCommandCenterPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/analytics"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized leadership and operations roles can open the Epic 15 analytics workspace."
+            deniedTitle="Analytics workspace is not available for this role."
+            requiredPermission="view_analytics_workspace"
+          >
+            <AppShell>
+              <AnalyticsWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/analytics/operational"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized leadership and operations roles can open the Epic 15 operational drilldown route."
+            deniedTitle="Operational analytics are not available for this role."
+            requiredPermission="view_analytics_workspace"
+          >
+            <AppShell>
+              <AnalyticsWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/analytics/branch-performance"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized leadership and operations roles can open the Epic 15 branch-performance route."
+            deniedTitle="Branch-performance analytics are not available for this role."
+            requiredPermission="view_analytics_workspace"
+          >
+            <AppShell>
+              <AnalyticsWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/analytics/caregiver-utilization"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized leadership and operations roles can open the Epic 15 caregiver-utilization route."
+            deniedTitle="Caregiver-utilization analytics are not available for this role."
+            requiredPermission="view_analytics_workspace"
+          >
+            <AppShell>
+              <AnalyticsWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/analytics/readiness"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized leadership and operations roles can open the Epic 15 revenue and compliance summary route."
+            deniedTitle="Revenue and compliance analytics are not available for this role."
+            requiredPermission="view_analytics_workspace"
+          >
+            <AppShell>
+              <AnalyticsWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open the goal and progression workspace."
+            deniedTitle="Care progression workspace is not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals/command-center"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open the coordinator progression summary."
+            deniedTitle="Progression command center is not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalCommandCenterPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals/templates"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open goal-template routes."
+            deniedTitle="Goal-template routes are not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals/patients/:patientId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open patient progression summary routes."
+            deniedTitle="Patient progression summary is not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals/patient-goals/:goalId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open patient-goal detail routes."
+            deniedTitle="Patient-goal detail is not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals/patient-goals/:goalId/interventions"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open intervention routes."
+            deniedTitle="Goal interventions are not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals/patient-goals/:goalId/progress-notes"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open progress-note routes."
+            deniedTitle="Goal progress notes are not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals/patient-goals/:goalId/history"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open goal version-history routes."
+            deniedTitle="Goal version history is not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/goals/patient-goals/:goalId/careplan-sync"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 13 care progression access can open care-plan sync routes."
+            deniedTitle="Care-plan sync visibility is not available for this role."
+            requiredPermission="view_goal_workspace"
+          >
+            <AppShell>
+              <GoalWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/compliance"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 11 compliance workspace access can open the clinical compliance workspace."
+            deniedTitle="Compliance workspace is not available for this role."
+            requiredPermission="view_compliance_workspace"
+          >
+            <AppShell>
+              <ComplianceWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open incident, infection, wound, follow-up, escalation, and timeline routes."
+            deniedTitle="Patient-event workspace is not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/incidents"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open incident routes."
+            deniedTitle="Incident routes are not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/incidents/:incidentId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open incident detail routes."
+            deniedTitle="Incident detail is not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/infections"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open infection routes."
+            deniedTitle="Infection routes are not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/infections/:infectionId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open infection detail routes."
+            deniedTitle="Infection detail is not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/wounds"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open wound routes."
+            deniedTitle="Wound routes are not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/wounds/:woundId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open wound detail routes."
+            deniedTitle="Wound detail is not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/follow-ups"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open follow-up routes."
+            deniedTitle="Follow-up routes are not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/escalations"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open escalation routes."
+            deniedTitle="Escalation routes are not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/patients/:patientId/timeline"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open patient-event timelines."
+            deniedTitle="Patient-event timeline is not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/patient-events/command-center"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 12 patient-event workspace access can open the coordinator-facing patient-event summary."
+            deniedTitle="Patient-event command center is not available for this role."
+            requiredPermission="view_patient_event_workspace"
+          >
+            <AppShell>
+              <PatientEventCommandCenterPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/compliance/command-center"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 11 compliance workspace access can open the coordinator-facing compliance summary."
+            deniedTitle="Compliance summary is not available for this role."
+            requiredPermission="view_compliance_workspace"
+          >
+            <AppShell>
+              <ComplianceCommandCenterPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/compliance/patients/:patientId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 11 compliance workspace access can open patient compliance detail routes."
+            deniedTitle="Patient compliance detail is not available for this role."
+            requiredPermission="view_compliance_workspace"
+          >
+            <AppShell>
+              <ComplianceWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/compliance/patients/:patientId/checklist"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 11 compliance workspace access can open checklist-detail compliance routes."
+            deniedTitle="Checklist compliance detail is not available for this role."
+            requiredPermission="view_compliance_workspace"
+          >
+            <AppShell>
+              <ComplianceWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/compliance/patients/:patientId/documentation-gaps"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 11 compliance workspace access can open documentation-gap compliance routes."
+            deniedTitle="Documentation-gap detail is not available for this role."
+            requiredPermission="view_compliance_workspace"
+          >
+            <AppShell>
+              <ComplianceWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/compliance/patients/:patientId/acknowledgments"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 11 compliance workspace access can open acknowledgment routes."
+            deniedTitle="Acknowledgment management is not available for this role."
+            requiredPermission="view_compliance_workspace"
+          >
+            <AppShell>
+              <ComplianceWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/compliance/patients/:patientId/certification-periods"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 11 compliance workspace access can open certification-period routes."
+            deniedTitle="Certification-period management is not available for this role."
+            requiredPermission="view_compliance_workspace"
+          >
+            <AppShell>
+              <ComplianceWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/compliance/patients/:patientId/risk-reminders"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 11 compliance workspace access can open risk-reminder routes."
+            deniedTitle="Risk-reminder management is not available for this role."
+            requiredPermission="view_compliance_workspace"
+          >
+            <AppShell>
+              <ComplianceWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/app/documentation"
         element={
           <ProtectedRoute
@@ -427,6 +1013,90 @@ function AppRoutes() {
           >
             <AppShell>
               <PrintableDocumentationPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/review"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 10 review access can open the QA review workspace."
+            deniedTitle="Review workspace is not available for this role."
+            requiredPermission="view_review_workspace"
+          >
+            <AppShell>
+              <ReviewWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/review/exceptions"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 10 exception-queue access can open review exception routes."
+            deniedTitle="Review exception queue is not available for this role."
+            requiredPermission="view_review_exception_queue"
+          >
+            <AppShell>
+              <ReviewWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/review/command-center"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only authorized reviewers and coordinators can open the review summary route."
+            deniedTitle="Review summary is not available for this role."
+            requiredPermission="view_review_workspace"
+          >
+            <AppShell>
+              <ReviewCommandCenterPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/review/items/:workItemId"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 10 review access can open review item detail routes."
+            deniedTitle="Review item detail is not available for this role."
+            requiredPermission="view_review_workspace"
+          >
+            <AppShell>
+              <ReviewWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/review/items/:workItemId/resubmission"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 10 review access can open returned-for-fix visibility routes."
+            deniedTitle="Review resubmission detail is not available for this role."
+            requiredPermission="view_review_workspace"
+          >
+            <AppShell>
+              <ReviewWorkspacePage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/review/items/:workItemId/assignment"
+        element={
+          <ProtectedRoute
+            deniedMessage="Only roles with Epic 10 review access can open reviewer assignment detail routes."
+            deniedTitle="Review assignment detail is not available for this role."
+            requiredPermission="view_review_workspace"
+          >
+            <AppShell>
+              <ReviewWorkspacePage />
             </AppShell>
           </ProtectedRoute>
         }

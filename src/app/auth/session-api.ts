@@ -177,6 +177,383 @@ export type CurrentAccessResponse = {
   permissions: string[];
 };
 
+export type IncidentRecordStatus = 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'CLOSED';
+export type InfectionRecordStatus = 'ACTIVE' | 'MONITORING' | 'RESOLVED';
+export type WoundRecordStatus =
+  | 'ACTIVE'
+  | 'MONITORING'
+  | 'IMPROVING'
+  | 'STABLE'
+  | 'DETERIORATING'
+  | 'RESOLVED';
+export type PatientEventFollowUpStatus = 'OPEN' | 'COMPLETED' | 'CANCELLED';
+export type PatientEventEscalationStatus = 'ACTIVE' | 'CLEARED';
+export type PatientEventTargetType =
+  | 'INCIDENT_RECORD'
+  | 'INFECTION_RECORD'
+  | 'WOUND_RECORD'
+  | 'WOUND_HISTORY_ENTRY'
+  | 'EVIDENCE_LINK'
+  | 'FOLLOW_UP_ASSIGNMENT'
+  | 'ESCALATION_RECORD'
+  | 'ALERT_EVENT'
+  | 'LONGITUDINAL_HISTORY_ENTRY';
+export type PatientEventHistoryEntryType =
+  | 'INCIDENT_EVENT'
+  | 'INFECTION_EVENT'
+  | 'WOUND_CREATED'
+  | 'WOUND_HISTORY_CAPTURED'
+  | 'FOLLOW_UP_MILESTONE'
+  | 'ESCALATION_MILESTONE'
+  | 'EVIDENCE_EVENT';
+
+export type GoalTemplateLifecycleStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+export type PatientGoalLifecycleStatus =
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'UNMET'
+  | 'NOT_ATTAINED'
+  | 'CANCELLED';
+export type GoalInterventionLifecycleStatus =
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'INACTIVE'
+  | 'CANCELLED';
+export type GoalTargetDatePosture = 'ON_TRACK' | 'AT_RISK' | 'OVERDUE' | 'NOT_APPLICABLE';
+export type CarePlanSyncStatus = 'ALIGNED' | 'UNSYNCED' | 'STALE' | 'FAILED';
+
+export type GoalTemplateResponse = {
+  id: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  name: string;
+  description: string | null;
+  targetOutcomeGuidance: string | null;
+  defaultInterventionScaffold: string | null;
+  status: GoalTemplateLifecycleStatus;
+};
+
+export type PatientGoalResponse = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  goalTemplateId: string | null;
+  ownerMembershipId: string | null;
+  title: string;
+  description: string | null;
+  targetDate: string | null;
+  status: PatientGoalLifecycleStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+};
+
+export type GoalInterventionResponse = {
+  id: string;
+  patientGoalId: string;
+  branchId: string | null;
+  ownerMembershipId: string | null;
+  title: string;
+  description: string | null;
+  targetDate: string | null;
+  status: GoalInterventionLifecycleStatus;
+  derivedFromTemplate: boolean;
+};
+
+export type GoalProgressNoteResponse = {
+  id: string;
+  patientGoalId: string;
+  goalInterventionId: string | null;
+  branchId: string | null;
+  capturedByMembershipId: string;
+  noteText: string;
+  capturedAt: string;
+  progressionSummary: string | null;
+  statusImpact: string | null;
+  lifecycleStatus: string;
+};
+
+export type GoalVersionResponse = {
+  id: string;
+  patientGoalId: string;
+  branchId: string | null;
+  versionNumber: number;
+  changeType: string;
+  changedAt: string;
+  snapshotJson: string;
+};
+
+export type CarePlanSyncResponse = {
+  id: string;
+  patientGoalId: string;
+  branchId: string | null;
+  careplanIdentifier: string;
+  syncStatus: CarePlanSyncStatus;
+  lastSyncedAt: string | null;
+  syncSource: string | null;
+};
+
+export type GoalSummaryResponse = {
+  goalId: string;
+  branchId: string | null;
+  title: string;
+  status: PatientGoalLifecycleStatus;
+  targetDate: string | null;
+  targetDatePosture: GoalTargetDatePosture;
+  latestProgressSummary: string | null;
+  completedInterventionCount: number;
+  totalInterventionCount: number;
+  carePlanSyncStatus: CarePlanSyncStatus | null;
+};
+
+export type PatientProgressionSummaryResponse = {
+  patientId: string;
+  branchId: string | null;
+  totalGoalCount: number;
+  overdueGoalCount: number;
+  atRiskGoalCount: number;
+  goals: GoalSummaryResponse[];
+};
+
+export type SaveGoalTemplateRequest = AuthenticatedRequestContext & {
+  goalTemplateId?: string;
+  branchId?: string | null;
+  serviceLineId?: string | null;
+  name: string;
+  description?: string | null;
+  targetOutcomeGuidance?: string | null;
+  defaultInterventionScaffold?: string | null;
+  status?: GoalTemplateLifecycleStatus | null;
+};
+
+export type SavePatientGoalRequest = AuthenticatedRequestContext & {
+  patientGoalId?: string;
+  patientId: string;
+  branchId?: string | null;
+  goalTemplateId?: string | null;
+  ownerMembershipId?: string | null;
+  title: string;
+  description?: string | null;
+  targetDate?: string | null;
+  createdAt?: string | null;
+};
+
+export type TransitionPatientGoalStateRequest = AuthenticatedRequestContext & {
+  patientGoalId: string;
+  status: PatientGoalLifecycleStatus;
+  changedAt?: string | null;
+};
+
+export type SaveGoalInterventionRequest = AuthenticatedRequestContext & {
+  patientGoalId?: string;
+  interventionId?: string;
+  branchId?: string | null;
+  ownerMembershipId?: string | null;
+  title: string;
+  description?: string | null;
+  targetDate?: string | null;
+  status?: GoalInterventionLifecycleStatus | null;
+  derivedFromTemplate?: boolean;
+};
+
+export type AddGoalProgressNoteRequest = AuthenticatedRequestContext & {
+  patientGoalId: string;
+  goalInterventionId?: string | null;
+  branchId?: string | null;
+  capturedByMembershipId?: string | null;
+  noteText: string;
+  capturedAt?: string | null;
+  progressionSummary?: string | null;
+  statusImpact?: string | null;
+};
+
+export type SaveCarePlanSyncRequest = AuthenticatedRequestContext & {
+  patientGoalId?: string;
+  carePlanSyncLinkId?: string;
+  branchId?: string | null;
+  careplanIdentifier: string;
+  syncStatus: CarePlanSyncStatus;
+  lastSyncedAt?: string | null;
+  syncSource?: string | null;
+};
+
+export type IncidentResponse = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  visitOccurrenceId: string | null;
+  incidentType: string;
+  severityLabel: string | null;
+  occurredAt: string;
+  reportedAt: string;
+  summary: string;
+  status: IncidentRecordStatus;
+  reportedByMembershipId: string | null;
+  resolvedAt: string | null;
+};
+
+export type InfectionResponse = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  relatedIncidentId: string | null;
+  onsetDate: string | null;
+  identifiedAt: string;
+  infectionType: string;
+  summary: string;
+  status: InfectionRecordStatus;
+  resolvedAt: string | null;
+};
+
+export type WoundResponse = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  identifiedAt: string;
+  woundTypeOrSite: string;
+  currentStatus: WoundRecordStatus;
+  baselineSummary: string | null;
+  active: boolean;
+  resolvedAt: string | null;
+};
+
+export type WoundHistoryResponse = {
+  id: string;
+  woundRecordId: string;
+  patientId: string;
+  branchId: string | null;
+  capturedAt: string;
+  observationSummary: string;
+  lengthCm: number | null;
+  widthCm: number | null;
+  depthCm: number | null;
+  progressionMarker: string | null;
+  capturedByMembershipId: string | null;
+};
+
+export type PatientEventEvidenceSourceType =
+  | 'PATIENT_ATTACHMENT'
+  | 'MOBILE_ARTIFACT'
+  | 'DOCUMENTATION_ATTACHMENT_LINK';
+
+export type PatientEventEvidenceLinkResponse = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  targetType: PatientEventTargetType;
+  targetId: string;
+  sourceType: PatientEventEvidenceSourceType | string;
+  patientAttachmentId: string | null;
+  mobileArtifactId: string | null;
+  documentationAttachmentLinkId: string | null;
+  linkedByMembershipId: string | null;
+  linkedAt: string;
+};
+
+export type PatientEventFollowUpResponse = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  targetType: PatientEventTargetType;
+  targetId: string;
+  ownerMembershipId: string | null;
+  ownerRole: AgencyRole | null;
+  assignedAt: string;
+  dueAt: string;
+  completionAt: string | null;
+  followUpNote: string | null;
+  status: PatientEventFollowUpStatus;
+};
+
+export type PatientEventEscalationResponse = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  targetType: PatientEventTargetType;
+  targetId: string;
+  status: PatientEventEscalationStatus;
+  severityLabel: string | null;
+  reasonTag: string | null;
+  escalatedByMembershipId: string | null;
+  escalatedAt: string;
+  clearedByMembershipId: string | null;
+  clearedAt: string | null;
+};
+
+export type PatientEventTimelineEntry = {
+  historyEntryType: PatientEventHistoryEntryType;
+  targetType: PatientEventTargetType;
+  targetId: string;
+  occurredAt: string;
+  branchId: string | null;
+  status: string | null;
+  severity: string | null;
+  summary: string;
+};
+
+export type PatientEventAlertResponse = {
+  patientId: string;
+  branchId: string | null;
+  alertType: string;
+  targetId: string | null;
+  targetType: PatientEventTargetType | null;
+  severity: string;
+  summary: string;
+};
+
+export type PatientEventSummaryResponse = {
+  patientId: string;
+  branchId: string | null;
+  openIncidentCount: number;
+  activeInfectionCount: number;
+  activeWoundCount: number;
+  openFollowUpCount: number;
+  activeEscalationCount: number;
+  alerts: PatientEventAlertResponse[];
+};
+
+export type CreatePatientEventInfectionRequest = AuthenticatedRequestContext & {
+  patientId: string;
+  branchId?: string;
+  relatedIncidentId?: string;
+  onsetDate?: string;
+  identifiedAt: string;
+  infectionType: string;
+  summary: string;
+  status?: InfectionRecordStatus;
+};
+
+export type CreatePatientEventWoundRequest = AuthenticatedRequestContext & {
+  patientId: string;
+  branchId?: string;
+  identifiedAt: string;
+  woundTypeOrSite: string;
+  currentStatus?: WoundRecordStatus;
+  baselineSummary?: string;
+};
+
+export type AddPatientEventWoundHistoryRequest = AuthenticatedRequestContext & {
+  woundId: string;
+  branchId?: string;
+  capturedAt: string;
+  observationSummary: string;
+  lengthCm?: number;
+  widthCm?: number;
+  depthCm?: number;
+  progressionMarker?: string;
+  capturedByMembershipId?: string;
+};
+
+export type LinkPatientEventEvidenceRequest = AuthenticatedRequestContext & {
+  targetType: PatientEventTargetType;
+  targetId: string;
+  branchId?: string;
+  patientAttachmentId?: string;
+  mobileArtifactId?: string;
+  documentationAttachmentLinkId?: string;
+  linkedByMembershipId?: string;
+  linkedAt: string;
+};
+
 export type MobileExecutionSessionStatus = 'IN_PROGRESS' | 'COMPLETED';
 
 export type MobileSyncDisposition = 'PENDING' | 'ACCEPTED' | 'FAILED';
@@ -2088,6 +2465,842 @@ export type PrintableDocumentationSummary = {
   fields: PrintableDocumentationField[];
   tasks: PrintableDocumentationTask[];
   attachments: PrintableDocumentationAttachment[];
+};
+
+export type ReviewLifecycleStatus =
+  | 'PENDING_REVIEW'
+  | 'ASSIGNED'
+  | 'IN_REVIEW'
+  | 'RETURNED_FOR_FIX'
+  | 'RESUBMITTED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'SIGNOFF_REQUESTED'
+  | 'SIGNOFF_COMPLETED';
+
+export type ReviewDecisionType = 'APPROVE' | 'REJECT' | 'RETURN_FOR_FIX' | 'REQUEST_SIGNOFF';
+
+export type ReviewSourceType =
+  | 'VISIT_DOCUMENTATION_RECORD'
+  | 'EVV_EXCEPTION_RECORD'
+  | 'MISSED_VISIT_RECORD'
+  | 'MOBILE_EXECUTION_SESSION';
+
+export type ReviewPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
+
+export type ReviewExceptionType =
+  | 'MISSING_SIGNATURE'
+  | 'MISSING_REQUIRED_DOCUMENTATION'
+  | 'EVV_EXCEPTION_CARRYOVER'
+  | 'RETURNED_WITH_OPEN_FINDING'
+  | 'REVIEWER_ESCALATION';
+
+export type ReviewFindingSeverity = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+export type ReviewFindingStatus = 'PASS' | 'WARNING' | 'FAIL';
+export type ReviewFindingKind = 'COMPLETENESS' | 'MISSING_FIELD';
+export type SignoffRequestStatus = 'PENDING' | 'COMPLETED' | 'DECLINED';
+
+export type ReviewWorkItemSummary = {
+  id: string;
+  sourceType: ReviewSourceType;
+  sourceRecordId: string;
+  branchId: string | null;
+  patientId: string | null;
+  visitOccurrenceId: string | null;
+  documentationRecordId: string | null;
+  status: ReviewLifecycleStatus;
+  priority: ReviewPriority;
+  exceptionDriven: boolean;
+  enteredQueueAt: string;
+  dueAt: string | null;
+  lastActivityAt: string | null;
+  resolvedAt: string | null;
+};
+
+export type ReviewAssignment = {
+  id: string;
+  workItemId: string;
+  reviewerMembershipId: string;
+  assignedByMembershipId: string;
+  assignedAt: string;
+  releasedAt: string | null;
+  assignmentNote: string | null;
+};
+
+export type ReviewDecision = {
+  id: string;
+  workItemId: string;
+  decisionType: ReviewDecisionType;
+  decidedByMembershipId: string;
+  decidedAt: string;
+  reasonCode: string | null;
+  reviewerNotes: string | null;
+};
+
+export type ReviewExceptionRecord = {
+  id: string;
+  exceptionType: ReviewExceptionType;
+  severity: ReviewFindingSeverity;
+  detectedAt: string;
+  resolvedAt: string | null;
+  resolutionNote: string | null;
+};
+
+export type ReviewFinding = {
+  id: string;
+  findingKind: ReviewFindingKind;
+  ruleCode: string;
+  severity: ReviewFindingSeverity;
+  findingStatus: ReviewFindingStatus;
+  fieldPath: string | null;
+  logicalSection: string | null;
+  explanation: string;
+  evaluatedAt: string;
+};
+
+export type MissingFieldResult = {
+  id: string;
+  ruleCode: string;
+  severity: ReviewFindingSeverity;
+  findingStatus: ReviewFindingStatus;
+  fieldPath: string | null;
+  logicalSection: string | null;
+  explanation: string;
+};
+
+export type CompletenessCheckResult = {
+  id: string;
+  evaluatedSourceType: ReviewSourceType;
+  evaluatedSourceId: string;
+  runNumber: number;
+  passCount: number;
+  warningCount: number;
+  failCount: number;
+  evaluatedAt: string;
+};
+
+export type ReviewCompletenessEvaluation = {
+  result: CompletenessCheckResult;
+  findings: ReviewFinding[];
+  missingFieldResults: MissingFieldResult[];
+};
+
+export type ReturnForFixEvent = {
+  id: string;
+  targetSourceType: ReviewSourceType;
+  targetSourceRecordId: string;
+  returnReason: string | null;
+  requiredCorrections: string | null;
+  returnedByMembershipId: string;
+  returnedAt: string;
+  resubmittedAt: string | null;
+  resolvedAt: string | null;
+};
+
+export type ReviewSignoffRequest = {
+  id: string;
+  workItemId: string;
+  requestedFromMembershipId: string | null;
+  requestedFromRole: AgencyRole | null;
+  requestedByMembershipId: string;
+  requestedAt: string;
+  status: SignoffRequestStatus;
+  signoffNote: string | null;
+  completedByMembershipId: string | null;
+  completedAt: string | null;
+};
+
+export type ReviewAuditEvent = {
+  id: string;
+  occurredAt: string;
+  actionType: string;
+  targetType: string;
+  targetId: string | null;
+  actorEmail: string | null;
+  branchId: string | null;
+  metadataJson: string | null;
+};
+
+export type ReviewQueueItem = {
+  workItem: ReviewWorkItemSummary;
+  activeAssignment: ReviewAssignment | null;
+  failCount: number;
+  warningCount: number;
+  openExceptionCount: number;
+};
+
+export type ReviewExceptionQueueItem = {
+  workItem: ReviewQueueItem;
+  exceptions: ReviewExceptionRecord[];
+};
+
+export type ReviewWorkItemDetail = {
+  workItem: ReviewWorkItemSummary;
+  activeAssignment: ReviewAssignment | null;
+  latestFindings: ReviewFinding[];
+  latestMissingFieldResults: MissingFieldResult[];
+  exceptions: ReviewExceptionRecord[];
+  decisions: ReviewDecision[];
+  signoffRequests: ReviewSignoffRequest[];
+};
+
+export type ReviewHistory = {
+  workItem: ReviewWorkItemSummary;
+  assignments: ReviewAssignment[];
+  decisions: ReviewDecision[];
+  returnForFixEvents: ReturnForFixEvent[];
+  signoffRequests: ReviewSignoffRequest[];
+  sourceAuditContext: ReviewAuditEvent[];
+};
+
+export type ComplianceReadinessStatus = 'READY' | 'WARNING' | 'NON_COMPLIANT' | 'UNKNOWN';
+export type CertificationPeriodStatus = 'CURRENT' | 'UPCOMING_EXPIRY' | 'EXPIRED' | 'MISSING';
+export type ComplianceChecklistResultStatus = 'PASS' | 'FAIL' | 'WARNING' | 'NOT_APPLICABLE';
+export type ComplianceEvaluationCategory = 'CHECKLIST_ITEM' | 'REQUIRED_DOCUMENTATION';
+export type ConsentAcknowledgmentStatus = 'ACTIVE' | 'EXPIRED' | 'REVOKED' | 'MISSING';
+export type PatientRiskReminderStatus = 'ACTIVE' | 'RESOLVED' | 'EXPIRED';
+
+export type ComplianceDashboardAggregate = {
+  branchId: string | null;
+  branchName: string;
+  totalPatients: number;
+  readyCount: number;
+  warningCount: number;
+  nonCompliantCount: number;
+  unknownCount: number;
+  activeRiskReminderCount: number;
+  acknowledgmentGapCount: number;
+};
+
+export type ComplianceDashboardPatientSummary = {
+  patientId: string;
+  branchId: string | null;
+  branchName: string;
+  firstName: string;
+  lastName: string;
+  readinessStatus: ComplianceReadinessStatus;
+  certificationPeriodStatus: CertificationPeriodStatus;
+  activeRiskReminderCount: number;
+  gapCount: number;
+  acknowledgmentGapCount: number;
+  evaluatedAt: string;
+};
+
+export type ComplianceStatusProjection = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  checklistPassCount: number;
+  checklistWarningCount: number;
+  checklistFailCount: number;
+  documentationSatisfiedCount: number;
+  documentationWarningCount: number;
+  documentationUnsatisfiedCount: number;
+  missingAcknowledgmentCount: number;
+  expiredAcknowledgmentCount: number;
+  certificationPeriodStatus: CertificationPeriodStatus;
+  activeRiskReminderCount: number;
+  readinessStatus: ComplianceReadinessStatus;
+  evaluatedAt: string;
+};
+
+export type ComplianceChecklistResult = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  evaluationCategory: ComplianceEvaluationCategory;
+  checklistDefinitionId: string | null;
+  documentationRequirementId: string | null;
+  resultCode: string;
+  resultStatus: ComplianceChecklistResultStatus;
+  evidenceSourceType: string | null;
+  evidenceSourceId: string | null;
+  evidenceSummary: string | null;
+  evaluationOrigin: string | null;
+  contextPeriodStart: string | null;
+  contextPeriodEnd: string | null;
+  satisfiedByRecordType: string | null;
+  satisfiedByRecordId: string | null;
+  missingReason: string | null;
+  evaluatedAt: string;
+};
+
+export type ConsentAcknowledgmentRecord = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  acknowledgmentType: string;
+  effectiveAt: string;
+  expiresAt: string | null;
+  capturedByMembershipId: string | null;
+  captureMethod: string | null;
+  supportingArtifactType: string | null;
+  supportingArtifactId: string | null;
+  status: ConsentAcknowledgmentStatus;
+  revokedAt: string | null;
+};
+
+export type CertificationPeriodRecord = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  patientPayerLinkId: string | null;
+  programContext: string | null;
+  startDate: string;
+  endDate: string;
+  recordState: string;
+  source: string | null;
+};
+
+export type PatientRiskReminder = {
+  id: string;
+  patientId: string;
+  branchId: string | null;
+  visitOccurrenceId: string | null;
+  documentationRecordId: string | null;
+  riskType: string;
+  severityLabel: string | null;
+  summary: string;
+  effectiveAt: string;
+  expiresAt: string | null;
+  sourceContextType: string | null;
+  sourceRecordId: string | null;
+  status: PatientRiskReminderStatus;
+  resolvedAt: string | null;
+};
+
+export type PatientComplianceWorkspace = {
+  projection: ComplianceStatusProjection | null;
+  results: ComplianceChecklistResult[];
+  acknowledgments: ConsentAcknowledgmentRecord[];
+  certificationPeriods: CertificationPeriodRecord[];
+  reminders: PatientRiskReminder[];
+};
+
+export type RevenueReadinessStatus = 'READY' | 'WARNING' | 'BLOCKED';
+export type RevenueExceptionType =
+  | 'INCOMPLETE_VISIT'
+  | 'MISSING_DOCUMENTATION'
+  | 'MISSING_SIGNATURE'
+  | 'PAYER_SERVICE_MISMATCH'
+  | 'AUTHORIZATION_ISSUE';
+
+export type RevenueReadinessSummaryResponse = {
+  visitOccurrenceId: string;
+  patientId: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  readinessStatus: RevenueReadinessStatus;
+  exceptionCount: number;
+  warningCount: number;
+  payerName: string | null;
+  evaluatedAt: string;
+};
+
+export type RevenueValidationResultResponse = {
+  outcome: 'PASS' | 'WARNING' | 'FAIL';
+  reasonCode: string;
+  summary: string;
+  evaluatedAt: string;
+};
+
+export type RevenuePayerServiceSummaryResponse = {
+  visitOccurrenceId: string;
+  patientId: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  payerName: string | null;
+  payerExternalId: string | null;
+  memberPolicyNumber: string | null;
+  authorizationId: string | null;
+  authorizationNumber: string | null;
+  serviceLineCode: string | null;
+  serviceLineName: string | null;
+  primaryPayer: boolean;
+  summarizedAt: string;
+};
+
+export type RevenueAuthorizationUsageSummaryResponse = {
+  authorizationId: string;
+  patientId: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  authorizedUnits: number | null;
+  usedUnits: number;
+  remainingUnits: number | null;
+  usagePosture: string;
+  countedVisitCount: number;
+  evaluatedAt: string;
+};
+
+export type RevenueReadinessDetailResponse = {
+  summary: RevenueReadinessSummaryResponse;
+  completionValidation: RevenueValidationResultResponse | null;
+  signatureValidation: RevenueValidationResultResponse | null;
+  authorizationUsage: RevenueAuthorizationUsageSummaryResponse | null;
+  payerServiceSummary: RevenuePayerServiceSummaryResponse | null;
+  exportLifecycleStatus: string;
+};
+
+export type RevenueExceptionFlagResponse = {
+  id: string;
+  targetType: string;
+  targetId: string;
+  exceptionType: RevenueExceptionType;
+  severity: string;
+  reasonCode: string;
+  summary: string;
+  detectedAt: string;
+  clearedAt: string | null;
+  branchId: string | null;
+};
+
+export type RevenueExportPreviewResponse = {
+  visitOccurrenceId: string;
+  readinessStatus: RevenueReadinessStatus;
+  payerName: string | null;
+  caregiverProfileId: string | null;
+  unitsOrMinutes: number;
+  exportable: boolean;
+  blockedReason: string | null;
+};
+
+export type PayrollExportRowResponse = {
+  id: string;
+  visitOccurrenceId: string;
+  patientId: string | null;
+  caregiverProfileId: string | null;
+  branchId: string | null;
+  serviceLineId: string | null;
+  scheduledStartAt: string | null;
+  scheduledEndAt: string | null;
+  performedStartAt: string | null;
+  performedEndAt: string | null;
+  durationMinutes: number;
+  readinessStatus: RevenueReadinessStatus;
+  exportLifecycleStatus: string;
+  generatedAt: string;
+};
+
+export type InvoiceExportRowResponse = {
+  id: string;
+  visitOccurrenceId: string;
+  patientId: string | null;
+  caregiverProfileId: string | null;
+  branchId: string | null;
+  serviceLineId: string | null;
+  payerName: string | null;
+  authorizationId: string | null;
+  authorizationNumber: string | null;
+  scheduledStartAt: string | null;
+  scheduledEndAt: string | null;
+  performedStartAt: string | null;
+  performedEndAt: string | null;
+  billableUnits: number;
+  readinessStatus: RevenueReadinessStatus;
+  exportLifecycleStatus: string;
+  generatedAt: string;
+};
+
+export type RevenueAuditEventResponse = {
+  id: string;
+  actionType: string;
+  targetType: string;
+  targetId: string;
+  branchId: string | null;
+  occurredAt: string;
+  metadataJson: string | null;
+};
+
+export type RevenueHistoryResponse = {
+  projection: RevenueReadinessDetailResponse | null;
+  exceptionFlags: RevenueExceptionFlagResponse[];
+  payrollExports: PayrollExportRowResponse[];
+  invoiceExports: InvoiceExportRowResponse[];
+  auditEvents: RevenueAuditEventResponse[];
+};
+
+export type RevenueReadinessQuery = AuthenticatedRequestContext & {
+  branchId?: string;
+  readinessStatus?: RevenueReadinessStatus | 'ALL';
+  exceptionType?: RevenueExceptionType | 'ALL';
+  payer?: string;
+  serviceLineId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
+};
+
+export type RevenueExceptionQuery = AuthenticatedRequestContext & {
+  branchId?: string;
+  exceptionType?: RevenueExceptionType | 'ALL';
+  payer?: string;
+  serviceLineId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
+};
+
+export type GenerateRevenueExportRequest = AuthenticatedRequestContext & {
+  visitOccurrenceId: string;
+  allowBlocked?: boolean;
+  generatedAt?: string;
+};
+
+export type AnalyticsMetricType =
+  | 'TODAYS_VISITS'
+  | 'UNFILLED_VISITS'
+  | 'LATE_STARTS'
+  | 'MISSED_VISITS'
+  | 'DOCUMENTATION_AGING'
+  | 'QA_BACKLOG'
+  | 'CAREGIVER_UTILIZATION'
+  | 'BRANCH_PERFORMANCE'
+  | 'REVENUE_READINESS'
+  | 'COMPLIANCE_EXCEPTIONS';
+
+export type AnalyticsDashboardSnapshotResponse = {
+  id: string;
+  branchId: string | null;
+  snapshotDate: string;
+  todaysVisitCount: number;
+  unfilledVisitCount: number;
+  lateStartCount: number;
+  missedVisitCount: number;
+  documentationAgingCount: number;
+  qaBacklogCount: number;
+  caregiverUtilizationCount: number;
+  revenueBlockedCount: number;
+  complianceExceptionCount: number;
+  generatedAt: string;
+};
+
+export type AnalyticsMetricSnapshotResponse = {
+  id: string;
+  metricType: AnalyticsMetricType;
+  metricScope: string;
+  branchId: string | null;
+  snapshotDate: string;
+  primaryValue: number;
+  secondaryValue: number;
+  statusCode: string | null;
+  drilldownReference: string;
+  capturedAt: string;
+};
+
+export type AnalyticsBranchPerformanceSummaryResponse = {
+  id: string;
+  branchId: string | null;
+  snapshotDate: string;
+  todaysVisitCount: number;
+  unfilledVisitCount: number;
+  lateStartCount: number;
+  missedVisitCount: number;
+  documentationAgingCount: number;
+  qaBacklogCount: number;
+  performancePosture: string;
+  evaluatedAt: string;
+};
+
+export type AnalyticsUtilizationSummaryResponse = {
+  id: string;
+  branchId: string | null;
+  caregiverProfileId: string;
+  snapshotDate: string;
+  assignedVisitCount: number;
+  completedVisitCount: number;
+  scheduledMinutes: number;
+  utilizationPosture: string;
+  evaluatedAt: string;
+};
+
+export type AnalyticsBacklogSummaryResponse = {
+  id: string;
+  branchId: string | null;
+  snapshotDate: string;
+  documentationAgingCount: number;
+  agingBucketsJson: string;
+  pendingReviewCount: number;
+  returnedForFixCount: number;
+  overdueReviewCount: number;
+  backlogPosture: string;
+  evaluatedAt: string;
+};
+
+export type AnalyticsReadinessComplianceSummaryResponse = {
+  id: string;
+  branchId: string | null;
+  snapshotDate: string;
+  revenueReadyCount: number;
+  revenueWarningCount: number;
+  revenueBlockedCount: number;
+  complianceReadyCount: number;
+  complianceWarningCount: number;
+  complianceExceptionCount: number;
+  evaluatedAt: string;
+};
+
+export type AnalyticsDashboardSummaryResponse = {
+  dashboardSnapshot: AnalyticsDashboardSnapshotResponse | null;
+  branchPerformanceSummaries: AnalyticsBranchPerformanceSummaryResponse[];
+  backlogSummaries: AnalyticsBacklogSummaryResponse[];
+  readinessComplianceSummaries: AnalyticsReadinessComplianceSummaryResponse[];
+};
+
+export type AnalyticsOperationalDrilldownResponse = {
+  visitOccurrenceId: string;
+  patientId: string;
+  branchId: string | null;
+  caregiverProfileId: string | null;
+  caregiverDisplayName: string | null;
+  plannedStartAt: string;
+  plannedEndAt: string;
+  visitStatus: string;
+  detailStatus: string;
+};
+
+export type AnalyticsBacklogDrilldownResponse = {
+  reviewWorkItemId: string;
+  sourceRecordId: string;
+  patientId: string;
+  branchId: string | null;
+  status: string;
+  priority: string | null;
+  enteredQueueAt: string;
+  dueAt: string | null;
+  overdue: boolean;
+};
+
+export type AnalyticsReadinessDrilldownResponse = {
+  visitOccurrenceId: string;
+  patientId: string;
+  branchId: string | null;
+  readinessStatus: string;
+  exceptionCount: number;
+  warningCount: number;
+  evaluatedAt: string;
+};
+
+export type AnalyticsComplianceDrilldownResponse = {
+  patientId: string;
+  branchId: string | null;
+  serviceLineId: string | null;
+  readinessStatus: string;
+  certificationPeriodStatus: string;
+  activeRiskReminderCount: number;
+  gapCount: number;
+  evaluatedAt: string;
+};
+
+export type AnalyticsMetricTrendSnapshotResponse = {
+  id: string;
+  metricType: AnalyticsMetricType;
+  branchId: string | null;
+  snapshotDate: string;
+  currentValue: number;
+  previousValue: number;
+  deltaValue: number;
+  direction: string;
+  calculatedAt: string;
+};
+
+export type AnalyticsAuditEventResponse = {
+  id: string;
+  actionType: string;
+  outcome: string;
+  targetType: string;
+  targetId: string;
+  branchId: string | null;
+  occurredAt: string;
+  metadataJson: string | null;
+};
+
+export type AnalyticsDashboardAnalyticsResponse = {
+  dashboardSnapshot: AnalyticsDashboardSnapshotResponse | null;
+  metricSnapshots: AnalyticsMetricSnapshotResponse[];
+  branchPerformanceSummaries: AnalyticsBranchPerformanceSummaryResponse[];
+  utilizationSummaries: AnalyticsUtilizationSummaryResponse[];
+  backlogSummaries: AnalyticsBacklogSummaryResponse[];
+  readinessComplianceSummaries: AnalyticsReadinessComplianceSummaryResponse[];
+  trendSnapshots: AnalyticsMetricTrendSnapshotResponse[];
+};
+
+export type AnalyticsSummaryQuery = AuthenticatedRequestContext & {
+  snapshotDate: string;
+  branchId?: string;
+};
+
+export type AnalyticsMetricQuery = AnalyticsSummaryQuery & {
+  metricType?: AnalyticsMetricType | 'ALL';
+  page?: number;
+  size?: number;
+};
+
+export type AnalyticsOperationalQuery = AnalyticsSummaryQuery & {
+  metricType: AnalyticsMetricType;
+  status?: string;
+  page?: number;
+  size?: number;
+};
+
+export type AnalyticsBacklogQuery = AnalyticsSummaryQuery & {
+  status?: string;
+  page?: number;
+  size?: number;
+};
+
+export type AnalyticsRevenueQuery = AnalyticsSummaryQuery & {
+  readinessStatus?: RevenueReadinessStatus | 'ALL';
+  page?: number;
+  size?: number;
+};
+
+export type AnalyticsComplianceQuery = AuthenticatedRequestContext & {
+  branchId?: string;
+  readinessStatus?: ComplianceReadinessStatus | 'ALL';
+  page?: number;
+  size?: number;
+};
+
+export type AnalyticsUtilizationQuery = AnalyticsSummaryQuery & {
+  caregiverProfileId?: string;
+  page?: number;
+  size?: number;
+};
+
+export type AnalyticsHistoryQuery = AuthenticatedRequestContext & {
+  fromDate?: string;
+  toDate?: string;
+  branchId?: string;
+  page?: number;
+  size?: number;
+};
+
+export type RefreshAnalyticsDashboardRequest = AuthenticatedRequestContext & {
+  snapshotDate: string;
+  branchId?: string | null;
+  evaluatedAt?: string | null;
+  lateStartThresholdMinutes?: number;
+  includeTrendSnapshots?: boolean;
+};
+
+export type ComplianceDashboardQuery = AuthenticatedRequestContext & {
+  branchId?: string;
+  readinessStatus?: ComplianceReadinessStatus | 'ALL';
+};
+
+export type ComplianceDashboardPatientQuery = ComplianceDashboardQuery & {
+  certificationPeriodStatus?: CertificationPeriodStatus | 'ALL';
+  riskSeverity?: string;
+  page?: number;
+  size?: number;
+};
+
+export type PatientComplianceQuery = AuthenticatedRequestContext & {
+  patientId: string;
+  branchId?: string;
+  serviceLineId?: string;
+};
+
+export type SaveComplianceAcknowledgmentRequest = AuthenticatedRequestContext & {
+  patientId: string;
+  acknowledgmentId?: string;
+  branchId?: string | null;
+  acknowledgmentType: string;
+  effectiveAt: string;
+  expiresAt?: string | null;
+  capturedByMembershipId?: string | null;
+  captureMethod?: string | null;
+  supportingArtifactType?: string | null;
+  supportingArtifactId?: string | null;
+};
+
+export type SaveCertificationPeriodRequest = AuthenticatedRequestContext & {
+  patientId: string;
+  certificationPeriodId?: string;
+  branchId?: string | null;
+  patientPayerLinkId?: string | null;
+  programContext?: string | null;
+  startDate: string;
+  endDate: string;
+  closed?: boolean;
+  source?: string | null;
+};
+
+export type SavePatientRiskReminderRequest = AuthenticatedRequestContext & {
+  patientId: string;
+  reminderId?: string;
+  branchId?: string | null;
+  visitOccurrenceId?: string | null;
+  documentationRecordId?: string | null;
+  riskType: string;
+  severityLabel?: string | null;
+  summary: string;
+  effectiveAt: string;
+  expiresAt?: string | null;
+  sourceContextType?: string | null;
+  sourceRecordId?: string | null;
+};
+
+export type RecalculateComplianceStatusRequest = AuthenticatedRequestContext & {
+  patientId: string;
+  branchId?: string | null;
+  serviceLineId?: string | null;
+  requiredAcknowledgmentTypes: string[];
+  certificationExpiryWarningDays: number;
+  evaluatedAt?: string | null;
+};
+
+export type ReviewQueueQuery = AuthenticatedRequestContext & {
+  branchId?: string;
+  assignedReviewerMembershipId?: string;
+  status?: ReviewLifecycleStatus | 'ALL';
+  sourceType?: ReviewSourceType | 'ALL';
+  dueFrom?: string;
+  dueTo?: string;
+  page?: number;
+  size?: number;
+};
+
+export type ReviewExceptionQueueQuery = ReviewQueueQuery & {
+  exceptionType?: ReviewExceptionType | 'ALL';
+  exceptionSeverity?: ReviewFindingSeverity | 'ALL';
+};
+
+export type AssignReviewWorkItemRequest = AuthenticatedRequestContext & {
+  workItemId: string;
+  reviewerMembershipId: string;
+  assignedAt?: string;
+  assignmentNote?: string;
+};
+
+export type RecordReviewDecisionRequest = AuthenticatedRequestContext & {
+  workItemId: string;
+  decisionType: ReviewDecisionType;
+  decidedAt?: string;
+  reasonCode?: string;
+  reviewerNotes?: string;
+  returnReason?: string;
+  requiredCorrections?: string;
+};
+
+export type RequestReviewSignoffRequest = AuthenticatedRequestContext & {
+  workItemId: string;
+  requestedFromMembershipId?: string;
+  requestedFromRole?: AgencyRole;
+  requestedAt?: string;
+  signoffNote?: string;
+};
+
+export type CompleteReviewSignoffRequest = AuthenticatedRequestContext & {
+  workItemId: string;
+  completedAt?: string;
+  approved: boolean;
+  signoffNote?: string;
 };
 
 export type BranchPolicySummary = {
@@ -8837,6 +10050,2525 @@ export async function fetchPrintableDocumentationSummary(
   return payload as PrintableDocumentationSummary;
 }
 
+export async function fetchReviewQueue(
+  request: ReviewQueueQuery,
+): Promise<ConfigurationPage<ReviewQueueItem>> {
+  const url = new URL(apiUrl('/api/review/work-items'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    assignedReviewerMembershipId:
+      request.assignedReviewerMembershipId && request.assignedReviewerMembershipId !== 'ALL'
+        ? request.assignedReviewerMembershipId
+        : undefined,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    sourceType: request.sourceType && request.sourceType !== 'ALL' ? request.sourceType : undefined,
+    dueFrom: request.dueFrom,
+    dueTo: request.dueTo,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<ReviewQueueItem>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review queue request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<ReviewQueueItem>;
+}
+
+export async function fetchReviewExceptionQueue(
+  request: ReviewExceptionQueueQuery,
+): Promise<ConfigurationPage<ReviewExceptionQueueItem>> {
+  const url = new URL(apiUrl('/api/review/exception-queue'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    assignedReviewerMembershipId:
+      request.assignedReviewerMembershipId && request.assignedReviewerMembershipId !== 'ALL'
+        ? request.assignedReviewerMembershipId
+        : undefined,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    sourceType: request.sourceType && request.sourceType !== 'ALL' ? request.sourceType : undefined,
+    exceptionType:
+      request.exceptionType && request.exceptionType !== 'ALL' ? request.exceptionType : undefined,
+    exceptionSeverity:
+      request.exceptionSeverity && request.exceptionSeverity !== 'ALL'
+        ? request.exceptionSeverity
+        : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<ReviewExceptionQueueItem>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review exception queue request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<ReviewExceptionQueueItem>;
+}
+
+export async function fetchGoalTemplates(
+  request: AuthenticatedRequestContext & {
+    branchId?: string;
+    status?: GoalTemplateLifecycleStatus | 'ALL';
+  },
+): Promise<GoalTemplateResponse[]> {
+  const url = new URL(apiUrl('/api/care-progression/goal-templates'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalTemplateResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal template request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalTemplateResponse[];
+}
+
+export async function fetchPatientGoals(
+  request: AuthenticatedRequestContext & {
+    patientId?: string;
+    branchId?: string;
+    status?: PatientGoalLifecycleStatus | 'ALL';
+  },
+): Promise<PatientGoalResponse[]> {
+  const url = new URL(apiUrl('/api/care-progression/patient-goals'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    patientId: request.patientId,
+    branchId: request.branchId,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientGoalResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient goal request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientGoalResponse[];
+}
+
+export async function fetchPatientGoal(
+  request: AuthenticatedRequestContext & { patientGoalId: string },
+): Promise<PatientGoalResponse> {
+  const response = await fetch(apiUrl(`/api/care-progression/patient-goals/${request.patientGoalId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientGoalResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient goal detail request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientGoalResponse;
+}
+
+export async function fetchGoalInterventions(
+  request: AuthenticatedRequestContext & { patientGoalId: string },
+): Promise<GoalInterventionResponse[]> {
+  const response = await fetch(
+    apiUrl(`/api/care-progression/patient-goals/${request.patientGoalId}/interventions`),
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalInterventionResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal intervention request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalInterventionResponse[];
+}
+
+export async function fetchGoalProgressNotes(
+  request: AuthenticatedRequestContext & { patientGoalId: string },
+): Promise<GoalProgressNoteResponse[]> {
+  const response = await fetch(
+    apiUrl(`/api/care-progression/patient-goals/${request.patientGoalId}/progress-notes`),
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalProgressNoteResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal progress-note request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalProgressNoteResponse[];
+}
+
+export async function fetchGoalVersions(
+  request: AuthenticatedRequestContext & { patientGoalId: string },
+): Promise<GoalVersionResponse[]> {
+  const response = await fetch(
+    apiUrl(`/api/care-progression/patient-goals/${request.patientGoalId}/versions`),
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalVersionResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal version-history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalVersionResponse[];
+}
+
+export async function fetchCarePlanSyncLinks(
+  request: AuthenticatedRequestContext & { patientGoalId: string },
+): Promise<CarePlanSyncResponse[]> {
+  const response = await fetch(
+    apiUrl(`/api/care-progression/patient-goals/${request.patientGoalId}/careplan-sync`),
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | CarePlanSyncResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Care-plan sync request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as CarePlanSyncResponse[];
+}
+
+export async function fetchPatientProgressionSummary(
+  request: AuthenticatedRequestContext & { patientId: string; branchId?: string },
+): Promise<PatientProgressionSummaryResponse> {
+  const url = new URL(
+    apiUrl(`/api/care-progression/patients/${request.patientId}/summary`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientProgressionSummaryResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient progression summary request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientProgressionSummaryResponse;
+}
+
+export async function saveGoalTemplate(
+  request: SaveGoalTemplateRequest,
+): Promise<GoalTemplateResponse> {
+  const isUpdate = Boolean(request.goalTemplateId);
+  const response = await fetch(
+    apiUrl(
+      isUpdate
+        ? `/api/care-progression/goal-templates/${request.goalTemplateId}`
+        : '/api/care-progression/goal-templates',
+    ),
+    {
+      method: isUpdate ? 'PUT' : 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        branchId: request.branchId || null,
+        serviceLineId: request.serviceLineId || null,
+        name: request.name,
+        description: request.description || null,
+        targetOutcomeGuidance: request.targetOutcomeGuidance || null,
+        defaultInterventionScaffold: request.defaultInterventionScaffold || null,
+        status: request.status || null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalTemplateResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal template save failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalTemplateResponse;
+}
+
+export async function deactivateGoalTemplate(
+  request: AuthenticatedRequestContext & { goalTemplateId: string },
+): Promise<GoalTemplateResponse> {
+  const response = await fetch(apiUrl(`/api/care-progression/goal-templates/${request.goalTemplateId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalTemplateResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal template deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalTemplateResponse;
+}
+
+export async function savePatientGoal(
+  request: SavePatientGoalRequest,
+): Promise<PatientGoalResponse> {
+  const isUpdate = Boolean(request.patientGoalId);
+  const response = await fetch(
+    apiUrl(
+      isUpdate
+        ? `/api/care-progression/patient-goals/${request.patientGoalId}`
+        : '/api/care-progression/patient-goals',
+    ),
+    {
+      method: isUpdate ? 'PUT' : 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        patientId: request.patientId,
+        branchId: request.branchId || null,
+        goalTemplateId: request.goalTemplateId || null,
+        ownerMembershipId: request.ownerMembershipId || null,
+        title: request.title,
+        description: request.description || null,
+        targetDate: request.targetDate || null,
+        createdAt: request.createdAt || null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientGoalResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient goal save failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientGoalResponse;
+}
+
+export async function transitionPatientGoalState(
+  request: TransitionPatientGoalStateRequest,
+): Promise<PatientGoalResponse> {
+  const response = await fetch(
+    apiUrl(`/api/care-progression/patient-goals/${request.patientGoalId}/state-transitions`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        status: request.status,
+        changedAt: request.changedAt || null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientGoalResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal state transition failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientGoalResponse;
+}
+
+export async function saveGoalIntervention(
+  request: SaveGoalInterventionRequest,
+): Promise<GoalInterventionResponse> {
+  const isUpdate = Boolean(request.interventionId);
+  const url = isUpdate
+    ? `/api/care-progression/interventions/${request.interventionId}`
+    : `/api/care-progression/patient-goals/${request.patientGoalId}/interventions`;
+  const response = await fetch(apiUrl(url), {
+    method: isUpdate ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId || null,
+      ownerMembershipId: request.ownerMembershipId || null,
+      title: request.title,
+      description: request.description || null,
+      targetDate: request.targetDate || null,
+      status: request.status || null,
+      derivedFromTemplate: request.derivedFromTemplate ?? false,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalInterventionResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal intervention save failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalInterventionResponse;
+}
+
+export async function deactivateGoalIntervention(
+  request: AuthenticatedRequestContext & { interventionId: string },
+): Promise<GoalInterventionResponse> {
+  const response = await fetch(apiUrl(`/api/care-progression/interventions/${request.interventionId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalInterventionResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal intervention deactivation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalInterventionResponse;
+}
+
+export async function addGoalProgressNote(
+  request: AddGoalProgressNoteRequest,
+): Promise<GoalProgressNoteResponse> {
+  const response = await fetch(
+    apiUrl(`/api/care-progression/patient-goals/${request.patientGoalId}/progress-notes`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        goalInterventionId: request.goalInterventionId || null,
+        branchId: request.branchId || null,
+        capturedByMembershipId: request.capturedByMembershipId || null,
+        noteText: request.noteText,
+        capturedAt: request.capturedAt || null,
+        progressionSummary: request.progressionSummary || null,
+        statusImpact: request.statusImpact || null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | GoalProgressNoteResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Goal progress-note save failed with status ${response.status}`,
+    );
+  }
+
+  return payload as GoalProgressNoteResponse;
+}
+
+export async function saveCarePlanSyncLink(
+  request: SaveCarePlanSyncRequest,
+): Promise<CarePlanSyncResponse> {
+  const isUpdate = Boolean(request.carePlanSyncLinkId);
+  const url = isUpdate
+    ? `/api/care-progression/careplan-sync/${request.carePlanSyncLinkId}`
+    : `/api/care-progression/patient-goals/${request.patientGoalId}/careplan-sync`;
+  const response = await fetch(apiUrl(url), {
+    method: isUpdate ? 'PUT' : 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId || null,
+      careplanIdentifier: request.careplanIdentifier,
+      syncStatus: request.syncStatus,
+      lastSyncedAt: request.lastSyncedAt || null,
+      syncSource: request.syncSource || null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | CarePlanSyncResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Care-plan sync save failed with status ${response.status}`,
+    );
+  }
+
+  return payload as CarePlanSyncResponse;
+}
+
+export async function fetchComplianceDashboard(
+  request: ComplianceDashboardQuery,
+): Promise<ComplianceDashboardAggregate[]> {
+  const url = new URL(apiUrl('/api/compliance/dashboard'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    readinessStatus:
+      request.readinessStatus && request.readinessStatus !== 'ALL'
+        ? request.readinessStatus
+        : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ComplianceDashboardAggregate[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Compliance dashboard request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ComplianceDashboardAggregate[];
+}
+
+export async function fetchComplianceDashboardPatients(
+  request: ComplianceDashboardPatientQuery,
+): Promise<ConfigurationPage<ComplianceDashboardPatientSummary>> {
+  const url = new URL(apiUrl('/api/compliance/dashboard/patients'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    readinessStatus:
+      request.readinessStatus && request.readinessStatus !== 'ALL'
+        ? request.readinessStatus
+        : undefined,
+    certificationPeriodStatus:
+      request.certificationPeriodStatus && request.certificationPeriodStatus !== 'ALL'
+        ? request.certificationPeriodStatus
+        : undefined,
+    riskSeverity: request.riskSeverity?.trim() || undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<ComplianceDashboardPatientSummary>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Compliance dashboard patient request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<ComplianceDashboardPatientSummary>;
+}
+
+export async function fetchPatientComplianceWorkspace(
+  request: AuthenticatedRequestContext & {
+    patientId: string;
+    branchId?: string;
+    serviceLineId?: string;
+  },
+): Promise<PatientComplianceWorkspace> {
+  const url = new URL(apiUrl(`/api/compliance/patients/${request.patientId}`), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId,
+    serviceLineId: request.serviceLineId,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientComplianceWorkspace
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient compliance workspace request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientComplianceWorkspace;
+}
+
+export async function fetchComplianceChecklistResults(
+  request: PatientComplianceQuery,
+): Promise<ComplianceChecklistResult[]> {
+  const url = new URL(
+    apiUrl(`/api/compliance/patients/${request.patientId}/checklist-results`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId,
+    serviceLineId: request.serviceLineId,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ComplianceChecklistResult[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Compliance checklist results request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ComplianceChecklistResult[];
+}
+
+export async function fetchComplianceDocumentationResults(
+  request: PatientComplianceQuery,
+): Promise<ComplianceChecklistResult[]> {
+  const url = new URL(
+    apiUrl(`/api/compliance/patients/${request.patientId}/documentation-results`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId,
+    serviceLineId: request.serviceLineId,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ComplianceChecklistResult[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Compliance documentation results request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ComplianceChecklistResult[];
+}
+
+export async function createComplianceAcknowledgment(
+  request: SaveComplianceAcknowledgmentRequest,
+): Promise<ConsentAcknowledgmentRecord> {
+  const response = await fetch(apiUrl(`/api/compliance/patients/${request.patientId}/acknowledgments`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId ?? null,
+      acknowledgmentType: request.acknowledgmentType,
+      effectiveAt: request.effectiveAt,
+      expiresAt: request.expiresAt ?? null,
+      capturedByMembershipId: request.capturedByMembershipId ?? null,
+      captureMethod: request.captureMethod ?? null,
+      supportingArtifactType: request.supportingArtifactType ?? null,
+      supportingArtifactId: request.supportingArtifactId ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConsentAcknowledgmentRecord
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Compliance acknowledgment creation failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as ConsentAcknowledgmentRecord;
+}
+
+export async function updateComplianceAcknowledgment(
+  request: SaveComplianceAcknowledgmentRequest & { acknowledgmentId: string },
+): Promise<ConsentAcknowledgmentRecord> {
+  const response = await fetch(
+    apiUrl(`/api/compliance/patients/${request.patientId}/acknowledgments/${request.acknowledgmentId}`),
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        branchId: request.branchId ?? null,
+        acknowledgmentType: request.acknowledgmentType,
+        effectiveAt: request.effectiveAt,
+        expiresAt: request.expiresAt ?? null,
+        capturedByMembershipId: request.capturedByMembershipId ?? null,
+        captureMethod: request.captureMethod ?? null,
+        supportingArtifactType: request.supportingArtifactType ?? null,
+        supportingArtifactId: request.supportingArtifactId ?? null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConsentAcknowledgmentRecord
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Compliance acknowledgment update failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as ConsentAcknowledgmentRecord;
+}
+
+export async function revokeComplianceAcknowledgment(
+  request: AuthenticatedRequestContext & {
+    patientId: string;
+    acknowledgmentId: string;
+    revokedAt?: string | null;
+  },
+): Promise<ConsentAcknowledgmentRecord> {
+  const url = new URL(
+    apiUrl(`/api/compliance/patients/${request.patientId}/acknowledgments/${request.acknowledgmentId}`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(url, {
+    revokedAt: request.revokedAt ?? undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConsentAcknowledgmentRecord
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Compliance acknowledgment revoke failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as ConsentAcknowledgmentRecord;
+}
+
+export async function createCertificationPeriod(
+  request: SaveCertificationPeriodRequest,
+): Promise<CertificationPeriodRecord> {
+  const response = await fetch(
+    apiUrl(`/api/compliance/patients/${request.patientId}/certification-periods`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        branchId: request.branchId ?? null,
+        patientPayerLinkId: request.patientPayerLinkId ?? null,
+        programContext: request.programContext ?? null,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        closed: request.closed ?? false,
+        source: request.source ?? null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | CertificationPeriodRecord
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Certification period creation failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as CertificationPeriodRecord;
+}
+
+export async function updateCertificationPeriod(
+  request: SaveCertificationPeriodRequest & { certificationPeriodId: string },
+): Promise<CertificationPeriodRecord> {
+  const response = await fetch(
+    apiUrl(
+      `/api/compliance/patients/${request.patientId}/certification-periods/${request.certificationPeriodId}`,
+    ),
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        branchId: request.branchId ?? null,
+        patientPayerLinkId: request.patientPayerLinkId ?? null,
+        programContext: request.programContext ?? null,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        closed: request.closed ?? false,
+        source: request.source ?? null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | CertificationPeriodRecord
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Certification period update failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as CertificationPeriodRecord;
+}
+
+export async function closeCertificationPeriod(
+  request: SaveCertificationPeriodRequest & { certificationPeriodId: string },
+): Promise<CertificationPeriodRecord> {
+  const response = await fetch(
+    apiUrl(
+      `/api/compliance/patients/${request.patientId}/certification-periods/${request.certificationPeriodId}/close`,
+    ),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        branchId: request.branchId ?? null,
+        patientPayerLinkId: request.patientPayerLinkId ?? null,
+        programContext: request.programContext ?? null,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        source: request.source ?? null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | CertificationPeriodRecord
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Certification period close failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as CertificationPeriodRecord;
+}
+
+export async function createPatientRiskReminder(
+  request: SavePatientRiskReminderRequest,
+): Promise<PatientRiskReminder> {
+  const response = await fetch(apiUrl(`/api/compliance/patients/${request.patientId}/risk-reminders`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId ?? null,
+      visitOccurrenceId: request.visitOccurrenceId ?? null,
+      documentationRecordId: request.documentationRecordId ?? null,
+      riskType: request.riskType,
+      severityLabel: request.severityLabel ?? null,
+      summary: request.summary,
+      effectiveAt: request.effectiveAt,
+      expiresAt: request.expiresAt ?? null,
+      sourceContextType: request.sourceContextType ?? null,
+      sourceRecordId: request.sourceRecordId ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientRiskReminder
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient risk reminder creation failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as PatientRiskReminder;
+}
+
+export async function updatePatientRiskReminder(
+  request: SavePatientRiskReminderRequest & { reminderId: string },
+): Promise<PatientRiskReminder> {
+  const response = await fetch(
+    apiUrl(`/api/compliance/patients/${request.patientId}/risk-reminders/${request.reminderId}`),
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        branchId: request.branchId ?? null,
+        visitOccurrenceId: request.visitOccurrenceId ?? null,
+        documentationRecordId: request.documentationRecordId ?? null,
+        riskType: request.riskType,
+        severityLabel: request.severityLabel ?? null,
+        summary: request.summary,
+        effectiveAt: request.effectiveAt,
+        expiresAt: request.expiresAt ?? null,
+        sourceContextType: request.sourceContextType ?? null,
+        sourceRecordId: request.sourceRecordId ?? null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientRiskReminder
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient risk reminder update failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as PatientRiskReminder;
+}
+
+export async function resolvePatientRiskReminder(
+  request: AuthenticatedRequestContext & { patientId: string; reminderId: string },
+): Promise<PatientRiskReminder> {
+  const response = await fetch(
+    apiUrl(`/api/compliance/patients/${request.patientId}/risk-reminders/${request.reminderId}/resolve`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientRiskReminder
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient risk reminder resolve failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as PatientRiskReminder;
+}
+
+export async function recalculateComplianceStatus(
+  request: RecalculateComplianceStatusRequest,
+): Promise<ComplianceStatusProjection> {
+  const response = await fetch(
+    apiUrl(`/api/compliance/patients/${request.patientId}/status-projection/recalculate`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        branchId: request.branchId ?? null,
+        serviceLineId: request.serviceLineId ?? null,
+        requiredAcknowledgmentTypes: request.requiredAcknowledgmentTypes,
+        certificationExpiryWarningDays: request.certificationExpiryWarningDays,
+        evaluatedAt: request.evaluatedAt ?? null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ComplianceStatusProjection
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Compliance recalculation failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as ComplianceStatusProjection;
+}
+
+export async function fetchRevenueReadinessList(
+  request: RevenueReadinessQuery,
+): Promise<ConfigurationPage<RevenueReadinessSummaryResponse>> {
+  const url = new URL(apiUrl('/api/revenue-readiness'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    readinessStatus:
+      request.readinessStatus && request.readinessStatus !== 'ALL'
+        ? request.readinessStatus
+        : undefined,
+    exceptionType:
+      request.exceptionType && request.exceptionType !== 'ALL' ? request.exceptionType : undefined,
+    payer: request.payer?.trim() ? request.payer.trim() : undefined,
+    serviceLineId: request.serviceLineId?.trim() ? request.serviceLineId.trim() : undefined,
+    from: request.from,
+    to: request.to,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<RevenueReadinessSummaryResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Revenue-readiness list request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<RevenueReadinessSummaryResponse>;
+}
+
+export async function fetchRevenueReadinessDetail(
+  request: AuthenticatedRequestContext & { visitOccurrenceId: string },
+): Promise<RevenueReadinessDetailResponse> {
+  const response = await fetch(apiUrl(`/api/revenue-readiness/${request.visitOccurrenceId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueReadinessDetailResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Revenue-readiness detail request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenueReadinessDetailResponse;
+}
+
+export async function recalculateRevenueReadiness(
+  request: AuthenticatedRequestContext & { visitOccurrenceId: string; evaluatedAt?: string },
+): Promise<RevenueReadinessDetailResponse> {
+  const response = await fetch(apiUrl(`/api/revenue-readiness/${request.visitOccurrenceId}/recalculate`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      evaluatedAt: request.evaluatedAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueReadinessDetailResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Revenue-readiness recalculation failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as RevenueReadinessDetailResponse;
+}
+
+export async function fetchRevenueExceptionFlags(
+  request: RevenueExceptionQuery,
+): Promise<ConfigurationPage<RevenueExceptionFlagResponse>> {
+  const url = new URL(apiUrl('/api/revenue-readiness/exceptions'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    exceptionType:
+      request.exceptionType && request.exceptionType !== 'ALL' ? request.exceptionType : undefined,
+    payer: request.payer?.trim() ? request.payer.trim() : undefined,
+    serviceLineId: request.serviceLineId?.trim() ? request.serviceLineId.trim() : undefined,
+    from: request.from,
+    to: request.to,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<RevenueExceptionFlagResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Revenue exception request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<RevenueExceptionFlagResponse>;
+}
+
+export async function fetchRevenuePayerServiceSummary(
+  request: AuthenticatedRequestContext & { visitOccurrenceId: string },
+): Promise<RevenuePayerServiceSummaryResponse> {
+  const response = await fetch(
+    apiUrl(`/api/revenue-readiness/${request.visitOccurrenceId}/payer-service-summary`),
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenuePayerServiceSummaryResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Revenue payer/service summary request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenuePayerServiceSummaryResponse;
+}
+
+export async function fetchRevenueAuthorizationUsageSummary(
+  request: AuthenticatedRequestContext & { authorizationId: string },
+): Promise<RevenueAuthorizationUsageSummaryResponse> {
+  const response = await fetch(
+    apiUrl(`/api/revenue-readiness/authorizations/${request.authorizationId}/usage-summary`),
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueAuthorizationUsageSummaryResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Authorization usage request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenueAuthorizationUsageSummaryResponse;
+}
+
+export async function recalculateRevenueAuthorizationUsage(
+  request: AuthenticatedRequestContext & { authorizationId: string; evaluatedAt?: string },
+): Promise<RevenueAuthorizationUsageSummaryResponse> {
+  const response = await fetch(
+    apiUrl(`/api/revenue-readiness/authorizations/${request.authorizationId}/usage-summary/recalculate`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request, 'application/json'),
+      body: JSON.stringify({
+        evaluatedAt: request.evaluatedAt ?? null,
+      }),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueAuthorizationUsageSummaryResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Authorization usage recalculation failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as RevenueAuthorizationUsageSummaryResponse;
+}
+
+export async function previewPayrollExport(
+  request: AuthenticatedRequestContext & { visitOccurrenceId: string },
+): Promise<RevenueExportPreviewResponse> {
+  const url = new URL(apiUrl('/api/revenue-readiness/payroll-exports/preview'), window.location.origin);
+  appendOptionalSearchParams(url, { visitOccurrenceId: request.visitOccurrenceId });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueExportPreviewResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Payroll export preview failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenueExportPreviewResponse;
+}
+
+export async function generatePayrollExport(
+  request: GenerateRevenueExportRequest,
+): Promise<PayrollExportRowResponse> {
+  const response = await fetch(apiUrl('/api/revenue-readiness/payroll-exports'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      visitOccurrenceId: request.visitOccurrenceId,
+      allowBlocked: request.allowBlocked ?? false,
+      generatedAt: request.generatedAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PayrollExportRowResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Payroll export generation failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as PayrollExportRowResponse;
+}
+
+export async function previewInvoiceExport(
+  request: AuthenticatedRequestContext & { visitOccurrenceId: string },
+): Promise<RevenueExportPreviewResponse> {
+  const url = new URL(apiUrl('/api/revenue-readiness/invoice-exports/preview'), window.location.origin);
+  appendOptionalSearchParams(url, { visitOccurrenceId: request.visitOccurrenceId });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueExportPreviewResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Invoice export preview failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenueExportPreviewResponse;
+}
+
+export async function generateInvoiceExport(
+  request: GenerateRevenueExportRequest,
+): Promise<InvoiceExportRowResponse> {
+  const response = await fetch(apiUrl('/api/revenue-readiness/invoice-exports'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      visitOccurrenceId: request.visitOccurrenceId,
+      allowBlocked: request.allowBlocked ?? false,
+      generatedAt: request.generatedAt ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | InvoiceExportRowResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Invoice export generation failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as InvoiceExportRowResponse;
+}
+
+export async function fetchRevenueHistory(
+  request: AuthenticatedRequestContext & { visitOccurrenceId: string },
+): Promise<RevenueHistoryResponse> {
+  const response = await fetch(apiUrl(`/api/revenue-readiness/${request.visitOccurrenceId}/history`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueHistoryResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Revenue history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenueHistoryResponse;
+}
+
+export async function fetchRevenueExportHistory(
+  request: AuthenticatedRequestContext,
+): Promise<RevenueAuditEventResponse[]> {
+  const response = await fetch(apiUrl('/api/revenue-readiness/export-history'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueAuditEventResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Revenue export history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenueAuditEventResponse[];
+}
+
+export async function fetchRevenueExceptionHistory(
+  request: AuthenticatedRequestContext,
+): Promise<RevenueAuditEventResponse[]> {
+  const response = await fetch(apiUrl('/api/revenue-readiness/exception-history'), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueAuditEventResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Revenue exception history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenueAuditEventResponse[];
+}
+
+export async function fetchRevenueAuthorizationUsageHistory(
+  request: AuthenticatedRequestContext & { authorizationId: string },
+): Promise<RevenueAuditEventResponse[]> {
+  const response = await fetch(
+    apiUrl(`/api/revenue-readiness/authorizations/${request.authorizationId}/usage-history`),
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: buildAuthenticatedHeaders(request),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | RevenueAuditEventResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Authorization usage history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as RevenueAuditEventResponse[];
+}
+
+export async function fetchAnalyticsDashboardSummary(
+  request: AnalyticsSummaryQuery,
+): Promise<AnalyticsDashboardSummaryResponse> {
+  const url = new URL(apiUrl('/api/analytics/dashboard'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    snapshotDate: request.snapshotDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | AnalyticsDashboardSummaryResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics dashboard summary failed with status ${response.status}`,
+    );
+  }
+
+  return payload as AnalyticsDashboardSummaryResponse;
+}
+
+export async function fetchAnalyticsMetricSnapshots(
+  request: AnalyticsMetricQuery,
+): Promise<ConfigurationPage<AnalyticsMetricSnapshotResponse>> {
+  const url = new URL(apiUrl('/api/analytics/metrics'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    snapshotDate: request.snapshotDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    metricType:
+      request.metricType && request.metricType !== 'ALL' ? request.metricType : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsMetricSnapshotResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics metric snapshot request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsMetricSnapshotResponse>;
+}
+
+export async function fetchAnalyticsOperationalDrilldown(
+  request: AnalyticsOperationalQuery,
+): Promise<ConfigurationPage<AnalyticsOperationalDrilldownResponse>> {
+  const url = new URL(apiUrl('/api/analytics/drilldowns/operational'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    metricType: request.metricType,
+    snapshotDate: request.snapshotDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    status: request.status?.trim() ? request.status.trim() : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsOperationalDrilldownResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics operational drilldown failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsOperationalDrilldownResponse>;
+}
+
+export async function fetchAnalyticsBacklogDrilldown(
+  request: AnalyticsBacklogQuery,
+): Promise<ConfigurationPage<AnalyticsBacklogDrilldownResponse>> {
+  const url = new URL(apiUrl('/api/analytics/drilldowns/backlog'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    snapshotDate: request.snapshotDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    status: request.status?.trim() ? request.status.trim() : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsBacklogDrilldownResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics backlog drilldown failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsBacklogDrilldownResponse>;
+}
+
+export async function fetchAnalyticsRevenueDrilldown(
+  request: AnalyticsRevenueQuery,
+): Promise<ConfigurationPage<AnalyticsReadinessDrilldownResponse>> {
+  const url = new URL(apiUrl('/api/analytics/drilldowns/revenue'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    snapshotDate: request.snapshotDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    readinessStatus:
+      request.readinessStatus && request.readinessStatus !== 'ALL'
+        ? request.readinessStatus
+        : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsReadinessDrilldownResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics revenue drilldown failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsReadinessDrilldownResponse>;
+}
+
+export async function fetchAnalyticsComplianceDrilldown(
+  request: AnalyticsComplianceQuery,
+): Promise<ConfigurationPage<AnalyticsComplianceDrilldownResponse>> {
+  const url = new URL(apiUrl('/api/analytics/drilldowns/compliance'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    readinessStatus:
+      request.readinessStatus && request.readinessStatus !== 'ALL'
+        ? request.readinessStatus
+        : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsComplianceDrilldownResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics compliance drilldown failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsComplianceDrilldownResponse>;
+}
+
+export async function fetchAnalyticsBranchPerformance(
+  request: AnalyticsSummaryQuery & { page?: number; size?: number },
+): Promise<ConfigurationPage<AnalyticsBranchPerformanceSummaryResponse>> {
+  const url = new URL(apiUrl('/api/analytics/branch-performance'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    snapshotDate: request.snapshotDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsBranchPerformanceSummaryResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics branch performance request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsBranchPerformanceSummaryResponse>;
+}
+
+export async function fetchAnalyticsCaregiverUtilization(
+  request: AnalyticsUtilizationQuery,
+): Promise<ConfigurationPage<AnalyticsUtilizationSummaryResponse>> {
+  const url = new URL(apiUrl('/api/analytics/caregiver-utilization'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    snapshotDate: request.snapshotDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    caregiverProfileId: request.caregiverProfileId?.trim()
+      ? request.caregiverProfileId.trim()
+      : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsUtilizationSummaryResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics caregiver utilization request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsUtilizationSummaryResponse>;
+}
+
+export async function fetchAnalyticsTrendSnapshots(
+  request: AnalyticsMetricQuery,
+): Promise<ConfigurationPage<AnalyticsMetricTrendSnapshotResponse>> {
+  const url = new URL(apiUrl('/api/analytics/trends'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    snapshotDate: request.snapshotDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    metricType:
+      request.metricType && request.metricType !== 'ALL' ? request.metricType : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsMetricTrendSnapshotResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics trend snapshot request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsMetricTrendSnapshotResponse>;
+}
+
+export async function fetchAnalyticsDashboardHistory(
+  request: AnalyticsHistoryQuery,
+): Promise<ConfigurationPage<AnalyticsDashboardSnapshotResponse>> {
+  const url = new URL(apiUrl('/api/analytics/history/dashboard-snapshots'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    fromDate: request.fromDate,
+    toDate: request.toDate,
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsDashboardSnapshotResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics dashboard history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsDashboardSnapshotResponse>;
+}
+
+export async function fetchAnalyticsMetricRefreshHistory(
+  request: AuthenticatedRequestContext & { branchId?: string; page?: number; size?: number },
+): Promise<ConfigurationPage<AnalyticsAuditEventResponse>> {
+  const url = new URL(apiUrl('/api/analytics/history/metric-refreshes'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    branchId: request.branchId?.trim() ? request.branchId.trim() : undefined,
+    page: request.page ?? 0,
+    size: request.size ?? 20,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ConfigurationPage<AnalyticsAuditEventResponse>
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics refresh history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ConfigurationPage<AnalyticsAuditEventResponse>;
+}
+
+export async function refreshAnalyticsDashboard(
+  request: RefreshAnalyticsDashboardRequest,
+): Promise<AnalyticsDashboardAnalyticsResponse> {
+  const response = await fetch(apiUrl('/api/analytics/dashboard/refresh'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      snapshotDate: request.snapshotDate,
+      branchId: request.branchId ?? null,
+      evaluatedAt: request.evaluatedAt ?? null,
+      lateStartThresholdMinutes: request.lateStartThresholdMinutes ?? 15,
+      includeTrendSnapshots: request.includeTrendSnapshots ?? true,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | AnalyticsDashboardAnalyticsResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Analytics refresh failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as AnalyticsDashboardAnalyticsResponse;
+}
+
+export async function fetchReviewWorkItemDetail(
+  request: AuthenticatedRequestContext & { workItemId: string },
+): Promise<ReviewWorkItemDetail> {
+  const response = await fetch(apiUrl(`/api/review/work-items/${request.workItemId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewWorkItemDetail
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review work item detail failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ReviewWorkItemDetail;
+}
+
+export async function fetchReviewCompleteness(
+  request: AuthenticatedRequestContext & { workItemId: string },
+): Promise<ReviewCompletenessEvaluation> {
+  const response = await fetch(apiUrl(`/api/review/work-items/${request.workItemId}/completeness`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewCompletenessEvaluation
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review completeness request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ReviewCompletenessEvaluation;
+}
+
+export async function recalculateReviewCompleteness(
+  request: AuthenticatedRequestContext & { workItemId: string; evaluatedAt?: string | null },
+): Promise<ReviewCompletenessEvaluation> {
+  const url = new URL(
+    apiUrl(`/api/review/work-items/${request.workItemId}/completeness/recalculate`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(url, {
+    evaluatedAt: request.evaluatedAt ?? undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewCompletenessEvaluation
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review completeness recalculation failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ReviewCompletenessEvaluation;
+}
+
+export async function fetchReviewHistory(
+  request: AuthenticatedRequestContext & { workItemId: string },
+): Promise<ReviewHistory> {
+  const response = await fetch(apiUrl(`/api/review/work-items/${request.workItemId}/history`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewHistory
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ReviewHistory;
+}
+
+export async function assignReviewWorkItem(
+  request: AssignReviewWorkItemRequest,
+): Promise<ReviewWorkItemDetail> {
+  const response = await fetch(apiUrl(`/api/review/work-items/${request.workItemId}/assignments`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      reviewerMembershipId: request.reviewerMembershipId,
+      assignedAt: request.assignedAt ?? new Date().toISOString(),
+      assignmentNote: request.assignmentNote ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewWorkItemDetail
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review assignment failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ReviewWorkItemDetail;
+}
+
+export async function recordReviewDecision(
+  request: RecordReviewDecisionRequest,
+): Promise<ReviewWorkItemDetail> {
+  const response = await fetch(apiUrl(`/api/review/work-items/${request.workItemId}/decisions`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      decisionType: request.decisionType,
+      decidedAt: request.decidedAt ?? new Date().toISOString(),
+      reasonCode: request.reasonCode ?? null,
+      reviewerNotes: request.reviewerNotes ?? null,
+      returnReason: request.returnReason ?? null,
+      requiredCorrections: request.requiredCorrections ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewWorkItemDetail
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review decision failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as ReviewWorkItemDetail;
+}
+
+export async function requestReviewSignoff(
+  request: RequestReviewSignoffRequest,
+): Promise<ReviewWorkItemDetail> {
+  const response = await fetch(apiUrl(`/api/review/work-items/${request.workItemId}/signoff-requests`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      requestedFromMembershipId: request.requestedFromMembershipId ?? null,
+      requestedFromRole: request.requestedFromRole ?? null,
+      requestedAt: request.requestedAt ?? new Date().toISOString(),
+      signoffNote: request.signoffNote ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewWorkItemDetail
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review signoff request failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as ReviewWorkItemDetail;
+}
+
+export async function completeReviewSignoff(
+  request: CompleteReviewSignoffRequest,
+): Promise<ReviewWorkItemDetail> {
+  const response = await fetch(apiUrl(`/api/review/work-items/${request.workItemId}/signoff-completion`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      completedAt: request.completedAt ?? new Date().toISOString(),
+      approved: request.approved,
+      signoffNote: request.signoffNote ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewWorkItemDetail
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review signoff completion failed with status ${response.status}`,
+      payload,
+    );
+  }
+
+  return payload as ReviewWorkItemDetail;
+}
+
+export async function releaseActiveReviewAssignment(
+  request: AuthenticatedRequestContext & { workItemId: string; releasedAt?: string | null },
+): Promise<ReviewWorkItemDetail> {
+  const url = new URL(
+    apiUrl(`/api/review/work-items/${request.workItemId}/assignments/active`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(url, {
+    releasedAt: request.releasedAt ?? undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewWorkItemDetail
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Active review assignment release failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ReviewWorkItemDetail;
+}
+
+export async function markReviewWorkItemResubmitted(
+  request: AuthenticatedRequestContext & { workItemId: string; resubmittedAt?: string | null },
+): Promise<ReviewWorkItemDetail> {
+  const url = new URL(
+    apiUrl(`/api/review/work-items/${request.workItemId}/resubmissions`),
+    window.location.origin,
+  );
+  appendOptionalSearchParams(url, {
+    resubmittedAt: request.resubmittedAt ?? undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | ReviewWorkItemDetail
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Review resubmission update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as ReviewWorkItemDetail;
+}
+
 export async function fetchBranchPolicies(
   request: BranchPolicyQuery,
 ): Promise<ConfigurationPage<BranchPolicySummary>> {
@@ -9138,4 +12870,1090 @@ export async function saveMileagePayBranchOverride(
   }
 
   return payload as MileagePaySettingScope;
+}
+
+export async function fetchPatientEventIncidents(
+  request: AuthenticatedRequestContext & {
+    patientId?: string;
+    branchId?: string;
+    status?: IncidentRecordStatus | 'ALL';
+  },
+): Promise<IncidentResponse[]> {
+  const url = new URL(apiUrl('/api/patient-events/incidents'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    patientId: request.patientId || undefined,
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | IncidentResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Incident request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as IncidentResponse[];
+}
+
+export async function createPatientEventIncident(
+  request: AuthenticatedRequestContext & {
+    patientId: string;
+    branchId?: string;
+    visitOccurrenceId?: string;
+    incidentType: string;
+    severityLabel?: string;
+    occurredAt: string;
+    reportedAt: string;
+    summary: string;
+    reportedByMembershipId?: string;
+  },
+): Promise<IncidentResponse> {
+  const response = await fetch(apiUrl('/api/patient-events/incidents'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      patientId: request.patientId,
+      branchId: request.branchId ?? null,
+      visitOccurrenceId: request.visitOccurrenceId ?? null,
+      incidentType: request.incidentType,
+      severityLabel: request.severityLabel ?? null,
+      occurredAt: request.occurredAt,
+      reportedAt: request.reportedAt,
+      summary: request.summary,
+      reportedByMembershipId: request.reportedByMembershipId ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | IncidentResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Incident create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as IncidentResponse;
+}
+
+export async function fetchPatientEventIncident(
+  incidentId: string,
+  request: AuthenticatedRequestContext,
+): Promise<IncidentResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/incidents/${incidentId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | IncidentResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Incident detail request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as IncidentResponse;
+}
+
+export async function updatePatientEventIncident(
+  request: AuthenticatedRequestContext & {
+    incidentId: string;
+    branchId?: string;
+    visitOccurrenceId?: string;
+    incidentType: string;
+    severityLabel?: string;
+    occurredAt: string;
+    reportedAt: string;
+    summary: string;
+    status: IncidentRecordStatus;
+    reportedByMembershipId?: string;
+  },
+): Promise<IncidentResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/incidents/${request.incidentId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId ?? null,
+      visitOccurrenceId: request.visitOccurrenceId ?? null,
+      incidentType: request.incidentType,
+      severityLabel: request.severityLabel ?? null,
+      occurredAt: request.occurredAt,
+      reportedAt: request.reportedAt,
+      summary: request.summary,
+      status: request.status,
+      reportedByMembershipId: request.reportedByMembershipId ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | IncidentResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Incident update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as IncidentResponse;
+}
+
+export async function resolvePatientEventIncident(
+  request: AuthenticatedRequestContext & { incidentId: string; resolvedAt: string },
+): Promise<IncidentResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/incidents/${request.incidentId}/resolve`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({ resolvedAt: request.resolvedAt }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | IncidentResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Incident resolve failed with status ${response.status}`,
+    );
+  }
+
+  return payload as IncidentResponse;
+}
+
+export async function fetchPatientEventInfections(
+  request: AuthenticatedRequestContext & {
+    patientId?: string;
+    branchId?: string;
+    status?: InfectionRecordStatus | 'ALL';
+  },
+): Promise<InfectionResponse[]> {
+  const url = new URL(apiUrl('/api/patient-events/infections'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    patientId: request.patientId || undefined,
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | InfectionResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Infection request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as InfectionResponse[];
+}
+
+export async function createPatientEventInfection(
+  request: CreatePatientEventInfectionRequest,
+): Promise<InfectionResponse> {
+  const response = await fetch(apiUrl('/api/patient-events/infections'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      patientId: request.patientId,
+      branchId: request.branchId ?? null,
+      relatedIncidentId: request.relatedIncidentId ?? null,
+      onsetDate: request.onsetDate ?? null,
+      identifiedAt: request.identifiedAt,
+      infectionType: request.infectionType,
+      summary: request.summary,
+      status: request.status ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | InfectionResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Infection create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as InfectionResponse;
+}
+
+export async function fetchPatientEventInfection(
+  infectionId: string,
+  request: AuthenticatedRequestContext,
+): Promise<InfectionResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/infections/${infectionId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | InfectionResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Infection detail request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as InfectionResponse;
+}
+
+export async function updatePatientEventInfection(
+  request: AuthenticatedRequestContext & {
+    infectionId: string;
+    branchId?: string;
+    relatedIncidentId?: string;
+    onsetDate?: string;
+    identifiedAt: string;
+    infectionType: string;
+    summary: string;
+    status: InfectionRecordStatus;
+  },
+): Promise<InfectionResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/infections/${request.infectionId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId ?? null,
+      relatedIncidentId: request.relatedIncidentId ?? null,
+      onsetDate: request.onsetDate ?? null,
+      identifiedAt: request.identifiedAt,
+      infectionType: request.infectionType,
+      summary: request.summary,
+      status: request.status,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | InfectionResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Infection update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as InfectionResponse;
+}
+
+export async function resolvePatientEventInfection(
+  request: AuthenticatedRequestContext & { infectionId: string; resolvedAt: string },
+): Promise<InfectionResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/infections/${request.infectionId}/resolve`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({ resolvedAt: request.resolvedAt }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | InfectionResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Infection resolve failed with status ${response.status}`,
+    );
+  }
+
+  return payload as InfectionResponse;
+}
+
+export async function fetchPatientEventWounds(
+  request: AuthenticatedRequestContext & {
+    patientId?: string;
+    branchId?: string;
+    status?: WoundRecordStatus | 'ALL';
+  },
+): Promise<WoundResponse[]> {
+  const url = new URL(apiUrl('/api/patient-events/wounds'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    patientId: request.patientId || undefined,
+    branchId: request.branchId && request.branchId !== 'ALL' ? request.branchId : undefined,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | WoundResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Wound request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as WoundResponse[];
+}
+
+export async function createPatientEventWound(
+  request: CreatePatientEventWoundRequest,
+): Promise<WoundResponse> {
+  const response = await fetch(apiUrl('/api/patient-events/wounds'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      patientId: request.patientId,
+      branchId: request.branchId ?? null,
+      identifiedAt: request.identifiedAt,
+      woundTypeOrSite: request.woundTypeOrSite,
+      currentStatus: request.currentStatus ?? null,
+      baselineSummary: request.baselineSummary ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | WoundResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Wound create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as WoundResponse;
+}
+
+export async function fetchPatientEventWound(
+  woundId: string,
+  request: AuthenticatedRequestContext,
+): Promise<WoundResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/wounds/${woundId}`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | WoundResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Wound detail request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as WoundResponse;
+}
+
+export async function updatePatientEventWound(
+  request: AuthenticatedRequestContext & {
+    woundId: string;
+    branchId?: string;
+    woundTypeOrSite: string;
+    currentStatus: WoundRecordStatus;
+    baselineSummary?: string;
+  },
+): Promise<WoundResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/wounds/${request.woundId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId ?? null,
+      woundTypeOrSite: request.woundTypeOrSite,
+      currentStatus: request.currentStatus,
+      baselineSummary: request.baselineSummary ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | WoundResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Wound update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as WoundResponse;
+}
+
+export async function resolvePatientEventWound(
+  request: AuthenticatedRequestContext & { woundId: string; resolvedAt: string },
+): Promise<WoundResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/wounds/${request.woundId}/resolve`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({ resolvedAt: request.resolvedAt }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | WoundResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Wound resolve failed with status ${response.status}`,
+    );
+  }
+
+  return payload as WoundResponse;
+}
+
+export async function fetchPatientEventWoundHistory(
+  request: AuthenticatedRequestContext & { woundId: string },
+): Promise<WoundHistoryResponse[]> {
+  const response = await fetch(apiUrl(`/api/patient-events/wounds/${request.woundId}/history`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | WoundHistoryResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Wound history request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as WoundHistoryResponse[];
+}
+
+export async function addPatientEventWoundHistory(
+  request: AddPatientEventWoundHistoryRequest,
+): Promise<WoundHistoryResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/wounds/${request.woundId}/history`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId ?? null,
+      capturedAt: request.capturedAt,
+      observationSummary: request.observationSummary,
+      lengthCm: request.lengthCm ?? null,
+      widthCm: request.widthCm ?? null,
+      depthCm: request.depthCm ?? null,
+      progressionMarker: request.progressionMarker ?? null,
+      capturedByMembershipId: request.capturedByMembershipId ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | WoundHistoryResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Wound history create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as WoundHistoryResponse;
+}
+
+export async function fetchPatientEventEvidenceLinks(
+  request: AuthenticatedRequestContext & { targetType: PatientEventTargetType; targetId: string },
+): Promise<PatientEventEvidenceLinkResponse[]> {
+  const url = new URL(apiUrl('/api/patient-events/evidence-links'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    targetType: request.targetType,
+    targetId: request.targetId,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventEvidenceLinkResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Evidence link request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventEvidenceLinkResponse[];
+}
+
+export async function linkPatientEventEvidence(
+  request: LinkPatientEventEvidenceRequest,
+): Promise<PatientEventEvidenceLinkResponse> {
+  const response = await fetch(apiUrl('/api/patient-events/evidence-links'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      targetType: request.targetType,
+      targetId: request.targetId,
+      branchId: request.branchId ?? null,
+      patientAttachmentId: request.patientAttachmentId ?? null,
+      mobileArtifactId: request.mobileArtifactId ?? null,
+      documentationAttachmentLinkId: request.documentationAttachmentLinkId ?? null,
+      linkedByMembershipId: request.linkedByMembershipId ?? null,
+      linkedAt: request.linkedAt,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventEvidenceLinkResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Evidence link create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventEvidenceLinkResponse;
+}
+
+export async function unlinkPatientEventEvidence(
+  evidenceLinkId: string,
+  request: AuthenticatedRequestContext,
+): Promise<void> {
+  const response = await fetch(apiUrl(`/api/patient-events/evidence-links/${evidenceLinkId}`), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { error?: string; message?: string }
+      | null;
+    throw new ApiError(
+      response.status,
+      payload?.error ?? payload?.message ?? `Evidence unlink failed with status ${response.status}`,
+    );
+  }
+}
+
+export async function fetchPatientEventFollowUps(
+  request: AuthenticatedRequestContext & {
+    patientId?: string;
+    targetType?: PatientEventTargetType;
+    targetId?: string;
+    status?: PatientEventFollowUpStatus | 'ALL';
+    overdueAsOf?: string;
+  },
+): Promise<PatientEventFollowUpResponse[]> {
+  const url = new URL(apiUrl('/api/patient-events/follow-ups'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    patientId: request.patientId || undefined,
+    targetType: request.targetType || undefined,
+    targetId: request.targetId || undefined,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+    overdueAsOf: request.overdueAsOf || undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventFollowUpResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Follow-up request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventFollowUpResponse[];
+}
+
+export async function assignPatientEventFollowUp(
+  request: AuthenticatedRequestContext & {
+    targetType: PatientEventTargetType;
+    targetId: string;
+    branchId?: string;
+    ownerMembershipId?: string;
+    ownerRole?: AgencyRole;
+    assignedAt: string;
+    dueAt: string;
+    followUpNote?: string;
+  },
+): Promise<PatientEventFollowUpResponse> {
+  const response = await fetch(apiUrl('/api/patient-events/follow-ups'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      targetType: request.targetType,
+      targetId: request.targetId,
+      branchId: request.branchId ?? null,
+      ownerMembershipId: request.ownerMembershipId ?? null,
+      ownerRole: request.ownerRole ?? null,
+      assignedAt: request.assignedAt,
+      dueAt: request.dueAt,
+      followUpNote: request.followUpNote ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventFollowUpResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Follow-up assignment failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventFollowUpResponse;
+}
+
+export async function updatePatientEventFollowUp(
+  request: AuthenticatedRequestContext & {
+    followUpId: string;
+    branchId?: string;
+    ownerMembershipId?: string;
+    ownerRole?: AgencyRole;
+    dueAt: string;
+    followUpNote?: string;
+  },
+): Promise<PatientEventFollowUpResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/follow-ups/${request.followUpId}`), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      branchId: request.branchId ?? null,
+      ownerMembershipId: request.ownerMembershipId ?? null,
+      ownerRole: request.ownerRole ?? null,
+      dueAt: request.dueAt,
+      followUpNote: request.followUpNote ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventFollowUpResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Follow-up update failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventFollowUpResponse;
+}
+
+export async function completePatientEventFollowUp(
+  request: AuthenticatedRequestContext & {
+    followUpId: string;
+    completionAt: string;
+    followUpNote?: string;
+  },
+): Promise<PatientEventFollowUpResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/follow-ups/${request.followUpId}/complete`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      completionAt: request.completionAt,
+      followUpNote: request.followUpNote ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventFollowUpResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Follow-up completion failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventFollowUpResponse;
+}
+
+export async function fetchPatientEventEscalations(
+  request: AuthenticatedRequestContext & {
+    patientId?: string;
+    targetType?: PatientEventTargetType;
+    targetId?: string;
+    status?: PatientEventEscalationStatus | 'ALL';
+  },
+): Promise<PatientEventEscalationResponse[]> {
+  const url = new URL(apiUrl('/api/patient-events/escalations'), window.location.origin);
+  appendOptionalSearchParams(url, {
+    patientId: request.patientId || undefined,
+    targetType: request.targetType || undefined,
+    targetId: request.targetId || undefined,
+    status: request.status && request.status !== 'ALL' ? request.status : undefined,
+  });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventEscalationResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Escalation request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventEscalationResponse[];
+}
+
+export async function createPatientEventEscalation(
+  request: AuthenticatedRequestContext & {
+    targetType: PatientEventTargetType;
+    targetId: string;
+    branchId?: string;
+    severityLabel?: string;
+    reasonTag?: string;
+    escalatedByMembershipId?: string;
+    escalatedAt: string;
+  },
+): Promise<PatientEventEscalationResponse> {
+  const response = await fetch(apiUrl('/api/patient-events/escalations'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      targetType: request.targetType,
+      targetId: request.targetId,
+      branchId: request.branchId ?? null,
+      severityLabel: request.severityLabel ?? null,
+      reasonTag: request.reasonTag ?? null,
+      escalatedByMembershipId: request.escalatedByMembershipId ?? null,
+      escalatedAt: request.escalatedAt,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventEscalationResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Escalation create failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventEscalationResponse;
+}
+
+export async function clearPatientEventEscalation(
+  request: AuthenticatedRequestContext & {
+    escalationId: string;
+    clearedAt: string;
+    clearedByMembershipId?: string;
+  },
+): Promise<PatientEventEscalationResponse> {
+  const response = await fetch(apiUrl(`/api/patient-events/escalations/${request.escalationId}/clear`), {
+    method: 'POST',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request, 'application/json'),
+    body: JSON.stringify({
+      clearedAt: request.clearedAt,
+      clearedByMembershipId: request.clearedByMembershipId ?? null,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventEscalationResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Escalation clear failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventEscalationResponse;
+}
+
+export async function fetchPatientEventTimeline(
+  request: AuthenticatedRequestContext & { patientId: string },
+): Promise<PatientEventTimelineEntry[]> {
+  const response = await fetch(apiUrl(`/api/patient-events/patients/${request.patientId}/timeline`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventTimelineEntry[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient-event timeline request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventTimelineEntry[];
+}
+
+export async function fetchPatientEventAlerts(
+  request: AuthenticatedRequestContext & { patientId: string; asOf?: string },
+): Promise<PatientEventAlertResponse[]> {
+  const url = new URL(apiUrl(`/api/patient-events/patients/${request.patientId}/alerts`), window.location.origin);
+  appendOptionalSearchParams(url, { asOf: request.asOf || undefined });
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventAlertResponse[]
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && !Array.isArray(payload) && 'error' in payload && payload.error
+        ? payload.error
+        : payload && !Array.isArray(payload) && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient-event alert request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventAlertResponse[];
+}
+
+export async function fetchPatientEventSummary(
+  request: AuthenticatedRequestContext & { patientId: string },
+): Promise<PatientEventSummaryResponse | null> {
+  const response = await fetch(apiUrl(`/api/patient-events/patients/${request.patientId}/summary`), {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildAuthenticatedHeaders(request),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; message?: string }
+    | PatientEventSummaryResponse
+    | null;
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : payload && 'message' in payload && payload.message
+          ? payload.message
+          : `Patient-event summary request failed with status ${response.status}`,
+    );
+  }
+
+  return payload as PatientEventSummaryResponse;
 }
