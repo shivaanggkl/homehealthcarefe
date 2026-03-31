@@ -51,7 +51,7 @@ export function MessagingCommandCenterPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const canViewMessaging = canAccessPermission(profile, 'view_messaging_workspace');
   const canViewAudit = canAccessPermission(profile, 'view_audit_log');

@@ -247,7 +247,7 @@ export function SchedulingWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const view = normalizeView(searchParams.get('view'));
   const date = searchParams.get('date') ?? toIsoDate(new Date());

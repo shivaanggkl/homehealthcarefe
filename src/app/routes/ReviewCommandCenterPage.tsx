@@ -55,7 +55,7 @@ export function ReviewCommandCenterPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const canViewWorkspace = canAccessPermission(profile, 'view_review_workspace');
   const canViewExceptionQueue = canAccessPermission(profile, 'view_review_exception_queue');

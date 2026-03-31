@@ -115,30 +115,29 @@ export function AccessProvider({ children }: PropsWithChildren) {
     setOverride(null);
   }, []);
 
-  const effectiveLoading =
-    loading || (state.status === 'authenticated' && !override && !backendAccessResolved);
+  const effectiveLoading = loading || (state.status === 'authenticated' && !backendAccessResolved);
 
   const value = useMemo<AccessContextValue>(
     () => ({
       profile:
-        override
-          ? buildAccessProfile(override)
-          : backendAccess
-            ? {
-                ...buildAccessProfileForRole(
+        backendAccess
+          ? {
+              ...buildAccessProfileForRole(
+                backendAccess.role,
+                backendAccess.assignedBranchIds,
+                'backend',
+              ),
+              permissions: mapBackendPermissionsToFrontend(
+                backendAccess.permissions,
+                buildAccessProfileForRole(
                   backendAccess.role,
                   backendAccess.assignedBranchIds,
                   'backend',
-                ),
-                permissions: mapBackendPermissionsToFrontend(
-                  backendAccess.permissions,
-                  buildAccessProfileForRole(
-                    backendAccess.role,
-                    backendAccess.assignedBranchIds,
-                    'backend',
-                  ).permissions,
-                ),
-              }
+                ).permissions,
+              ),
+            }
+          : override
+            ? buildAccessProfile(override)
             : buildAccessProfile(null),
       loading: effectiveLoading,
       setRoleOverride,

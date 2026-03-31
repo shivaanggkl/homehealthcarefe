@@ -73,7 +73,7 @@ export function ComplianceCommandCenterPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const canViewWorkspace = canAccessPermission(profile, 'view_compliance_workspace');
   const canViewDashboard = canAccessPermission(profile, 'view_compliance_dashboard');

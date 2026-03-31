@@ -25,7 +25,7 @@ export function HomePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   useEffect(() => {
     if (state.status !== 'authenticated') {

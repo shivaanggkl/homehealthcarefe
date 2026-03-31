@@ -608,7 +608,7 @@ export function MobileWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const day = useMemo(() => toIsoDate(new Date()), []);
   const timezone = useMemo(

@@ -11,7 +11,12 @@ export type SessionSnapshot = {
 };
 
 export type SessionBootstrapResult =
-  | { kind: 'authenticated'; snapshot: SessionSnapshot; authSource: 'cookie' | 'storage' }
+  | {
+      kind: 'authenticated';
+      snapshot: SessionSnapshot;
+      authSource: 'cookie' | 'storage';
+      refreshedCredentials?: DevSessionCredentials;
+    }
   | { kind: 'unauthenticated' };
 
 export type LoginRequest = {
@@ -3826,21 +3831,53 @@ function appendOptionalSearchParams(
 export async function fetchSessionSnapshot(
   devSession: DevSessionCredentials | null,
 ): Promise<SessionBootstrapResult> {
-  const headers = new Headers();
+  async function requestSessionSnapshot(
+    activeSession: DevSessionCredentials | null,
+  ): Promise<Response> {
+    const headers = new Headers();
 
-  if (devSession?.accessToken) {
-    headers.set('Authorization', `Bearer ${devSession.accessToken}`);
+    if (activeSession?.accessToken) {
+      headers.set('Authorization', `Bearer ${activeSession.accessToken}`);
+    }
+
+    if (activeSession?.sessionId) {
+      headers.set('X-Session-Id', activeSession.sessionId);
+    }
+
+    return fetch(apiUrl('/api/auth/session'), {
+      method: 'GET',
+      credentials: 'include',
+      headers,
+    });
   }
 
-  if (devSession?.sessionId) {
-    headers.set('X-Session-Id', devSession.sessionId);
-  }
+  let response = await requestSessionSnapshot(devSession);
+  let activeSession = devSession;
+  let refreshedCredentials: DevSessionCredentials | undefined;
 
-  const response = await fetch(apiUrl('/api/auth/session'), {
-    method: 'GET',
-    credentials: 'include',
-    headers,
-  });
+  if (response.status === 401) {
+    try {
+      const refreshedSession = await refreshAuthenticatedSession({
+        refreshToken: devSession?.refreshToken,
+        sessionId: devSession?.sessionId,
+      });
+
+      activeSession = devSession
+        ? {
+            accessToken: refreshedSession.accessToken,
+            refreshToken: refreshedSession.refreshToken,
+            sessionId: refreshedSession.sessionId,
+          }
+        : null;
+      refreshedCredentials = activeSession ?? undefined;
+      response = await requestSessionSnapshot(activeSession);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        return { kind: 'unauthenticated' };
+      }
+      throw error;
+    }
+  }
 
   if (response.status === 401) {
     return { kind: 'unauthenticated' };
@@ -3854,7 +3891,8 @@ export async function fetchSessionSnapshot(
   return {
     kind: 'authenticated',
     snapshot,
-    authSource: devSession ? 'storage' : 'cookie',
+    authSource: activeSession ? 'storage' : 'cookie',
+    refreshedCredentials,
   };
 }
 

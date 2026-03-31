@@ -4,6 +4,7 @@ import { useAccess } from '../access/access-context';
 import { APP_ROUTES, canAccessPermission, NAV_SECTIONS } from '../access/access-control';
 import { useAuth } from '../auth/auth-context';
 import { AccessProfileCard } from '../components/AccessProfileCard';
+import { BrandLogo } from '../components/BrandLogo';
 import { SessionTimeoutWarning } from '../components/SessionTimeoutWarning';
 
 function formatTimestamp(value: string): string {
@@ -44,11 +45,7 @@ export function AppShell({ children }: PropsWithChildren) {
     <div className="shell">
       <aside className="sidebar">
         <Link className="brand" to="/app">
-          <span className="brand-mark">MH</span>
-          <div>
-            <strong>MavieHealth</strong>
-            <p>Secure operations console</p>
-          </div>
+          <BrandLogo className="brand-logo-shell" subtitle="Secure operations console" />
         </Link>
 
         <nav className="nav">

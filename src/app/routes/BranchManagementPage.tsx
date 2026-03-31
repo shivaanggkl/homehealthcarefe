@@ -52,7 +52,7 @@ export function BranchManagementPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   async function loadBranchList(searchValue = search) {
     setLoading(true);

@@ -254,7 +254,7 @@ export function ReviewWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const onExceptionRoute = location.pathname.includes('/review/exceptions');
   const onResubmissionRoute = location.pathname.endsWith('/resubmission');

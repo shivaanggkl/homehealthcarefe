@@ -173,7 +173,7 @@ export function MessagingWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const contextMode: MessagingContextMode = patientId
     ? 'patient'

@@ -73,6 +73,19 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const SESSION_SNAPSHOT_POLL_MS = 60000;
+const SESSION_WARNING_POLL_MS = 5000;
+const AUTO_EXTEND_CHECK_MS = 60000;
+const AUTO_EXTEND_MIN_INTERVAL_MS = 5 * 60 * 1000;
+const RECENT_ACTIVITY_WINDOW_MS = 10 * 60 * 1000;
+const USER_ACTIVITY_EVENTS: (keyof WindowEventMap)[] = [
+  'pointerdown',
+  'keydown',
+  'mousedown',
+  'touchstart',
+  'focus',
+];
+
 const initialState: AuthState = {
   status: 'bootstrapping',
   session: null,
@@ -83,6 +96,9 @@ const initialState: AuthState = {
 export function AuthProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<AuthState>(initialState);
   const stateRef = useRef<AuthState>(initialState);
+  const lastInteractionAtRef = useRef<number>(Date.now());
+  const lastSessionExtensionAtRef = useRef<number>(Date.now());
+  const autoExtendPendingRef = useRef(false);
   const warningRequired = state.status === 'authenticated' ? state.session.warningRequired : false;
 
   useEffect(() => {
@@ -134,6 +150,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
           return;
         }
 
+        if (result.refreshedCredentials) {
+          saveDevSessionCredentials(result.refreshedCredentials);
+        }
+
         setAuthenticated(result.snapshot, result.authSource);
       } catch (error) {
         if (mode === 'background' && previousState.status === 'authenticated') {
@@ -164,7 +184,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const pollEveryMs = warningRequired ? 5000 : 60000;
+    const pollEveryMs = warningRequired ? SESSION_WARNING_POLL_MS : SESSION_SNAPSHOT_POLL_MS;
     const intervalId = window.setInterval(() => {
       void syncAuth('background');
     }, pollEveryMs);
@@ -173,6 +193,38 @@ export function AuthProvider({ children }: PropsWithChildren) {
       window.clearInterval(intervalId);
     };
   }, [state.status, warningRequired, syncAuth]);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated') {
+      autoExtendPendingRef.current = false;
+      return;
+    }
+
+    const markInteraction = () => {
+      lastInteractionAtRef.current = Date.now();
+    };
+
+    lastInteractionAtRef.current = Date.now();
+    lastSessionExtensionAtRef.current = Date.now();
+
+    USER_ACTIVITY_EVENTS.forEach((eventName) => {
+      window.addEventListener(eventName, markInteraction, { passive: true });
+    });
+
+    return () => {
+      USER_ACTIVITY_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, markInteraction);
+      });
+    };
+  }, [state.status]);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated') {
+      return;
+    }
+
+    lastSessionExtensionAtRef.current = Date.now();
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const clearLocalAuthState = useCallback(() => {
     clearDevSessionCredentials();
@@ -211,8 +263,39 @@ export function AuthProvider({ children }: PropsWithChildren) {
       });
     }
 
+    lastSessionExtensionAtRef.current = Date.now();
     await syncAuth('background');
   }, [syncAuth]);
+
+  useEffect(() => {
+    if (state.status !== 'authenticated') {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      const now = Date.now();
+      const hasRecentUserActivity = now - lastInteractionAtRef.current <= RECENT_ACTIVITY_WINDOW_MS;
+      const extensionDue = now - lastSessionExtensionAtRef.current >= AUTO_EXTEND_MIN_INTERVAL_MS;
+
+      if (!hasRecentUserActivity || !extensionDue || autoExtendPendingRef.current) {
+        return;
+      }
+
+      autoExtendPendingRef.current = true;
+
+      void extendSession()
+        .catch(() => {
+          // Let the regular auth poll determine whether the session is still valid.
+        })
+        .finally(() => {
+          autoExtendPendingRef.current = false;
+        });
+    }, AUTO_EXTEND_CHECK_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [extendSession, state.status]);
 
   const login = useCallback(
     async (command: { email: string; password: string; persistDevSession: boolean }) => {

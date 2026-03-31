@@ -352,7 +352,7 @@ export function PatientEventWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const canViewWorkspace = canAccessPermission(profile, 'view_patient_event_workspace');
   const canCreateIncident = canAccessPermission(profile, 'create_incident_records');

@@ -75,7 +75,7 @@ export function EvvIssueListPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const canManageExceptions = canAccessPermission(profile, 'manage_mobile_evv_exceptions');
   const canViewMissedVisits = canAccessPermission(profile, 'view_mobile_missed_visits');

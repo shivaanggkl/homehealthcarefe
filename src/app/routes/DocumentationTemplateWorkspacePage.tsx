@@ -181,7 +181,7 @@ export function DocumentationTemplateWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   async function loadWorkspace(selectTemplateId?: string) {
     setLoading(true);

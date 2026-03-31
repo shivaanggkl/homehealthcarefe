@@ -69,7 +69,7 @@ export function ServiceLineSetupPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   async function loadRows(nextPage = page) {
     setLoading(true);

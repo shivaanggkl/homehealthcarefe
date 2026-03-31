@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '../auth/session-api';
 import { useAuth } from '../auth/auth-context';
+import { BrandLogo } from '../components/BrandLogo';
 
 export function MobileLoginPage() {
   const { state, refreshAuth, clearLocalAuthState, login } = useAuth();
@@ -65,6 +66,7 @@ export function MobileLoginPage() {
   return (
     <div className="mobile-auth-layout">
       <section className="mobile-auth-card">
+        <BrandLogo className="brand-logo-mobile-auth" subtitle="Field care mobile access" />
         <span className="eyebrow">Epic 6 Mobile</span>
         <h1>Caregiver field sign in</h1>
         <p>

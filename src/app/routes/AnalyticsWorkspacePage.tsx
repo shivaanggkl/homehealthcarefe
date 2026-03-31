@@ -253,7 +253,7 @@ export function AnalyticsWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const navigationItems = [
     { href: '/app/analytics', label: 'Dashboard', active: section === 'dashboard' },

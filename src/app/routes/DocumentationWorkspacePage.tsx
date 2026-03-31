@@ -40,7 +40,7 @@ export function DocumentationWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const canManageTemplates = canAccessPermission(profile, 'manage_documentation_templates');
   const canManageTaskLibrary = canAccessPermission(profile, 'manage_documentation_task_library');

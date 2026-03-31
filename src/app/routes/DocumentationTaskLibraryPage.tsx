@@ -93,7 +93,7 @@ export function DocumentationTaskLibraryPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   async function loadWorkspace() {
     setLoading(true);

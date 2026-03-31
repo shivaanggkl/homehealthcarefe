@@ -1,30 +1,34 @@
 :root {
   font-family:
-    "Space Grotesk",
     "Avenir Next",
     "Segoe UI",
+    "Helvetica Neue",
+    Arial,
     sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #10202d;
-  background:
-    radial-gradient(circle at top left, rgba(209, 232, 255, 0.9), transparent 28%),
-    radial-gradient(circle at right 15%, rgba(216, 247, 230, 0.85), transparent 24%),
-    linear-gradient(180deg, #f4f8fb 0%, #edf4f2 100%);
+  color: #163a70;
+  background: #f4f7f8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --ink-strong: #10202d;
-  --ink-soft: #546474;
-  --surface: rgba(255, 255, 255, 0.8);
+  --ink-strong: #183b56;
+  --ink-soft: #657d92;
+  --surface: #fdfefe;
   --surface-strong: #ffffff;
-  --border: rgba(16, 32, 45, 0.1);
-  --brand: #0f4c81;
-  --brand-deep: #08395d;
-  --accent: #158f63;
+  --surface-elevated: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-muted: #e9f1f4;
+  --border: rgba(24, 59, 86, 0.16);
+  --border-subtle: rgba(24, 59, 86, 0.12);
+  --brand: #6f9dac;
+  --brand-deep: #183b56;
+  --brand-accent: #6f9dac;
+  --accent: #e4f0f3;
+  --accent-strong: #6f9dac;
   --danger: #9f3034;
-  --shadow: 0 22px 60px rgba(15, 31, 48, 0.12);
+  --shadow: none;
 }
 
 .messaging-shell {
@@ -107,15 +111,15 @@
 .messaging-status-banner-warning,
 .messaging-escalation-badge-urgent,
 .messaging-escalation-badge-escalated {
-  background: #fff1dc;
-  border-color: #f0c27b;
+  background: #eef4f6;
+  border-color: rgba(111, 167, 184, 0.32);
 }
 
 .messaging-status-banner-readonly,
 .messaging-module-state-readonly,
 .messaging-escalation-badge-resolved {
-  background: #eef2f6;
-  border-color: #c8d1db;
+  background: #f4f7f8;
+  border-color: rgba(22, 58, 112, 0.14);
 }
 
 .messaging-thread-list,
@@ -133,7 +137,7 @@
   border: 1px solid var(--border-subtle, #d6d9df);
   text-decoration: none;
   color: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 251, 0.98));
+  background: var(--surface-elevated, #fff);
 }
 
 .messaging-thread-card-active {
@@ -177,24 +181,24 @@
 }
 
 .messaging-unread-badge-active {
-  background: #dff4ea;
-  border-color: #79b08f;
+  background: #e7eff3;
+  border-color: rgba(111, 167, 184, 0.28);
 }
 
 .messaging-context-badge-patient {
-  background: #eef5ff;
+  background: #eef4f6;
 }
 
 .messaging-context-badge-visit {
-  background: #f3efe9;
+  background: #f4f7f8;
 }
 
 .messaging-context-badge-task {
-  background: #eff8ea;
+  background: #eef4f6;
 }
 
 .messaging-context-badge-broadcast {
-  background: #fff4e8;
+  background: #f4f7f8;
 }
 
 .messaging-form label {
@@ -231,7 +235,7 @@
   border: 1px solid var(--border-subtle, #d6d9df);
   text-decoration: none;
   color: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 251, 0.98));
+  background: var(--surface-elevated, #fff);
 }
 
 .messaging-command-card header {
@@ -361,6 +365,7 @@ body,
 body {
   min-height: 100vh;
   color: var(--ink-strong);
+  background: #f4f7f8;
 }
 
 a {
@@ -398,8 +403,34 @@ code {
 .sidebar-card {
   border: 1px solid var(--border);
   background: var(--surface);
-  backdrop-filter: blur(18px);
   box-shadow: var(--shadow);
+}
+
+.brand-logo {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.brand-logo-wordmark {
+  color: var(--brand-deep);
+  font-family:
+    "Iowan Old Style",
+    "Palatino Linotype",
+    "Book Antiqua",
+    Georgia,
+    serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+.brand-logo-subtitle {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .boot-card,
@@ -422,13 +453,13 @@ code {
   gap: 1.5rem;
   align-content: center;
   padding: 2rem;
+  background: #f4f7f8;
 }
 
 .login-hero-panel,
 .login-form-panel {
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
 }
 
 .login-hero-panel {
@@ -436,10 +467,8 @@ code {
   gap: 1.5rem;
   padding: 2.4rem;
   border-radius: 32px;
-  background:
-    radial-gradient(circle at top right, rgba(130, 201, 255, 0.2), transparent 22rem),
-    linear-gradient(145deg, rgba(8, 57, 93, 0.96), rgba(15, 76, 129, 0.94));
-  color: #f7fbff;
+  background: #e9f1f4;
+  color: var(--ink-strong);
 }
 
 .login-form-panel {
@@ -447,30 +476,20 @@ code {
   gap: 1.25rem;
   padding: 2.2rem;
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--surface-elevated);
 }
 
 .login-brand-lockup {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  display: grid;
+  gap: 0.85rem;
 }
 
-.login-brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  font-weight: 800;
-  letter-spacing: 0.08em;
+.brand-logo-hero .brand-logo-wordmark {
+  font-size: clamp(2.4rem, 5vw, 4rem);
 }
 
-.login-eyebrow {
-  color: rgba(255, 255, 255, 0.74);
+.brand-logo-hero .brand-logo-subtitle {
+  color: var(--brand-deep);
 }
 
 .login-hero-panel h1,
@@ -498,7 +517,7 @@ code {
 
 .login-hero-copy {
   max-width: 52ch;
-  color: rgba(247, 251, 255, 0.88);
+  color: rgba(22, 58, 112, 0.82);
 }
 
 .login-form-intro {
@@ -507,7 +526,7 @@ code {
 }
 
 .login-form-intro .eyebrow {
-  color: var(--brand);
+  color: var(--brand-deep);
 }
 
 .login-value-grid {
@@ -521,13 +540,13 @@ code {
   gap: 0.35rem;
   padding: 1rem;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border-subtle);
 }
 
 .login-value-card p,
 .login-trust-strip {
-  color: rgba(247, 251, 255, 0.78);
+  color: rgba(22, 58, 112, 0.76);
 }
 
 .login-trust-strip {
@@ -544,8 +563,8 @@ code {
   gap: 0.4rem;
   padding: 0.45rem 0.8rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #f4f7f8;
+  border: 1px solid var(--border-subtle);
 }
 
 .login-form-stack {
@@ -553,7 +572,7 @@ code {
 }
 
 .login-input {
-  border-color: rgba(16, 32, 45, 0.12);
+  border-color: rgba(22, 58, 112, 0.14);
   background: #fff;
   color: var(--ink-strong);
 }
@@ -563,7 +582,7 @@ code {
 }
 
 .login-input:focus {
-  outline: 2px solid rgba(15, 76, 129, 0.2);
+  outline: 2px solid rgba(111, 167, 184, 0.28);
 }
 
 .login-password-row {
@@ -575,8 +594,8 @@ code {
 
 .login-password-toggle {
   appearance: none;
-  border: 1px solid rgba(16, 32, 45, 0.12);
-  background: rgba(15, 76, 129, 0.06);
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
   color: var(--brand-deep);
   border-radius: 16px;
   padding: 0.95rem 1rem;
@@ -616,14 +635,14 @@ code {
   gap: 0.45rem;
   padding: 1rem 1.1rem;
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(239, 246, 250, 0.98));
-  border: 1px solid rgba(16, 32, 45, 0.08);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
 }
 
 .login-dev-tools {
   border-radius: 20px;
-  border: 1px dashed rgba(16, 32, 45, 0.16);
-  background: rgba(15, 76, 129, 0.03);
+  border: 1px dashed rgba(24, 59, 86, 0.14);
+  background: #f1f6f8;
   overflow: hidden;
 }
 
@@ -646,10 +665,8 @@ code {
 
 .auth-card-primary,
 .hero-card {
-  background:
-    linear-gradient(135deg, rgba(15, 76, 129, 0.96), rgba(10, 41, 66, 0.96)),
-    var(--surface-strong);
-  color: #f7fbff;
+  background: var(--surface-elevated);
+  color: var(--ink-strong);
 }
 
 .hero-card {
@@ -659,7 +676,7 @@ code {
 
 .hero-card p,
 .auth-card-primary p {
-  color: rgba(247, 251, 255, 0.86);
+  color: rgba(22, 58, 112, 0.78);
 }
 
 .unauthorized-hero {
@@ -682,7 +699,7 @@ code {
 .auth-card-primary .eyebrow,
 .hero-card .eyebrow,
 .boot-card .eyebrow {
-  color: rgba(255, 255, 255, 0.74);
+  color: rgba(22, 58, 112, 0.66);
 }
 
 .button-row,
@@ -695,14 +712,16 @@ code {
 
 .button {
   appearance: none;
-  border: none;
+  border: 1px solid rgba(24, 59, 86, 0.08);
   border-radius: 999px;
   padding: 0.85rem 1.3rem;
   cursor: pointer;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+  background: var(--brand-deep);
   color: white;
-  box-shadow: 0 10px 24px rgba(15, 76, 129, 0.2);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
 }
 
 .button:disabled {
@@ -712,20 +731,20 @@ code {
 }
 
 .button:hover {
-  transform: translateY(-1px);
+  border-color: rgba(24, 59, 86, 0.18);
 }
 
 .button-secondary {
-  background: white;
-  color: var(--ink-strong);
+  background: var(--surface-elevated);
+  color: var(--brand-deep);
   border: 1px solid var(--border);
   box-shadow: none;
 }
 
 .button-ghost {
   background: transparent;
-  color: var(--ink-soft);
-  border: 1px dashed rgba(16, 32, 45, 0.24);
+  color: var(--brand-deep);
+  border: 1px dashed rgba(24, 59, 86, 0.18);
   box-shadow: none;
 }
 
@@ -734,7 +753,7 @@ code {
   padding: 0.9rem 1rem;
   border-radius: 16px;
   color: var(--danger);
-  background: rgba(159, 48, 52, 0.08);
+  background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(159, 48, 52, 0.18);
 }
 
@@ -750,14 +769,14 @@ code {
 }
 
 .text-link {
-  color: rgba(247, 251, 255, 0.88);
+  color: var(--brand-deep);
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 0.18rem;
 }
 
 .text-link:hover {
-  color: white;
+  color: var(--brand);
 }
 
 .stack-form {
@@ -786,19 +805,19 @@ code {
 
 .input {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(22, 58, 112, 0.12);
   border-radius: 18px;
   padding: 0.95rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink-strong);
 }
 
 .input::placeholder {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(96, 120, 147, 0.72);
 }
 
 .input:focus {
-  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline: 2px solid rgba(111, 167, 184, 0.28);
   outline-offset: 2px;
 }
 
@@ -813,7 +832,7 @@ code {
 }
 
 .input-light:focus {
-  outline: 2px solid rgba(15, 76, 129, 0.24);
+  outline: 2px solid rgba(111, 167, 184, 0.28);
 }
 
 .checkbox {
@@ -821,7 +840,7 @@ code {
   gap: 0.75rem;
   align-items: flex-start;
   font-size: 0.92rem;
-  color: rgba(247, 251, 255, 0.86);
+  color: var(--ink-soft);
 }
 
 .checkbox input {
@@ -861,9 +880,9 @@ code {
   margin: 0;
   padding: 0.9rem 1rem;
   border-radius: 16px;
-  color: #0c5a40;
-  background: rgba(21, 143, 99, 0.14);
-  border: 1px solid rgba(21, 143, 99, 0.22);
+  color: var(--brand-deep);
+  background: #e9f1f4;
+  border: 1px solid rgba(111, 157, 172, 0.2);
 }
 
 .mfa-meta {
@@ -875,7 +894,7 @@ code {
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 1rem 1.1rem;
-  background: rgba(15, 76, 129, 0.05);
+  background: #eef4f6;
 }
 
 .note-card p {
@@ -907,8 +926,8 @@ code {
   display: block;
   padding: 0.8rem 0.9rem;
   border-radius: 16px;
-  background: rgba(15, 76, 129, 0.08);
-  border: 1px solid rgba(15, 76, 129, 0.14);
+  background: #eef4f6;
+  border: 1px solid rgba(111, 167, 184, 0.24);
   font-size: 0.95rem;
 }
 
@@ -931,7 +950,7 @@ code {
 }
 
 .session-card-current {
-  background: linear-gradient(145deg, rgba(15, 76, 129, 0.08), rgba(21, 143, 99, 0.08));
+  background: #f1f6f8;
 }
 
 .session-card-header {
@@ -967,8 +986,8 @@ code {
 }
 
 .session-badge-active {
-  background: rgba(21, 143, 99, 0.16);
-  color: #0c5a40;
+  background: rgba(220, 239, 247, 0.96);
+  color: var(--brand-deep);
 }
 
 .session-badge-inactive {
@@ -1020,8 +1039,7 @@ code {
 
 .policy-option:hover,
 .role-option:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(15, 31, 48, 0.08);
+  border-color: rgba(24, 59, 86, 0.16);
 }
 
 .policy-option input,
@@ -1042,8 +1060,8 @@ code {
 
 .policy-option-active,
 .role-option-active {
-  border-color: rgba(15, 76, 129, 0.4);
-  background: linear-gradient(145deg, rgba(15, 76, 129, 0.08), rgba(21, 143, 99, 0.08));
+  border-color: rgba(111, 157, 172, 0.28);
+  background: #eef4f6;
 }
 
 .role-option-disabled {
@@ -1065,40 +1083,28 @@ code {
 .sidebar {
   padding: 1.5rem;
   border-right: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(18px);
+  background: #edf3f5;
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  display: block;
   padding: 1rem;
   border-radius: 24px;
-  background: linear-gradient(145deg, rgba(15, 76, 129, 0.08), rgba(21, 143, 99, 0.08));
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
 }
 
-.brand strong {
-  display: block;
-  font-size: 1rem;
+.brand-logo-shell .brand-logo-wordmark {
+  font-size: clamp(1.8rem, 2.3vw, 2.6rem);
 }
 
-.brand p {
-  margin: 0.15rem 0 0;
-  color: var(--ink-soft);
-  font-size: 0.9rem;
+.brand-logo-shell .brand-logo-subtitle {
+  font-size: 0.74rem;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, var(--brand), var(--accent));
-  color: white;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+.brand-logo-boot,
+.brand-logo-mobile-auth {
+  margin-bottom: 0.35rem;
 }
 
 .nav {
@@ -1139,11 +1145,23 @@ code {
   border-radius: 18px;
   color: var(--ink-soft);
   font-weight: 600;
+  border: 1px solid transparent;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.nav-link:hover {
+  color: var(--ink-strong);
+  background: #f7fafb;
+  border-color: var(--border-subtle);
 }
 
 .nav-link.active {
   color: var(--ink-strong);
-  background: rgba(15, 76, 129, 0.1);
+  background: #e4eef2;
+  border-color: var(--border);
 }
 
 .nav-link-disabled {
@@ -1163,13 +1181,13 @@ code {
 }
 
 .nav-link-tag-owner-only {
-  background: rgba(15, 76, 129, 0.12);
+  background: #e4eef2;
   color: var(--brand-deep);
 }
 
 .nav-link-tag-admin {
-  background: rgba(21, 143, 99, 0.14);
-  color: #0c5a40;
+  background: rgba(248, 247, 244, 0.96);
+  color: var(--brand-deep);
 }
 
 .compact-field {
@@ -1188,7 +1206,7 @@ code {
   align-items: center;
   border-radius: 999px;
   padding: 0.32rem 0.72rem;
-  background: rgba(15, 76, 129, 0.08);
+  background: #e7eff3;
   color: var(--brand-deep);
   font-size: 0.8rem;
   font-weight: 700;
@@ -1212,6 +1230,7 @@ code {
 
 .content {
   padding: 1.75rem;
+  background: #f7fafb;
 }
 
 .topbar {
@@ -1324,9 +1343,7 @@ code {
   padding: 1.5rem;
   border: 1px solid var(--border);
   border-radius: 28px;
-  background:
-    linear-gradient(145deg, rgba(15, 76, 129, 0.08), rgba(21, 143, 99, 0.08)),
-    rgba(255, 255, 255, 0.74);
+  background: #eef4f6;
   box-shadow: var(--shadow);
 }
 
@@ -1394,7 +1411,7 @@ code {
   padding: 1rem 1.1rem;
   border: 1px solid var(--border);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .config-table-row > span,
@@ -1408,7 +1425,7 @@ code {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: rgba(15, 76, 129, 0.08);
+  background: #e7eff3;
 }
 
 .config-row-actions {
@@ -1435,7 +1452,7 @@ code {
   padding: 1rem 1.1rem;
   border: 1px solid var(--border);
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .config-module-card p {
@@ -1462,16 +1479,16 @@ code {
 
 .config-audience-owner-only {
   color: var(--brand-deep);
-  background: rgba(15, 76, 129, 0.12);
+  background: rgba(228, 239, 243, 0.72);
 }
 
 .config-audience-admin {
-  color: #0c5a40;
-  background: rgba(21, 143, 99, 0.14);
+  color: var(--brand-deep);
+  background: rgba(248, 247, 244, 0.96);
 }
 
 .config-module-link {
-  color: var(--brand);
+  color: var(--brand-deep);
 }
 
 .panel-span-2 {
@@ -1576,7 +1593,7 @@ code {
   padding: 1rem 1.1rem;
   border: 1px solid var(--border);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .directory-row > div,
@@ -1595,7 +1612,7 @@ code {
 }
 
 .directory-row-header {
-  background: rgba(15, 76, 129, 0.08);
+  background: #e7eff3;
   color: var(--ink-soft);
   font-size: 0.78rem;
   font-weight: 700;
@@ -1619,13 +1636,13 @@ code {
 }
 
 .status-active {
-  color: #116647;
-  background: rgba(21, 143, 99, 0.16);
+  color: var(--brand-deep);
+  background: #e4eef2;
 }
 
 .status-draft {
-  color: #0f4c81;
-  background: rgba(15, 76, 129, 0.14);
+  color: var(--brand-deep);
+  background: #e7eff3;
 }
 
 .status-locked,
@@ -1646,13 +1663,13 @@ code {
 }
 
 .status-planned {
-  color: #0f4c81;
-  background: rgba(15, 76, 129, 0.14);
+  color: var(--brand-deep);
+  background: #e7eff3;
 }
 
 .status-assigned {
-  color: #11583d;
-  background: rgba(21, 143, 99, 0.14);
+  color: var(--brand-deep);
+  background: #eaf1f4;
 }
 
 .status-open-shift,
@@ -1683,7 +1700,7 @@ code {
   padding: 0.9rem 1rem;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .checkbox-card input {
@@ -1697,13 +1714,13 @@ code {
   border: 1px solid var(--border);
   border-radius: 22px;
   padding: 1rem 1.1rem;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .success-card {
-  color: #11583d;
-  background: rgba(21, 143, 99, 0.1);
-  border-color: rgba(21, 143, 99, 0.22);
+  color: var(--brand-deep);
+  background: #eef4f6;
+  border-color: rgba(111, 157, 172, 0.22);
 }
 
 .empty-state-card {
@@ -1829,7 +1846,7 @@ code {
 .patient-record-meta div {
   padding: 0.95rem 1rem;
   border-radius: 18px;
-  background: rgba(15, 76, 129, 0.06);
+  background: rgba(220, 239, 247, 0.64);
 }
 
 .patient-record-meta dt {
@@ -1872,7 +1889,7 @@ code {
 .patient-section-link-active,
 .patient-module-card-available:hover,
 .patient-module-card-read-only:hover {
-  border-color: rgba(15, 76, 129, 0.28);
+  border-color: rgba(111, 167, 184, 0.32);
   transform: translateY(-1px);
 }
 
@@ -1890,7 +1907,7 @@ code {
 .patient-section-link-read-only,
 .patient-module-card-read-only,
 .patient-module-state-readonly {
-  background: rgba(15, 76, 129, 0.08);
+  background: rgba(220, 239, 247, 0.7);
 }
 
 .patient-section-link-restricted,
@@ -1904,7 +1921,7 @@ code {
 }
 
 .patient-module-state-info {
-  background: rgba(15, 76, 129, 0.06);
+  background: rgba(220, 239, 247, 0.58);
 }
 
 .patient-form-framework {
@@ -1927,13 +1944,13 @@ code {
 }
 
 .patient-mode-badge-editable {
-  color: #11583d;
-  background: rgba(21, 143, 99, 0.12);
+  color: var(--brand-deep);
+  background: rgba(231, 245, 250, 0.98);
 }
 
 .patient-mode-badge-read-only {
   color: var(--brand-deep);
-  background: rgba(15, 76, 129, 0.1);
+  background: rgba(220, 239, 247, 0.8);
 }
 
 .patient-form-grid {
@@ -2142,7 +2159,7 @@ code {
 .workforce-record-meta div {
   padding: 0.95rem 1rem;
   border-radius: 18px;
-  background: rgba(15, 76, 129, 0.06);
+  background: rgba(220, 239, 247, 0.64);
 }
 
 .workforce-record-meta dt {
@@ -2438,8 +2455,7 @@ code {
 
 .scheduling-match-card-selected,
 .scheduling-recurring-card-selected {
-  border-color: rgba(15, 76, 129, 0.3);
-  box-shadow: 0 10px 24px rgba(15, 76, 129, 0.08);
+  border-color: rgba(111, 167, 184, 0.34);
 }
 
 .scheduling-match-card-header,
@@ -2464,17 +2480,17 @@ code {
 }
 
 .scheduling-assignment-dropzone {
-  border: 2px dashed rgba(15, 76, 129, 0.28);
+  border: 2px dashed rgba(22, 58, 112, 0.2);
   border-radius: 20px;
-  background: rgba(15, 76, 129, 0.06);
+  background: rgba(220, 239, 247, 0.54);
   padding: 1rem 1.1rem;
   display: grid;
   gap: 0.6rem;
 }
 
 .scheduling-assignment-dropzone-active {
-  border-color: rgba(21, 143, 99, 0.4);
-  background: rgba(21, 143, 99, 0.08);
+  border-color: rgba(111, 167, 184, 0.36);
+  background: rgba(220, 239, 247, 0.9);
 }
 
 .scheduling-guidance-grid {
@@ -2499,7 +2515,7 @@ code {
 }
 
 .scheduling-conflict-card-clear {
-  border-color: rgba(21, 143, 99, 0.22);
+  border-color: rgba(111, 167, 184, 0.26);
 }
 
 .status-warning {
@@ -2513,8 +2529,8 @@ code {
 }
 
 .status-clear {
-  color: #11583d;
-  background: rgba(21, 143, 99, 0.14);
+  color: var(--brand-deep);
+  background: rgba(231, 245, 250, 0.98);
 }
 
 .scheduling-mode-badge {
@@ -2527,19 +2543,19 @@ code {
 }
 
 .scheduling-mode-badge-editable {
-  color: #11583d;
-  background: rgba(21, 143, 99, 0.12);
+  color: var(--brand-deep);
+  background: rgba(231, 245, 250, 0.98);
 }
 
 .scheduling-mode-badge-read-only {
   color: var(--brand-deep);
-  background: rgba(15, 76, 129, 0.1);
+  background: rgba(220, 239, 247, 0.8);
 }
 
 .scheduling-action-banner-success {
-  border-color: rgba(21, 143, 99, 0.22);
-  background: rgba(21, 143, 99, 0.1);
-  color: #11583d;
+  border-color: rgba(111, 167, 184, 0.24);
+  background: rgba(242, 250, 253, 0.98);
+  color: var(--brand-deep);
 }
 
 .scheduling-action-banner-warning {
@@ -2555,9 +2571,9 @@ code {
 }
 
 .scheduling-audit-callout {
-  border: 1px solid rgba(15, 76, 129, 0.16);
+  border: 1px solid rgba(22, 58, 112, 0.14);
   border-radius: 18px;
-  background: rgba(15, 76, 129, 0.07);
+  background: rgba(220, 239, 247, 0.62);
   padding: 1rem 1.1rem;
   display: grid;
   gap: 0.45rem;
@@ -2602,7 +2618,7 @@ code {
 .workforce-section-link-active,
 .workforce-module-card-available:hover,
 .workforce-module-card-read-only:hover {
-  border-color: rgba(15, 76, 129, 0.28);
+  border-color: rgba(111, 167, 184, 0.32);
   transform: translateY(-1px);
 }
 
@@ -2620,7 +2636,7 @@ code {
 .workforce-section-link-read-only,
 .workforce-module-card-read-only,
 .workforce-module-state-readonly {
-  background: rgba(15, 76, 129, 0.08);
+  background: rgba(220, 239, 247, 0.7);
 }
 
 .workforce-section-link-restricted,
@@ -2636,7 +2652,7 @@ code {
 
 .workforce-module-state-info,
 .workforce-inline-state-success {
-  background: rgba(15, 76, 129, 0.06);
+  background: rgba(220, 239, 247, 0.58);
 }
 
 .workforce-form-framework {
@@ -2659,13 +2675,13 @@ code {
 }
 
 .workforce-mode-badge-editable {
-  color: #11583d;
-  background: rgba(21, 143, 99, 0.12);
+  color: var(--brand-deep);
+  background: rgba(231, 245, 250, 0.98);
 }
 
 .workforce-mode-badge-read-only {
   color: var(--brand-deep);
-  background: rgba(15, 76, 129, 0.1);
+  background: rgba(220, 239, 247, 0.8);
 }
 
 .workforce-form-grid {
@@ -2791,7 +2807,7 @@ code {
 }
 
 .success-message {
-  color: #11583d;
+  color: var(--brand-deep);
 }
 
 .workforce-pagination {
@@ -3044,7 +3060,7 @@ code {
   padding: 1.5rem;
   border-radius: 1.5rem;
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 1rem 3rem rgba(20, 43, 74, 0.12);
+  border: 1px solid var(--border);
 }
 
 .mobile-shell {
@@ -3089,7 +3105,6 @@ code {
   gap: 0.25rem;
   background: rgba(255, 255, 255, 0.94);
   color: #163046;
-  box-shadow: 0 0.75rem 1.75rem rgba(18, 40, 68, 0.08);
 }
 
 .mobile-sync-banner strong {
@@ -3128,7 +3143,7 @@ code {
   padding: 1rem;
   border-radius: 1.25rem;
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 1rem 2.5rem rgba(22, 48, 70, 0.08);
+  border: 1px solid var(--border);
 }
 
 .mobile-panel-accent {
@@ -5278,7 +5293,6 @@ code {
   border-radius: 1rem;
   background: #ffffff;
   border: 1px solid rgba(148, 163, 184, 0.26);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
 }
 
 .analytics-panel-header {
@@ -5376,8 +5390,7 @@ code {
 }
 
 .analytics-card-link:hover .analytics-status-banner {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  border-color: rgba(24, 59, 86, 0.18);
 }
 
 .analytics-status-banner {
@@ -5387,7 +5400,7 @@ code {
   border-radius: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.24);
   background: #f8fafc;
-  transition: transform 140ms ease, box-shadow 140ms ease;
+  transition: border-color 140ms ease;
 }
 
 .analytics-status-banner strong,
@@ -5472,7 +5485,6 @@ code {
 
 .analytics-command-link:hover {
   border-color: rgba(14, 116, 144, 0.28);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
 .analytics-link-cluster,

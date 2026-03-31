@@ -79,7 +79,7 @@ export function MileagePaySetupPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   async function loadPage() {
     setLoading(true);

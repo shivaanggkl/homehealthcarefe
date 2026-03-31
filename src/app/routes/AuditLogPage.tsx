@@ -64,7 +64,7 @@ export function AuditLogPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const initialFilters = useMemo<AuditFilters>(
     () => ({

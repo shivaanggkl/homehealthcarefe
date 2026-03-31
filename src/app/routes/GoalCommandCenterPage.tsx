@@ -82,7 +82,7 @@ export function GoalCommandCenterPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const canViewWorkspace = canAccessPermission(profile, 'view_goal_workspace');
   const canViewAudit = canAccessPermission(profile, 'view_audit_log');

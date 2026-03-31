@@ -97,7 +97,7 @@ export function AdminMfaPolicyPage() {
       accessToken: devSession?.accessToken,
       sessionId: devSession?.sessionId ?? (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   async function loadPolicy() {
     setLoading(true);

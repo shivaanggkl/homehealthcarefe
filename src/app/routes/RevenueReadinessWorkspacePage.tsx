@@ -206,7 +206,7 @@ export function RevenueReadinessWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   const canViewWorkspace = canAccessPermission(profile, 'view_revenue_readiness_workspace');
   const canRecalculate = canAccessPermission(profile, 'recalculate_revenue_readiness');

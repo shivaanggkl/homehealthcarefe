@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '../auth/session-api';
 import { useAuth } from '../auth/auth-context';
+import { BrandLogo } from '../components/BrandLogo';
 
 export function LoginPage() {
   const { state, refreshAuth, clearLocalAuthState, login } = useAuth();
@@ -74,9 +75,8 @@ export function LoginPage() {
     <div className="login-layout">
       <section className="login-hero-panel">
         <div className="login-brand-lockup">
-          <span className="login-brand-mark">MH</span>
           <div>
-            <span className="eyebrow login-eyebrow">MavieHealth</span>
+            <BrandLogo className="brand-logo-hero" subtitle="Connected home health operations" />
             <h1>Built for modern home health operations.</h1>
           </div>
         </div>

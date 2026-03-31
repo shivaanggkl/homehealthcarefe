@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AccessProvider, useAccess } from './access/access-context';
 import { AuthProvider, useAuth } from './auth/auth-context';
+import { BrandLogo } from './components/BrandLogo';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AppShell } from './layout/AppShell';
 import { ActiveSessionsPage } from './routes/ActiveSessionsPage';
@@ -66,7 +67,10 @@ function BootstrapScreen() {
   return (
     <div className="boot-screen">
       <div className="boot-card">
-        <span className="eyebrow">MavieHealth</span>
+        <BrandLogo
+          className="brand-logo-boot"
+          subtitle="Session-aware home health operations"
+        />
         <h1>Restoring secure session</h1>
         <p>Checking the backend session API before rendering protected routes.</p>
       </div>
@@ -78,6 +82,7 @@ function MobileBootstrapScreen() {
   return (
     <div className="mobile-auth-layout">
       <section className="mobile-auth-card">
+        <BrandLogo className="brand-logo-mobile-auth" subtitle="Field care mobile access" />
         <span className="eyebrow">Epic 6 Mobile</span>
         <h1>Restoring field session</h1>
         <p>

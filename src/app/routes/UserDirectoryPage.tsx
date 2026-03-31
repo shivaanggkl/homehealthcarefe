@@ -95,7 +95,7 @@ export function UserDirectoryPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   async function loadDirectory(targetFilters: DirectoryFilters = filters) {
     setLoading(true);

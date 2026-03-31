@@ -57,7 +57,7 @@ export function AdminNotificationPreferencesPage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   async function loadPreferences() {
     setLoading(true);

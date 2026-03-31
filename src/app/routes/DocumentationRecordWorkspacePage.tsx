@@ -23,7 +23,7 @@ export function DocumentationRecordWorkspacePage() {
         devSession?.sessionId ??
         (state.status === 'authenticated' ? state.session.sessionId : undefined),
     };
-  }, [state]);
+  }, [state.status, state.status === 'authenticated' ? state.session.sessionId : undefined]);
 
   return (
     <DocumentationWorkspaceShell
